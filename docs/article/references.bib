@@ -1,0 +1,357 @@
+% References for the literature table in docs/literature.md.
+% The order follows the table.
+
+% ---- Probing methodology ----
+
+@misc{alain2016probes,
+  author        = {Alain, Guillaume and Bengio, Yoshua},
+  title         = {Understanding intermediate layers using linear classifier probes},
+  year          = {2016},
+  eprint        = {1610.01644},
+  archivePrefix = {arXiv},
+  url           = {https://arxiv.org/abs/1610.01644}
+}
+
+@inproceedings{hewitt2019control,
+  author    = {Hewitt, John and Liang, Percy},
+  title     = {Designing and Interpreting Probes with Control Tasks},
+  booktitle = {Proceedings of the 2019 Conference on Empirical Methods in Natural Language Processing and the 9th International Joint Conference on Natural Language Processing ({EMNLP}-{IJCNLP})},
+  year      = {2019},
+  pages     = {2733--2743},
+  address   = {Hong Kong, China},
+  publisher = {Association for Computational Linguistics},
+  doi       = {10.18653/v1/D19-1275},
+  url       = {https://aclanthology.org/D19-1275/}
+}
+
+@article{belinkov2022probing,
+  author    = {Belinkov, Yonatan},
+  title     = {Probing Classifiers: Promises, Shortcomings, and Advances},
+  journal   = {Computational Linguistics},
+  volume    = {48},
+  number    = {1},
+  year      = {2022},
+  pages     = {207--219},
+  publisher = {MIT Press},
+  doi       = {10.1162/coli_a_00422},
+  url       = {https://aclanthology.org/2022.cl-1.7/}
+}
+
+% ---- Concept-based explanations and concept erasure ----
+
+@inproceedings{kim2018tcav,
+  author    = {Kim, Been and Wattenberg, Martin and Gilmer, Justin and Cai, Carrie and Wexler, James and Viegas, Fernanda and Sayres, Rory},
+  title     = {Interpretability Beyond Feature Attribution: Quantitative Testing with Concept Activation Vectors ({TCAV})},
+  booktitle = {Proceedings of the 35th International Conference on Machine Learning},
+  series    = {Proceedings of Machine Learning Research},
+  volume    = {80},
+  year      = {2018},
+  pages     = {2668--2677},
+  publisher = {PMLR},
+  url       = {https://proceedings.mlr.press/v80/kim18d.html}
+}
+
+@inproceedings{graziani2018rcv,
+  author    = {Graziani, Mara and Andrearczyk, Vincent and M{\"u}ller, Henning},
+  title     = {Regression Concept Vectors for Bidirectional Explanations in Histopathology},
+  booktitle = {Understanding and Interpreting Machine Learning in Medical Image Computing Applications},
+  series    = {Lecture Notes in Computer Science},
+  volume    = {11038},
+  year      = {2018},
+  pages     = {124--132},
+  publisher = {Springer},
+  doi       = {10.1007/978-3-030-02628-8_14},
+  url       = {https://arxiv.org/abs/1904.04520}
+}
+
+@inproceedings{ravfogel2020inlp,
+  author    = {Ravfogel, Shauli and Elazar, Yanai and Gonen, Hila and Twiton, Michael and Goldberg, Yoav},
+  title     = {Null It Out: Guarding Protected Attributes by Iterative Nullspace Projection},
+  booktitle = {Proceedings of the 58th Annual Meeting of the {A}ssociation for {C}omputational {L}inguistics},
+  year      = {2020},
+  pages     = {7237--7256},
+  address   = {Online},
+  publisher = {Association for Computational Linguistics},
+  doi       = {10.18653/v1/2020.acl-main.647},
+  url       = {https://aclanthology.org/2020.acl-main.647/}
+}
+
+@article{elazar2021amnesic,
+  author    = {Elazar, Yanai and Ravfogel, Shauli and Jacovi, Alon and Goldberg, Yoav},
+  title     = {Amnesic Probing: Behavioral Explanation with Amnesic Counterfactuals},
+  journal   = {Transactions of the Association for Computational Linguistics},
+  volume    = {9},
+  year      = {2021},
+  pages     = {160--175},
+  publisher = {MIT Press},
+  doi       = {10.1162/tacl_a_00359},
+  url       = {https://aclanthology.org/2021.tacl-1.10/}
+}
+
+@inproceedings{belrose2023leace,
+  author    = {Belrose, Nora and Schneider-Joseph, David and Ravfogel, Shauli and Cotterell, Ryan and Raff, Edward and Biderman, Stella},
+  title     = {{LEACE}: Perfect linear concept erasure in closed form},
+  booktitle = {Advances in Neural Information Processing Systems},
+  volume    = {36},
+  year      = {2023},
+  pages     = {66044--66063},
+  url       = {https://proceedings.neurips.cc/paper_files/paper/2023/hash/d066d21c619d0a78c5b557fa3291a8f4-Abstract-Conference.html}
+}
+
+% ---- Sanity checks, attribution and cue conflicts ----
+
+@inproceedings{adebayo2018sanity,
+  author    = {Adebayo, Julius and Gilmer, Justin and Muelly, Michael and Goodfellow, Ian and Hardt, Moritz and Kim, Been},
+  title     = {Sanity Checks for Saliency Maps},
+  booktitle = {Advances in Neural Information Processing Systems},
+  volume    = {31},
+  year      = {2018},
+  url       = {https://proceedings.neurips.cc/paper_files/paper/2018/hash/294a8ed24b1ad22ec2e7efea049b8737-Abstract.html}
+}
+
+@inproceedings{sundararajan2017ig,
+  author    = {Sundararajan, Mukund and Taly, Ankur and Yan, Qiqi},
+  title     = {Axiomatic Attribution for Deep Networks},
+  booktitle = {Proceedings of the 34th International Conference on Machine Learning},
+  series    = {Proceedings of Machine Learning Research},
+  volume    = {70},
+  year      = {2017},
+  pages     = {3319--3328},
+  publisher = {PMLR},
+  url       = {https://proceedings.mlr.press/v70/sundararajan17a.html}
+}
+
+@inproceedings{geirhos2019texture,
+  author    = {Geirhos, Robert and Rubisch, Patricia and Michaelis, Claudio and Bethge, Matthias and Wichmann, Felix A. and Brendel, Wieland},
+  title     = {{ImageNet}-trained {CNNs} are biased towards texture; increasing shape bias improves accuracy and robustness},
+  booktitle = {International Conference on Learning Representations},
+  year      = {2019},
+  eprint    = {1811.12231},
+  archivePrefix = {arXiv},
+  url       = {https://arxiv.org/abs/1811.12231}
+}
+
+% ---- 3D and physical knowledge in generative and vision models ----
+
+@misc{chen2023beyond,
+  author        = {Chen, Yida and Vi{\'e}gas, Fernanda and Wattenberg, Martin},
+  title         = {Beyond Surface Statistics: Scene Representations in a Latent Diffusion Model},
+  year          = {2023},
+  eprint        = {2306.05720},
+  archivePrefix = {arXiv},
+  url           = {https://arxiv.org/abs/2306.05720},
+  note          = {A short version appeared at the NeurIPS 2023 Workshop on Diffusion Models}
+}
+
+@inproceedings{zhan2024protocol,
+  author    = {Zhan, Guanqi and Zheng, Chuanxia and Xie, Weidi and Zisserman, Andrew},
+  title     = {A General Protocol to Probe Large Vision Models for {3D} Physical Understanding},
+  booktitle = {Advances in Neural Information Processing Systems},
+  volume    = {37},
+  year      = {2024},
+  pages     = {43468--43498},
+  doi       = {10.52202/079017-1377},
+  eprint    = {2310.06836},
+  archivePrefix = {arXiv},
+  url       = {https://arxiv.org/abs/2310.06836}
+}
+
+@inproceedings{elbanani2024probing,
+  author    = {El Banani, Mohamed and Raj, Amit and Maninis, Kevis-Kokitsi and Kar, Abhishek and Li, Yuanzhen and Rubinstein, Michael and Sun, Deqing and Guibas, Leonidas and Johnson, Justin and Jampani, Varun},
+  title     = {Probing the {3D} Awareness of Visual Foundation Models},
+  booktitle = {Proceedings of the {IEEE/CVF} Conference on Computer Vision and Pattern Recognition ({CVPR})},
+  year      = {2024},
+  month     = jun,
+  pages     = {21795--21806},
+  url       = {https://openaccess.thecvf.com/content/CVPR2024/html/Banani_Probing_the_3D_Awareness_of_Visual_Foundation_Models_CVPR_2024_paper.html}
+}
+
+@misc{du2023generative,
+  author        = {Du, Xiaodan and Kolkin, Nicholas and Shakhnarovich, Greg and Bhattad, Anand},
+  title         = {Generative Models: What Do They Know? Do They Know Things? Let's Find Out!},
+  year          = {2023},
+  eprint        = {2311.17137},
+  archivePrefix = {arXiv},
+  url           = {https://arxiv.org/abs/2311.17137}
+}
+
+@inproceedings{bhattad2023stylegan,
+  author    = {Bhattad, Anand and McKee, Daniel and Hoiem, Derek and Forsyth, D. A.},
+  title     = {{StyleGAN} knows Normal, Depth, Albedo, and More},
+  booktitle = {Advances in Neural Information Processing Systems},
+  volume    = {36},
+  year      = {2023},
+  eprint    = {2306.00987},
+  archivePrefix = {arXiv},
+  url       = {https://proceedings.neurips.cc/paper_files/paper/2023/hash/e7407ab5e89c405d28ff6807ffec594a-Abstract.html}
+}
+
+@inproceedings{sarkar2024shadows,
+  author    = {Sarkar, Ayush and Mai, Hanlin and Mahapatra, Amitabh and Lazebnik, Svetlana and Forsyth, D. A. and Bhattad, Anand},
+  title     = {Shadows Don't Lie and Lines Can't Bend! Generative Models don't know Projective Geometry...for now},
+  booktitle = {Proceedings of the {IEEE/CVF} Conference on Computer Vision and Pattern Recognition ({CVPR})},
+  year      = {2024},
+  month     = jun,
+  pages     = {28140--28149},
+  url       = {https://openaccess.thecvf.com/content/CVPR2024/html/Sarkar_Shadows_Dont_Lie_and_Lines_Cant_Bend_Generative_Models_dont_CVPR_2024_paper.html}
+}
+
+@inproceedings{tang2023dift,
+  author    = {Tang, Luming and Jia, Menglin and Wang, Qianqian and Phoo, Cheng Perng and Hariharan, Bharath},
+  title     = {Emergent Correspondence from Image Diffusion},
+  booktitle = {Advances in Neural Information Processing Systems},
+  volume    = {36},
+  year      = {2023},
+  eprint    = {2306.03881},
+  archivePrefix = {arXiv},
+  url       = {https://proceedings.neurips.cc/paper_files/paper/2023/hash/0503f5dce343a1d06d16ba103dd52db1-Abstract-Conference.html}
+}
+
+% ---- Interpretability and control of diffusion models ----
+
+@inproceedings{kwon2023hspace,
+  author    = {Kwon, Mingi and Jeong, Jaeseok and Uh, Youngjung},
+  title     = {Diffusion Models already have a Semantic Latent Space},
+  booktitle = {International Conference on Learning Representations},
+  year      = {2023},
+  eprint    = {2210.10960},
+  archivePrefix = {arXiv},
+  url       = {https://arxiv.org/abs/2210.10960}
+}
+
+@inproceedings{gandikota2024sliders,
+  author    = {Gandikota, Rohit and Materzy{\'n}ska, Joanna and Zhou, Tingrui and Torralba, Antonio and Bau, David},
+  title     = {Concept Sliders: {LoRA} Adaptors for Precise Control in Diffusion Models},
+  booktitle = {Computer Vision -- {ECCV} 2024},
+  series    = {Lecture Notes in Computer Science},
+  year      = {2024},
+  pages     = {172--188},
+  publisher = {Springer Nature Switzerland},
+  doi       = {10.1007/978-3-031-73661-2_10},
+  eprint    = {2311.12092},
+  archivePrefix = {arXiv},
+  url       = {https://arxiv.org/abs/2311.12092}
+}
+
+@inproceedings{surkov2024sae,
+  author    = {Surkov, Viacheslav and Wendler, Chris and Mari, Antonio and Terekhov, Mikhail and Deschenaux, Justin and West, Robert and Gulcehre, Caglar and Bau, David},
+  title     = {One-Step is Enough: Sparse Autoencoders for Text-to-Image Diffusion Models},
+  booktitle = {Advances in Neural Information Processing Systems},
+  volume    = {38},
+  year      = {2025},
+  eprint    = {2410.22366},
+  archivePrefix = {arXiv},
+  url       = {https://papers.neurips.cc/paper_files/paper/2025/hash/90291c8d685db65a8a1e32fd2b66f8bb-Abstract-Conference.html}
+}
+
+@inproceedings{helbling2025concept,
+  author    = {Helbling, Alec and Meral, Tuna Han Salih and Hoover, Ben and Yanardag, Pinar and Chau, Duen Horng},
+  title     = {{ConceptAttention}: Diffusion Transformers Learn Highly Interpretable Features},
+  booktitle = {Proceedings of the 42nd International Conference on Machine Learning},
+  series    = {Proceedings of Machine Learning Research},
+  volume    = {267},
+  year      = {2025},
+  pages     = {22946--22963},
+  publisher = {PMLR},
+  eprint    = {2502.04320},
+  archivePrefix = {arXiv},
+  url       = {https://proceedings.mlr.press/v267/helbling25a.html}
+}
+
+@misc{shabalin2025dictionary,
+  author        = {Shabalin, Stepan and Panda, Ayush and Kharlapenko, Dmitrii and Ali, Abdur Raheem and Hao, Yixiong and Conmy, Arthur},
+  title         = {Interpreting Large Text-to-Image Diffusion Models with Dictionary Learning},
+  year          = {2025},
+  eprint        = {2505.24360},
+  archivePrefix = {arXiv},
+  url           = {https://arxiv.org/abs/2505.24360},
+  note          = {Presented at the CVPR 2025 workshop on mechanistic interpretability for vision}
+}
+
+% ---- Lighting control and light estimation ----
+
+@inproceedings{zhang2025iclight,
+  author    = {Zhang, Lvmin and Rao, Anyi and Agrawala, Maneesh},
+  title     = {Scaling In-the-Wild Training for Diffusion-based Illumination Harmonization and Editing by Imposing Consistent Light Transport},
+  booktitle = {International Conference on Learning Representations},
+  year      = {2025},
+  url       = {https://proceedings.iclr.cc/paper_files/paper/2025/file/1cce374fec7829c24a97ae0e91cd0999-Paper-Conference.pdf}
+}
+
+@inproceedings{zeng2024dilightnet,
+  author    = {Zeng, Chong and Dong, Yue and Peers, Pieter and Kong, Youkang and Wu, Hongzhi and Tong, Xin},
+  title     = {{DiLightNet}: Fine-grained Lighting Control for Diffusion-based Image Generation},
+  booktitle = {{ACM} {SIGGRAPH} 2024 Conference Papers},
+  year      = {2024},
+  pages     = {1--12},
+  publisher = {ACM},
+  doi       = {10.1145/3641519.3657396},
+  eprint    = {2402.11929},
+  archivePrefix = {arXiv},
+  url       = {https://arxiv.org/abs/2402.11929}
+}
+
+@inproceedings{kocsis2024lightit,
+  author    = {Kocsis, Peter and Philip, Julien and Sunkavalli, Kalyan and Nie{\ss}ner, Matthias and Hold-Geoffroy, Yannick},
+  title     = {{LightIt}: Illumination Modeling and Control for Diffusion Models},
+  booktitle = {Proceedings of the {IEEE/CVF} Conference on Computer Vision and Pattern Recognition ({CVPR})},
+  year      = {2024},
+  month     = jun,
+  pages     = {9359--9369},
+  url       = {https://openaccess.thecvf.com/content/CVPR2024/html/Kocsis_LightIt_Illumination_Modeling_and_Control_for_Diffusion_Models_CVPR_2024_paper.html}
+}
+
+@inproceedings{phongthawee2024light,
+  author    = {Phongthawee, Pakkapon and Chinchuthakun, Worameth and Sinsunthithet, Nontaphat and Jampani, Varun and Raj, Amit and Khungurn, Pramook and Suwajanakorn, Supasorn},
+  title     = {{DiffusionLight}: Light Probes for Free by Painting a Chrome Ball},
+  booktitle = {Proceedings of the {IEEE/CVF} Conference on Computer Vision and Pattern Recognition ({CVPR})},
+  year      = {2024},
+  month     = jun,
+  pages     = {98--108},
+  url       = {https://openaccess.thecvf.com/content/CVPR2024/html/Phongthawee_DiffusionLight_Light_Probes_for_Free_by_Painting_a_Chrome_Ball_CVPR_2024_paper.html}
+}
+
+% ---- Model and data of this project ----
+
+@inproceedings{xie2025sana,
+  author    = {Xie, Enze and Chen, Junsong and Chen, Junyu and Cai, Han and Tang, Haotian and Lin, Yujun and Zhang, Zhekai and Li, Muyang and Zhu, Ligeng and Lu, Yao and Han, Song},
+  title     = {{SANA}: Efficient High-Resolution Text-to-Image Synthesis with Linear Diffusion Transformers},
+  booktitle = {International Conference on Learning Representations},
+  year      = {2025},
+  eprint    = {2410.10629},
+  archivePrefix = {arXiv},
+  url       = {https://proceedings.iclr.cc/paper_files/paper/2025/hash/34345e243156da67605d4b63d71c8d98-Abstract-Conference.html}
+}
+
+@inproceedings{johnson2017clevr,
+  author    = {Johnson, Justin and Hariharan, Bharath and van der Maaten, Laurens and Fei-Fei, Li and Zitnick, C. Lawrence and Girshick, Ross},
+  title     = {{CLEVR}: A Diagnostic Dataset for Compositional Language and Elementary Visual Reasoning},
+  booktitle = {Proceedings of the {IEEE} Conference on Computer Vision and Pattern Recognition ({CVPR})},
+  year      = {2017},
+  doi       = {10.1109/CVPR.2017.215},
+  eprint    = {1612.06890},
+  archivePrefix = {arXiv},
+  url       = {https://arxiv.org/abs/1612.06890}
+}
+
+% ---- Noise schedules ----
+
+@inproceedings{lipman2023flow,
+  author    = {Lipman, Yaron and Chen, Ricky T. Q. and Ben-Hamu, Heli and Nickel, Maximilian and Le, Matthew},
+  title     = {Flow Matching for Generative Modeling},
+  booktitle = {International Conference on Learning Representations},
+  year      = {2023},
+  eprint    = {2210.02747},
+  archivePrefix = {arXiv},
+  url       = {https://arxiv.org/abs/2210.02747}
+}
+
+@inproceedings{liu2023rectified,
+  author    = {Liu, Xingchao and Gong, Chengyue and Liu, Qiang},
+  title     = {Flow Straight and Fast: Learning to Generate and Transfer Data with Rectified Flow},
+  booktitle = {International Conference on Learning Representations},
+  year      = {2023},
+  eprint    = {2209.03003},
+  archivePrefix = {arXiv},
+  url       = {https://arxiv.org/abs/2209.03003}
+}

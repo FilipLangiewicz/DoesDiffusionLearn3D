@@ -1,0 +1,61 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dd3d"
+version = "0.2.0"
+description = "Probe and audit the light direction representation of text-to-image diffusion models."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "numpy>=1.26",
+    "scipy>=1.11",
+    "pandas>=2.1",
+    "scikit-learn>=1.4",
+    "pillow>=10.0",
+    "matplotlib>=3.8",
+    "pyyaml>=6.0",
+    "typer>=0.12",
+]
+
+[project.optional-dependencies]
+# The model part needs a GPU in practice; the CPU path only serves for smoke tests.
+model = [
+    "torch>=2.3",
+    "torchvision>=0.18",
+    "diffusers>=0.32",
+    "transformers>=4.46",
+    "accelerate>=0.33",
+    "safetensors>=0.4",
+    "sentencepiece>=0.2",
+]
+track = ["tensorboard>=2.16"]
+dev = ["pytest>=8.0", "ruff>=0.6"]
+
+[project.scripts]
+dd3d = "dd3d.cli:app"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["dd3d*"]
+
+[tool.ruff]
+line-length = 110
+target-version = "py310"
+extend-exclude = ["clevr-dataset-gen", "legacy", "tools/diffusers_upstream"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "NPY"]
+ignore = ["E741"]
+
+[tool.ruff.lint.per-file-ignores]
+"tools/blender/*.py" = ["E402"]
+"src/dd3d/cli.py" = ["B008"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+markers = [
+    "slow: tests that need model weights or Blender",
+]

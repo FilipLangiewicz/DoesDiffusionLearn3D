@@ -1,0 +1,7 @@
+scenes: 3000
+camera fit: max residual 0.56 px
+legacy arrow vs exact shadow direction: mean 5.18 deg, median 2.94, p90 13.22, max 34.49
+share of scenes with legacy arrow error > 10 deg: 0.158
+legacy arrow origin (object centre) is 56.0 px above the shadow start (mean)
+label vs light at object, azimuth: mean 34.99 deg, median 27.22
+label vs light at object, elevation: mean -12.82 deg, mean abs 16.20

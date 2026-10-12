@@ -44,4 +44,4 @@ The full dataset and the activations (approximately 130 GB) are not in this repo
 
 ## Authors
 
-Natalia Choszczyk and Filip Langiewicz. A project for the course *Advanced Topics in Neural Networks* at the Warsaw University of Technology, 2026.
+Natalia Choszczyk and Filip Langiewicz

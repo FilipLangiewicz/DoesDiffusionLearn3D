@@ -3,3 +3,4 @@ data/activations_test/
 data/activations/
 data/final/
 *.pkl
+data/activations_example/

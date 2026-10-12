@@ -5,7 +5,7 @@ Do text-to-image models build a 3D model of the world inside? We test this with 
 We render simple objects with a known light direction and give the images to **SANA-1.6B**. A linear probe on the frozen transformer activations predicts the light azimuth and elevation. The probe learns on spheres and cylinders only. Then we test it on cubes.
 
 <p align="center">
-  <img src="probe_exp/test_cubes_eval_all/summary_final/pred_viz/test_cubes/SmoothCube_v2_new_000362_az0.0_el8.3_s0.1851.png" width="45%" alt="Correct prediction on a cube">
+  <img src="probe_exp/test_cubes_eval_all/summary_final/pred_viz/test_cubes/SmoothCube_v2_new_000170_az1.0_el0.3_s0.0084.png" width="45%" alt="Correct prediction on a cube">
   <img src="probe_exp/test_cubes_eval_all/summary_final/pred_viz/test_cubes/SmoothCube_v2_new_000629_az115.2_el0.3_s0.3269.png" width="45%" alt="Incorrect prediction on a cube">
   <br>
   <em>Green: true light direction. Red: probe prediction. Left: a correct prediction. Right: one of the worst errors.</em>

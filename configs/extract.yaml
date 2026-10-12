@@ -1,0 +1,18 @@
+# Corrected extraction for dataset v1 (all 20 blocks, five timesteps).
+# Paths are relative to the repository root.
+images_dir: data/final/images
+out_dir: data/features/v1_sana
+prompt_cache: data/features/prompt_empty.pt
+blocks: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
+timesteps: [100, 200, 400, 600, 800]
+grid: 8
+image_size: 1024
+seed: 1234
+max_per_shape: 1000
+num_tasks: 30
+device: cuda
+transformer_variant: bf16
+save_vae_latents: true
+# Full token maps (4.6 MB each) only for the blocks and timesteps of the attribution maps.
+full_blocks: [10]
+full_timesteps: [200]

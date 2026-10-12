@@ -1,0 +1,14 @@
+# CPU smoke test on two images: it checks the code path, not the science.
+images_dir: data/final_example/images
+out_dir: data/features/cpu_smoke
+prompt_cache: data/features/prompt_empty.pt
+blocks: [4, 10, 18]
+timesteps: [200, 500, 800]
+grid: 8
+image_size: 1024
+seed: 1234
+max_per_shape: 1
+num_tasks: 1
+device: cpu
+transformer_variant: bf16
+save_vae_latents: true

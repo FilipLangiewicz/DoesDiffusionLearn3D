@@ -1,0 +1,14 @@
+# Reproduction of the ZZSN noise rule, only for the comparison in the article.
+images_dir: data/final/images
+out_dir: data/features/v1_sana_legacy_noise
+prompt_cache: data/features/prompt_empty.pt
+blocks: [4, 10, 18]
+timesteps: [200, 500, 800]
+grid: 8
+image_size: 1024
+seed: 1234
+max_per_shape: 1000
+num_tasks: 10
+device: cuda
+legacy_noise: true
+save_vae_latents: false

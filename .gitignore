@@ -19,3 +19,8 @@ data/v2/
 runs/
 docs/article/build/
 data/v2_sample/
+
+# Course rule PDFs: keep them only in the local copy
+docs/Siwy regulamin 26Z.pdf
+docs/regulamin_projektów.pdf
+*:Zone.Identifier

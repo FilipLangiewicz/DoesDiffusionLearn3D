@@ -106,3 +106,23 @@ dd3d viz probe_exp/test_cubes_eval_all/layer_10_t_200/test_cubes_predictions.csv
 ```
 
 Blender 2.78c needs the libraries `libGLU.so.1` and `libOpenGL.so.0`. Without root access, download the Ubuntu packages `libglu1-mesa` and `libopengl0` with `apt-get download` and unpack them with `dpkg -x`. Then put the folder on `LD_LIBRARY_PATH`.
+
+## 8. Test of the light options (2026-10-13)
+
+`scripts/audit/lighting_study.py` renders a sphere at the scene centre with four light setups. Each setup has six light directions. Means over the six directions:
+
+| Setup | Floor highlight | Shadow depth | Object contrast | Shadow direction error |
+|---|---:|---:|---:|---:|
+| Current dataset (AREA key lamp, sun lamp Area on) | 48.9 | 36.3 | 48.7 | 10.7 deg |
+| Sun lamp Area off | 58.5 | 47.2 | 52.4 | 10.0 deg |
+| SUN key lamp, flat ground | 0.1 | 86.2 | 77.1 | 7.1 deg |
+| SUN key lamp, flat ground, world light 0.05 | 0.0 | 87.8 | 89.5 | 5.3 deg |
+
+The values are luminance differences in the range 0 to 255. Figure: `reports/audit/lighting_study.png`.
+
+- If you only switch off the sun lamp Area, the floor highlight stays. The image becomes darker, and the shadow becomes a little deeper.
+- A SUN key lamp removes the floor highlight completely. The shadow is sharp and deep, and the object shows more contrast.
+- **The SUN key lamp needs a flat ground.** The CLEVR ground is a curved backdrop with a wall behind the scene. The wall blocks a sun lamp from behind (azimuth near 100 to 200 deg), so the whole visible floor goes into shadow. The render option `flat_ground` replaces the backdrop with a flat plane of the same material.
+- With a SUN key lamp, the mean floor brightness depends on the elevation only. This is correct physics, but a probe can read the elevation from the mean brightness. The pixel control shows this effect.
+
+`scripts/data/make_v2_spec.py` writes the render spec and the labels of dataset v2 with these rules. Sample: `docs/figures/v2_sample.png`.

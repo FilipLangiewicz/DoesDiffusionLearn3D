@@ -171,7 +171,7 @@ The function finds the index of $t$ in the descending list and reads the sigma o
 With flow sigmas it then computes $x_t=(1-\sigma)x_0+\sigma\epsilon$ with this value of $\sigma$.
 Table~\ref{tab:noise} shows the result: for $t=200$ the transformer receives an input with $35$ times the expected norm and an inverted signal, while its timestep embedding says $\sigma=0.2$.
 The stored activations agree with this: in block 4 the mean token norm is about $11{,}100$ at $t=200$ and $720$ at $t=800$.
-The same order problem affects the variance-preserving case of four schedulers of the library; we prepared a fix and tests for the library \pending{link after the report is public}.
+The same order problem affects the variance-preserving case of four schedulers of the library. We reported the problem to the maintainers of the library, with a fix and tests (the link is withheld for anonymity).
 
 \begin{table}[t]
 \centering
@@ -234,9 +234,49 @@ Figure~\ref{fig:cues} shows the variants and the errors.
 \label{sec:pipeline}
 
 The corrected extraction (package \texttt{dd3d}) uses the flow rule $x_t=(1-t/1000)\,x_0+(t/1000)\,\epsilon$, a fixed noise seed for each image, and the attention mask of the empty prompt.
-It stores the average-pooled features in float16 (287~KB for each image, block and timestep instead of 9.2~MB), which makes a sweep over all 20 blocks feasible.
-A CPU smoke test on SANA-1.6B checks the code path and compares the two noise rules on the same images: \pending{token norms and one-step reconstruction error from reports/smoke}.
-\pending{E0: corrected probe sweep over 20 blocks and 5 timesteps, with the pixel, DC-AE latent and random-weight controls.}
+All five timesteps $t\in\{100,200,400,600,800\}$ of one image go through the transformer as one batch.
+The features of all 20 blocks are average-pooled to a $4\times4$ grid, and blocks 4, 10 and 18 also to the $8\times8$ grid of the original study (float16).
+
+\paragraph{Agreement with the original pipeline.}
+With the original noise rule, our extraction gives a mean token norm of $11{,}147$ in block~4 at $t=200$; the stored original activations have about $11{,}100$.
+With the flow rule, the norm is $718$.
+Thus our pipeline agrees with the original one, except for the noise.
+
+\paragraph{Numeric precision.}
+The runs use a T4 GPU, which has no bfloat16 arithmetic.
+On the same 12 images, float16 and float32 give the same features (relative difference $0.1\%$; cosine of the centered features $0.9999$), and float16 is four times faster.
+The original noise rule gives inputs with 35 times the expected norm, which overflow in float16 in block 18; this control therefore runs in float32.
+
+\paragraph{Controls.}
+Each data set has the same probe on: the input pixels ($64\times64$); the DC-AE latent; SANA-1.6B with random weights \citep{adebayo2018sanity}; and, for generality, the UNets of Stable Diffusion 1.5 and SDXL with the noise rule of their own schedules.
+
+\pending{E0 on v1: probe sweep over 20 blocks and 5 timesteps with all controls; the original noise rule against the flow rule.}
+
+\section{Clean data: one directional light and a controlled position}
+\label{sec:clean}
+
+\paragraph{Data set v2.}
+We rendered 3000 new images with the same camera and object sizes, but with these changes: the key lamp is a sun lamp (only a direction, so the label is exact at every point of the scene); the extra sun lamp of the base scene is off; a flat floor replaces the curved backdrop, whose back wall blocks a sun lamp from behind; there is no camera jitter; and the object stands at the scene centre.
+The elevation is $\mathcal{U}(30\degr,75\degr)$, as in the original data, and the splits follow the same rules.
+
+\paragraph{A centred object makes the pixel control almost perfect.}
+On v2, the pixel probe has an azimuth MAE of $2.5\degr$ on spheres and cylinders and $13.7\degr$ on cubes.
+With the object always at the same place, the shadow always falls in the same part of the image, and a linear read-out of the pixels needs no 3D knowledge.
+The floor brightness also shows the elevation: the floor alone gives an elevation MAE of $1.7\degr$ on cubes, because a low sun lights the floor less.
+Thus the elevation is not a useful target for a claim about 3D knowledge, and we use the azimuth.
+The same pixel probe on 300 images with the object at random positions has an azimuth MAE of $69.0\degr$, close to chance ($90\degr$).
+
+\paragraph{Data set v2r: a random position.}
+The decisive test needs data in which the shadow position depends on the object position.
+Data set v2r has the same lights, sizes and rotations as v2, image for image; only the position changes.
+The position is uniform on the part of $[-3,3]^2$ where the largest object is fully in the image; this region depends only on the camera, so the position does not correlate with the light ($|r|<0.01$).
+The tip of the shadow is in the image for $99\%$ of the scenes.
+
+\paragraph{Cue variants.}
+Two more variants have the same scenes as v2r: in the first, the object casts no shadow (only its shading is left); in the second, the camera does not see the object, but its shadow stays.
+A pair of images thus differs in one cue only.
+
+\pending{RQ1 on v2 and v2r: SANA against pixels, latent and random weights; transfer from centred to random positions; cue variants; SD 1.5 and SDXL.}
 
 \section{Discussion}
 \label{sec:discussion}
@@ -259,9 +299,20 @@ It also does not show the opposite: the corrected extraction and the controls in
     \item Check figures against the true geometry.
 \end{enumerate}
 
-\paragraph{Planned causal tests.}
-We plan a second dataset with a directional key lamp (no floor highlight, the same direction at every point) and without the extra sun lamp, cue-conflict renders, exact spatial maps of the linear probe, LEACE erasure of the probe subspace during denoising, and steering along the probe direction, with the pixel probe as a measurement of the shadow direction in the output.
-\pending{results}
+\paragraph{Causal tests.}
+A probe shows that a property is readable, not that the model uses it.
+Our causal test starts from a render of v2: we encode it, add flow noise up to $\sigma_0=0.7$, and integrate the flow back to $\sigma=0$ in 20 Euler steps (SDEdit).
+At each step, a forward hook changes the output of one block in one of these ways:
+\begin{itemize}
+    \item shift: add to the tokens of each grid cell the shortest feature change that moves the probe output to the label azimuth $+90\degr$, times a scale $s\in\{1,4,16\}$;
+    \item random shift: a random change with the same norm as the shift with $s=16$;
+    \item erase: apply the LEACE eraser \citep{belrose2023leace} of $(\sin\phi,\cos\phi)$, fitted on the cell features of the train split, to every token.
+\end{itemize}
+A shift changes the mean of the tokens of a cell by exactly the planned vector, so the probe output moves as planned.
+The question is whether the image moves too.
+A pixel probe, fitted on the v2 renders, measures the azimuth of each output image.
+A causal direction rotates the measured azimuth towards the target and more than the random shift does; a used direction makes the measured azimuth worse after erasure.
+\pending{results of the causal tests}
 
 \section{Limitations}
 One model, one property and synthetic scenes limit the scope of this study.

@@ -77,6 +77,9 @@ RUNS = {
         "random_init": True,
         "save_vae_latents": False,
     },
+    # Two UNet models for the check of generality (see dd3d.extract_unet).
+    "sd15": {"kind": "unet", "model": "sd15"},
+    "sdxl": {"kind": "unet", "model": "sdxl"},
 }
 
 

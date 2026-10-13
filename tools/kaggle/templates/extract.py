@@ -70,21 +70,26 @@ log(f"images: {images_dir} {counts}")
 
 sys.path.insert(0, f"{repo}/src")
 from dd3d.extract import ExtractConfig, run  # noqa: E402
+from dd3d.extract_unet import UNetExtractConfig  # noqa: E402
+from dd3d.extract_unet import run as run_unet  # noqa: E402
 
 name = PARAMS["name"]
 prompt_cache = Path(f"{TMP}/prompt_empty.pt")
 for run_name, overrides in PARAMS["runs"].items():
-    cfg = ExtractConfig(
-        images_dir=images_dir,
-        out_dir=Path(f"{TMP}/out/{run_name}"),
-        prompt_cache=prompt_cache,
-        task_id=PARAMS["task_id"],
-        num_tasks=PARAMS["num_tasks"],
-        **overrides,
-    )
+    overrides = dict(overrides)
+    common = {
+        "images_dir": images_dir,
+        "out_dir": Path(f"{TMP}/out/{run_name}"),
+        "task_id": PARAMS["task_id"],
+        "num_tasks": PARAMS["num_tasks"],
+    }
+    if overrides.pop("kind", "sana") == "unet":
+        cfg, runner = UNetExtractConfig(**common, **overrides), run_unet
+    else:
+        cfg, runner = ExtractConfig(**common, prompt_cache=prompt_cache, **overrides), run
     t0 = time.time()
     log(f"run {run_name}: {overrides}")
-    run(cfg)
+    runner(cfg)
     log(f"run {run_name}: done in {time.time() - t0:.0f} s")
     stats = sorted(glob.glob(f"{cfg.out_dir}/stats/*.csv"))
     if stats:

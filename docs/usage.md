@@ -101,7 +101,33 @@ The test needs about 4 GB of free RAM and 17 GB of disk for the model files. It 
 
 One render with 64 samples takes about 25 s on an 8-core CPU.
 
-## 6. Development rules
+## 6. Jobs on Kaggle
+
+The renders and the extraction run as Kaggle script jobs. A CPU job renders one shard of a data set with Blender 2.78c (about 7 s for each image). A GPU job (T4) extracts the features of one task. The tools are in `tools/kaggle/`.
+
+Before you start, install the Kaggle API token in `~/.kaggle/`. Each job clones this repository from GitHub at a given commit. Thus, push the commit before you push the job.
+
+To render a data set, do these steps:
+
+1. Write the job folders: `python tools/kaggle/make_jobs.py render --name v2 --shards 6 --ref <commit> --out-root runs/kaggle/render`.
+2. Push each job and wait for it: `python tools/kaggle/kjob.py run runs/kaggle/render/dd3d-render-v2-0`.
+3. Unpack the images: `python tools/kaggle/collect.py runs/kaggle/render dd3d-render-v2- data/v2`.
+
+To extract the features, do these steps:
+
+1. Write the job folders: `python tools/kaggle/make_jobs.py extract --name v1 --tasks 6 --dataset jankombajn/dd3d-v1-images --ref <commit> --out-root runs/kaggle/extract`. For the renders of a Kaggle job, use `--kernel <owner>/<slug>` in place of `--dataset`.
+2. Push each job on a T4: `python tools/kaggle/kjob.py run runs/kaggle/extract/dd3d-extract-v1-0 --accelerator NvidiaTeslaT4`.
+3. Unpack and merge the features: `python tools/kaggle/collect.py runs/kaggle/extract dd3d-extract-v1- data/features/v1 --merge`.
+
+Obey these limits of Kaggle:
+
+- A job must write few files. A download of many files fails with HTTP 429, so each job writes one tar file.
+- Kaggle runs at most 5 CPU jobs at the same time. `kjob.py` waits and pushes again when Kaggle refuses a job.
+- The T4 has no bfloat16. Run SANA in float16 or float32, and the Gemma text encoder on the CPU.
+- Blender 2.78c cannot compile its CUDA kernels for the Kaggle GPUs. Render on the CPU.
+- A job stops after 12 hours. Make shards that end in less than 4 hours.
+
+## 7. Development rules
 
 - Format and lint: `make format` and `make lint` (ruff, line length 110).
 - Tests: `make test`. Add a unit test for each new function in `src/dd3d`.

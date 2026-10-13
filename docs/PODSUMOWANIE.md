@@ -324,6 +324,12 @@ Wnioski:
 2. **Elewację zdradza jasność podłogi** (lampa SUN oświetla podłogę słabiej, gdy jest nisko). Elewacja nie nadaje się więc na dowód wiedzy 3D. Główną miarą zostaje azymut.
 3. **Ta sama sonda na obiektach w losowych miejscach daje 69°**, prawie jak zgadywanie (90°). Piksele nie przenoszą kierunku światła na nowe pozycje.
 
+Gdzie sonda pikselowa czyta kierunek (dokładny rozkład liniowej sondy na komórki 16×16; jaśniej = większy udział):
+
+![Mapy sondy pikselowej: v1 i v2](figures/probe_maps_pixels.png)
+
+Na v1 waga rozkłada się na całą podłogę (plama od lampy), a na v2 skupia się przy obiekcie i jego cieniu.
+
 ### Dlatego powstał v2r: obiekt w losowym miejscu
 
 Decydujący test to zbiór, w którym obiekt stoi w losowym miejscu. Wtedy położenie cienia zależy od pozycji obiektu i liniowa sonda na pikselach nie ma prostego skrótu. Model, który naprawdę reprezentuje kierunek światła, powinien tu wyraźnie wygrać z pikselami.

@@ -23,6 +23,8 @@ I found this in a probe study on SANA-1.6B. I can open a pull request with a fix
 
 # Reproduction
 
+Note: I have no GPU now, so I could not run the SanaPipeline script below with SANA-1.6B. The second snippet runs on a CPU and loads the real SANA-1.6B scheduler config. The numbers in "Logs" come from the closest run that I could do (see there).
+
 The real workflow: SanaPipeline, an image through the VAE, `pipe.scheduler.add_noise`, then a one-step clean estimate from the transformer. The script compares this with the expected flow noise `(1 - t/1000) * x0 + (t/1000) * eps`.
 
 ```python
@@ -76,15 +78,13 @@ print("DPMSolver t=200", DPMSolverMultistepScheduler().add_noise(x0, eps, t).ite
 
 # Logs
 
-Relative error of the one-step clean estimate (lower is better). Real image, real model, float32 on CPU, `Efficient-Large-Model/Sana_600M_512px_diffusers` (same scheduler config as the 1.6B model):
+Relative error of the one-step clean estimate (lower is better). This is the closest run that I could do on a CPU: `Efficient-Large-Model/Sana_600M_512px_diffusers` (the same scheduler config as the 1.6B model), float32, 512 px, four of my renders as images, and the empty-prompt embeddings computed once with the Gemma-2 text encoder:
 
 | t | `add_noise` | expected flow noise |
 |---:|---:|---:|
 | 200 | 45.5 | 0.228 |
 | 500 | 5.76 | 0.383 |
 | 800 | 0.556 | 0.590 |
-
-<!-- Add the SANA-1.6B numbers from the GPU run of the script above. -->
 
 Weights of `x_t = a * x0 + b * eps` from `add_noise` with the SANA scheduler:
 

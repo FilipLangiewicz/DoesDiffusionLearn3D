@@ -20,17 +20,27 @@ parser.add_argument("--device", default="cuda")
 parser.add_argument("--dtype", default="bfloat16", choices=["bfloat16", "float32"])
 parser.add_argument("--size", type=int, default=1024)
 parser.add_argument(
+    "--text-encoder-device", default=None, help="Run the text encoder here, for example cpu on a 16 GB GPU."
+)
+parser.add_argument(
     "--image",
     default="https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/diffusers/astronaut.jpg",
 )
 args = parser.parse_args()
 dtype = getattr(torch, args.dtype)
 
-pipe = SanaPipeline.from_pretrained(args.model, torch_dtype=dtype).to(args.device)
+pipe = SanaPipeline.from_pretrained(args.model, torch_dtype=dtype)
+te_device = args.text_encoder_device or args.device
+pipe.text_encoder.to(te_device)
+with torch.no_grad():
+    embeds, mask, _, _ = pipe.encode_prompt("", do_classifier_free_guidance=False, device=te_device)
+embeds, mask = embeds.to(args.device), mask.to(args.device)
+pipe.text_encoder = None
+pipe.transformer.to(args.device)
+pipe.vae.to(args.device)
 image = pipe.image_processor.preprocess(load_image(args.image), height=args.size, width=args.size)
 with torch.no_grad():
     x0 = pipe.vae.encode(image.to(args.device, dtype)).latent * pipe.vae.config.scaling_factor
-    embeds, mask, _, _ = pipe.encode_prompt("", do_classifier_free_guidance=False, device=args.device)
     eps = torch.randn(x0.shape, generator=torch.Generator().manual_seed(0)).to(args.device, dtype)
 
     print(f"{'t':>4} | {'a (x0)':>8} {'b (eps)':>8} | error with add_noise | error with flow noise")
@@ -45,7 +55,11 @@ with torch.no_grad():
         errors = []
         for x_t in (noised, expected):
             v = pipe.transformer(
-                x_t, encoder_hidden_states=embeds, encoder_attention_mask=mask, timestep=timestep, return_dict=False
+                x_t,
+                encoder_hidden_states=embeds,
+                encoder_attention_mask=mask,
+                timestep=timestep,
+                return_dict=False,
             )[0]
             x0_hat = x_t.float() - sigma * v.float()
             errors.append(((x0_hat - x0.float()).norm() / x0.float().norm()).item())

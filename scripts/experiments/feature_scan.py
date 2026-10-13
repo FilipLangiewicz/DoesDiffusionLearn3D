@@ -45,7 +45,7 @@ def probe_rows(feats: dict, splits: dict, targets: list[str], info: dict, n_comp
     rows = []
     for target in targets:
         az_col, el_col = target_columns(target)
-        labels = {k: (v[az_col].to_numpy(), v[el_col].to_numpy()) for k, v in splits.items()}
+        labels = {k: (v[az_col].to_numpy(), v[el_col].to_numpy()) for k, v in splits.items() if k in feats}
         res = run(feats, labels, ProbeConfig(n_components=n_components))
         for split, s in res.splits.items():
             rows.append(
@@ -92,6 +92,20 @@ def main() -> None:
     targets = args.targets.split(",")
     ids = {k: v["image_id"].tolist() for k, v in splits.items()}
 
+    def load_all(d: Path) -> dict:
+        # A split without features in this folder (for example test_pos before its
+        # extraction) is left out, and the train and val splits must be complete.
+        known = set((d / "ids.txt").read_text().split())
+        out = {}
+        for k, v in ids.items():
+            if set(v) <= known:
+                out[k] = load_feature_dir(d, v)
+            elif k in ("train", "val"):
+                raise KeyError(f"split {k} has images without features in {d}")
+            else:
+                print(f"  split {k} left out: no features in {d}")
+        return out
+
     def save(new_rows):
         rows.extend(new_rows)
         pd.DataFrame(rows).to_csv(out_csv, index=False)
@@ -117,7 +131,7 @@ def main() -> None:
         meta = json.loads((root / "meta.json").read_text())
         vae_dir = root / "vae_latent"
         if (vae_dir / "features.npy").exists() and ("vae_latent", -1, -1, 32) not in done:
-            feats = {k: load_feature_dir(vae_dir, v) for k, v in ids.items()}
+            feats = load_all(vae_dir)
             report({"run": "vae_latent", "block": -1, "t": -1, "grid": 32}, feats)
         for b in meta["blocks"]:
             grid = meta["grid_of_block"][str(b)]
@@ -126,7 +140,7 @@ def main() -> None:
                 grids = sorted({grid, min(grid, args.scan_grid)})
                 if all((run_name, b, t, g) in done for g in grids):
                     continue
-                feats = {k: load_feature_dir(d, v) for k, v in ids.items()}
+                feats = load_all(d)
                 for g in grids:
                     if (run_name, b, t, g) in done:
                         continue

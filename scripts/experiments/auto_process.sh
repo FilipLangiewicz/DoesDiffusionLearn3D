@@ -46,5 +46,19 @@ while true; do
       work=1
     fi
   done
+  # Pixel transfer tests, when their render sets are ready.
+  done_r() { [ -f "reports/experiments/$1/.processed_render" ]; }
+  if done_r v2r && [ ! -f reports/experiments/transfer/.pos_pixels ]; then
+    echo "[$(date '+%F %T')] transfer v2 -> v2r (pixels): start"
+    .venv/bin/python scripts/experiments/transfer.py --fit v2 --tests v2r --out reports/experiments/transfer/position_pixels \
+      && date > reports/experiments/transfer/.pos_pixels
+    work=1
+  fi
+  if done_r v2r && done_r v2rns && done_r v2rso && [ ! -f reports/experiments/transfer/.cue_pixels ]; then
+    echo "[$(date '+%F %T')] transfer v2r -> v2rns, v2rso (pixels): start"
+    .venv/bin/python scripts/experiments/transfer.py --fit v2r --tests v2rns,v2rso --out reports/experiments/transfer/cue_pixels \
+      && date > reports/experiments/transfer/.cue_pixels
+    work=1
+  fi
   [ "$work" = 0 ] && sleep 300
 done

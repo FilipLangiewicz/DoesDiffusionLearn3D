@@ -1,134 +1,108 @@
 # Title
 
-`add_noise` gives the wrong noise level if `set_timesteps` was not called (DPMSolverMultistep, DPMSolverSinglestep, UniPCMultistep, DEISMultistep)
+`add_noise()` before `set_timesteps()` uses the wrong noise level (DPMSolverMultistep, DPMSolverSinglestep, UniPC, DEIS; also SanaPipeline)
 
-## Description
+# Describe the bug
 
-Some users call `scheduler.add_noise(x0, noise, t)` before `set_timesteps()`. This is the normal case in training code. A maintainer wrote in the fix for #5981 that this call order is typical in training.
+If you call `scheduler.add_noise(x0, noise, t)` before `set_timesteps()`, these schedulers use the noise level of timestep `999 - t`:
 
-In this case, `add_noise` returns the noise level of a different timestep.
+- `DPMSolverMultistepScheduler`
+- `DPMSolverSinglestepScheduler`
+- `UniPCMultistepScheduler`
+- `DEISMultistepScheduler`
 
-In `__init__`, these schedulers set the attributes in this way:
+Fine-tune scripts and probe studies use this call order, and #5981 / #6006 made it a supported call order.
 
-- `self.timesteps` is descending: `[999, 998, ..., 0]`.
-- `self.sigmas` is ascending: the VP sigmas `sqrt((1 - alphas_cumprod) / alphas_cumprod)` for `t = 0 ... 999`.
+The cause: after `__init__`, `self.timesteps` goes from 999 down to 0, but `self.sigmas` (added in #6006) goes up from step 0 to step 999. `add_noise` finds the index of `t` in `self.timesteps` and reads `self.sigmas` at the same index.
 
-`add_noise` finds the index of `t` in `self.timesteps`. This index is `999 - t`. Then it reads `self.sigmas[999 - t]`. This value is the sigma of timestep `999 - t`, not of `t`.
+With `use_flow_sigmas=True` (the scheduler of SanaPipeline) the result is worse. The code uses `alpha_t = 1 - sigma` with a VP sigma, so for `t = 200` you get `-24.5 * x0 + 25.5 * eps` instead of `0.8 * x0 + 0.2 * eps`.
 
-With `use_flow_sigmas=True` the result is worse. The code then uses `alpha_t = 1 - sigma` and `sigma_t = sigma`. These formulas are correct only for flow sigmas in [0, 1]. The VP sigmas are in [0.01, 157]. The result is a large negative weight for the clean sample.
+After `set_timesteps()` everything is correct.
 
-After `set_timesteps()`, `self.sigmas` and `self.timesteps` have the same order. The result is correct in that case.
+I found this in a probe study on SANA-1.6B. I can open a pull request with a fix and tests.
 
-## Reproduction
+# Reproduction
 
-The script needs no model weights. Only the scheduler config is used.
+The real workflow: SanaPipeline, an image through the VAE, `pipe.scheduler.add_noise`, then a one-step clean estimate from the transformer. The script compares this with the expected flow noise `(1 - t/1000) * x0 + (t/1000) * eps`.
+
+```python
+import torch
+from diffusers import SanaPipeline
+from diffusers.utils import load_image
+
+pipe = SanaPipeline.from_pretrained(
+    "Efficient-Large-Model/Sana_1600M_1024px_BF16_diffusers", torch_dtype=torch.bfloat16
+).to("cuda")
+url = "https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/diffusers/astronaut.jpg"
+image = pipe.image_processor.preprocess(load_image(url), height=1024, width=1024).to("cuda", torch.bfloat16)
+
+with torch.no_grad():
+    x0 = pipe.vae.encode(image).latent * pipe.vae.config.scaling_factor
+    embeds, mask, _, _ = pipe.encode_prompt("", do_classifier_free_guidance=False, device="cuda")
+    eps = torch.randn(x0.shape, generator=torch.Generator().manual_seed(0)).to("cuda", torch.bfloat16)
+    for t in (200, 500, 800):
+        timestep = torch.tensor([t], device="cuda")
+        for name, x_t in [
+            ("add_noise", pipe.scheduler.add_noise(x0, eps, timestep)),
+            ("expected", (1 - t / 1000) * x0 + t / 1000 * eps),
+        ]:
+            v = pipe.transformer(
+                x_t, encoder_hidden_states=embeds, encoder_attention_mask=mask, timestep=timestep, return_dict=False
+            )[0]
+            x0_hat = x_t.float() - t / 1000 * v.float()
+            print(t, name, ((x0_hat - x0.float()).norm() / x0.float().norm()).item())
+```
+
+The same problem without model weights (only the scheduler config):
 
 ```python
 import torch
 from diffusers import DDPMScheduler, DPMSolverMultistepScheduler
 
-def coeffs(scheduler, t):
-    t = torch.tensor([t])
-    a = scheduler.add_noise(torch.ones(1, 1), torch.zeros(1, 1), t).item()  # weight of x0
-    b = scheduler.add_noise(torch.zeros(1, 1), torch.ones(1, 1), t).item()  # weight of noise
-    return round(a, 4), round(b, 4)
-
-# 1. Flow config of Efficient-Large-Model/Sana_1600M_1024px_BF16_diffusers
-flow = dict(
-    prediction_type="flow_prediction", use_flow_sigmas=True, flow_shift=3.0,
-    beta_schedule="linear", beta_start=0.0001, beta_end=0.02, num_train_timesteps=1000,
+sana = DPMSolverMultistepScheduler.from_pretrained(
+    "Efficient-Large-Model/Sana_1600M_1024px_BF16_diffusers", subfolder="scheduler"
 )
+x0, eps = torch.ones(1), torch.zeros(1)
 for t in (200, 500, 800):
-    print("flow", t, coeffs(DPMSolverMultistepScheduler(**flow), t))
+    t = torch.tensor([t])
+    print("sana", t.item(), sana.add_noise(x0, eps, t).item(), sana.add_noise(eps, x0, t).item())
 
-# 2. Default VP config, compared with DDPMScheduler (same betas)
-for t in (200, 799):
-    print("DDPM", t, coeffs(DDPMScheduler(), t))
-print("DPMSolver t=200", coeffs(DPMSolverMultistepScheduler(), 200))
+# The default VP config gives the noise level of 999 - t:
+t = torch.tensor([200])
+print("DDPM t=200", DDPMScheduler().add_noise(x0, eps, t).item())
+print("DDPM t=799", DDPMScheduler().add_noise(x0, eps, torch.tensor([799])).item())
+print("DPMSolver t=200", DPMSolverMultistepScheduler().add_noise(x0, eps, t).item())
 ```
 
-A longer script with all schedulers is `repro.py` (attached or in the linked pull request).
+# Logs
 
-## Actual output (diffusers 0.41.0)
+Relative error of the one-step clean estimate (lower is better). Real image, real model, float32 on CPU, `Efficient-Large-Model/Sana_600M_512px_diffusers` (same scheduler config as the 1.6B model):
 
-Flow config (`x_t = a * x0 + b * eps`):
+| t | `add_noise` | expected flow noise |
+|---:|---:|---:|
+| 200 | 45.5 | 0.228 |
+| 500 | 5.76 | 0.383 |
+| 800 | 0.556 | 0.590 |
 
-| t   | actual `a`, `b`   | expected `a`, `b` |
-|-----|-------------------|-------------------|
-| 200 | -24.5285, 25.5285 | 0.8, 0.2          |
-| 500 | -2.4241, 3.4241   | 0.5, 0.5          |
-| 800 | 0.2807, 0.7193    | 0.2, 0.8          |
+<!-- Add the SANA-1.6B numbers from the GPU run of the script above. -->
 
-Default VP config, `t = 200`:
+Weights of `x_t = a * x0 + b * eps` from `add_noise` with the SANA scheduler:
 
-| scheduler                         | `a`    | `b`    |
-|-----------------------------------|--------|--------|
-| `DDPMScheduler` at t=200          | 0.8102 | 0.5862 |
-| `DDPMScheduler` at t=799          | 0.0391 | 0.9992 |
-| `DPMSolverMultistepScheduler`     | 0.0391 | 0.9992 |
+| t | `a`, `b` from `add_noise` | expected |
+|---:|---|---|
+| 200 | -24.53, 25.53 | 0.8, 0.2 |
+| 500 | -2.42, 3.42 | 0.5, 0.5 |
+| 800 | 0.28, 0.72 | 0.2, 0.8 |
 
-The result of `DPMSolverMultistepScheduler` is the noise level of `t = 799 = 999 - 200`. So the bug is also in the VP case, not only with flow sigmas.
+Default VP config, `t = 200`: `DPMSolverMultistepScheduler` gives `a = 0.0391`. `DDPMScheduler` gives `0.8102` at `t = 200` and `0.0391` at `t = 799`.
 
-## Expected output
+With a trained VP model (`google/ddpm-cifar10-32`), the one-step error at `t = 100` is 0.590 with the four schedulers and 0.045 with `DDPMScheduler`.
 
-`add_noise(x0, noise, t)` gives the noise level of timestep `t`. The result is the same before and after `set_timesteps()`. For flow sigmas, the result is `(1 - t / 1000) * x0 + (t / 1000) * eps`. This is the convention of `set_timesteps`, where `timesteps = sigmas * num_train_timesteps`.
+# System Info
 
-## Affected schedulers
+<!-- Paste the output of `diffusers-cli env`. -->
+Also checked on `main` at commit 916a579 (2026-10-13). The code is the same as in 0.41.0.
 
-Tested with the default VP config and with `use_flow_sigmas=True`, without `set_timesteps`:
+# Who can help?
 
-| scheduler                              | VP      | flow sigmas |
-|----------------------------------------|---------|-------------|
-| `DPMSolverMultistepScheduler`          | wrong   | wrong       |
-| `DPMSolverSinglestepScheduler`         | wrong   | wrong       |
-| `UniPCMultistepScheduler`              | wrong   | wrong       |
-| `DEISMultistepScheduler`               | wrong   | wrong       |
-| `DPMSolverMultistepInverseScheduler`   | correct | wrong (its timesteps are ascending, but its sigmas are the VP sigmas) |
-| `SASolverScheduler`                    | correct | wrong (its `add_noise` always uses `alphas_cumprod`, also after `set_timesteps`) |
-| `EDMDPMSolverMultistepScheduler`       | not affected (the timesteps and sigmas are both in EDM order) | not applicable |
-
-## Versions
-
-- diffusers 0.41.0 (installed) and `main` at commit 1e004eb (2026-10-12). The code is the same.
-- torch 2.14.1 (CPU), numpy 2.5.2, Python 3.14
-
-## Related issues and pull requests
-
-- #5981 (closed): `add_noise` raised `AttributeError` because `self.sigmas` did not exist before `set_timesteps`.
-- PR #6006 (merged): fix for #5981. It adds `self.sigmas` to `__init__`, in the VP order. The order of the timesteps was not changed, so the two orders do not match.
-- PR #5158 (merged): changed `add_noise` to read the sigmas, and caused the need for #6006.
-- #6232 (closed): `add_noise` and duplicate timesteps in `DPMSolverSinglestepScheduler`. This is a different problem.
-- #10266 (closed): UniPC with flow sigmas, sigma length. This is a different problem.
-
-I did not find an open issue or pull request for this behavior.
-
-## Proposed fix
-
-In `__init__`, make `self.sigmas` match `self.timesteps` (same order):
-
-- VP: flip the sigmas.
-- Flow: use `timesteps / num_train_timesteps`.
-
-A pull request is ready, with tests. `set_timesteps()` is not changed, so the behavior after `set_timesteps()` is the same as before.
-
-## Functional check with trained models
-
-We noise real images with `add_noise` before `set_timesteps`. Then the model predicts the clean image in one step. The value is the relative error of this estimate (lower is better).
-
-`google/ddpm-cifar10-32` (VP; the reference is `DDPMScheduler.add_noise`):
-
-| t | reference | four schedulers, main | four schedulers, this fix |
-|---:|---:|---:|---:|
-| 100 | 0.045 | 0.590 | 0.045 |
-| 300 | 0.115 | 0.294 | 0.115 |
-| 500 | 0.191 | 0.190 | 0.191 |
-
-`Efficient-Large-Model/Sana_600M_512px_diffusers` (flow sigmas, float32; the reference is `(1 - t/1000) x0 + (t/1000) eps`):
-
-| t | reference | main | this fix |
-|---:|---:|---:|---:|
-| 200 | 0.228 | 45.5 | 0.228 |
-| 500 | 0.383 | 5.76 | 0.383 |
-| 800 | 0.590 | 0.556 | 0.590 |
-
-Tested on main at commit 916a579 (2026-10-13) and on the release 0.41.0.
+@yiyixuxu @dg845

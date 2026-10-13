@@ -1,53 +1,82 @@
 # Title
 
-Fix `add_noise` before `set_timesteps` in the multistep and singlestep solver schedulers
+[schedulers] Fix the sigma order for `add_noise()` before `set_timesteps()`
 
-## What
+# What does this PR do?
 
-`self.sigmas` is now in the same order as `self.timesteps` after `__init__`. This applies to:
+Fixes #<ISSUE NUMBER>
 
-- `DPMSolverMultistepScheduler`
-- `DPMSolverSinglestepScheduler`
-- `UniPCMultistepScheduler`
-- `DEISMultistepScheduler`
+After `__init__`, `self.timesteps` goes from 999 down to 0, but `self.sigmas` (added in #6006) went from step 0 up to step 999. So `add_noise(x0, noise, t)` before `set_timesteps()` used the noise level of `999 - t`. With `use_flow_sigmas=True` (the SanaPipeline scheduler), it also used a VP sigma in the flow formula: for `t = 200` the input was `-24.5 * x0 + 25.5 * eps` instead of `0.8 * x0 + 0.2 * eps`.
 
-If `use_flow_sigmas=True`, `self.sigmas` is now `timestep / num_train_timesteps`. This is a flow sigma in [0, 1]. Before this change, the VP sigmas were used.
+The change is one block in `__init__` of four schedulers (`DPMSolverMultistep`, `DPMSolverSinglestep`, `UniPCMultistep`, `DEISMultistep`):
 
-`set_timesteps()` and `add_noise()` are not changed.
+- VP sigmas: flip them, so that `sigmas[i]` belongs to `timesteps[i]`.
+- Flow sigmas: use `timestep / num_train_timesteps`. This is the same convention as `set_timesteps`, where `timesteps = sigmas * num_train_timesteps`, so `flow_shift` is not applied twice.
 
-## Why
+`add_noise`, `set_timesteps` and `step` do not change. The values after `set_timesteps()` are the same as before.
 
-In `__init__`, `self.timesteps` is descending (`[999, ..., 0]`), but `self.sigmas` was ascending. `add_noise` finds the index of `t` in `self.timesteps` and reads `self.sigmas` at this index. So `add_noise(x0, noise, t)` used the sigma of `999 - t` if `set_timesteps()` was not called. This call order is the normal case in training code (see #5981).
+## Effect on a real model
 
-With `use_flow_sigmas=True` the VP sigmas also gave invalid weights, because `alpha_t = 1 - sigma` is correct only for a sigma in [0, 1]. Example for the Sana scheduler at `t = 200`: the result was `-24.5 * x0 + 25.5 * eps`. The correct result is `0.8 * x0 + 0.2 * eps`.
+One-step clean estimate of a real image after `pipe.scheduler.add_noise` (relative error, lower is better). `Efficient-Large-Model/Sana_600M_512px_diffusers`, float32, CPU:
 
-PR #6006 added `self.sigmas` to `__init__` for #5981. It did not match the order of the timesteps. This PR completes that fix.
+| t | main | this PR | expected flow noise |
+|---:|---:|---:|---:|
+| 200 | 45.5 | 0.228 | 0.228 |
+| 500 | 5.76 | 0.383 | 0.383 |
+| 800 | 0.556 | 0.590 | 0.590 |
 
-The flow value `timestep / num_train_timesteps` follows `set_timesteps`, where `timesteps = sigmas * num_train_timesteps`. So `flow_shift` is already part of the timestep value, and it is not applied a second time.
+<!-- Add the SANA-1.6B numbers from the GPU run, if available. -->
 
-## How tested
+`google/ddpm-cifar10-32` with the four schedulers at `t = 100`: 0.590 on main, 0.045 with this PR, 0.045 with `DDPMScheduler`.
 
-New tests in `tests/schedulers/test_scheduler_dpm_multi.py`:
+## Tests
 
-- `test_add_noise_without_set_timesteps`: VP config. The result must equal `DDPMScheduler.add_noise` for t in (0, 200, 500, 800, 999). It runs for the four schedulers.
-- `test_add_noise_without_set_timesteps_flow_sigmas`: flow config. The result must be `(1 - t/1000, t/1000)`. It runs for the four schedulers.
-- `test_add_noise_after_set_timesteps_matches_before`: after `set_timesteps(50)`, the result is correct for each timestep, and it is the same as before `set_timesteps`.
+Three new tests in `tests/schedulers/test_scheduler_dpm_multi.py`:
 
-Results (CPU, torch 2.14.1):
+- the VP result must equal `DDPMScheduler.add_noise` (four schedulers, five timesteps);
+- the flow result must be `(1 - t/1000) * x0 + (t/1000) * eps` (four schedulers);
+- the result after `set_timesteps(50)` must agree with the result before it.
 
-- Before the fix: 3 new tests fail.
-- After the fix: 3 new tests pass.
-- `tests/schedulers/test_scheduler_dpm_multi.py`: 43 passed, 1 skipped, 1 failed. The failed test is `test_compatibles`. It needs `torchsde`, which is not installed. It fails in the same way without this change.
-- The files for DPM-Solver singlestep, UniPC, DEIS, DPM-Solver inverse, EDM DPM-Solver and SA-Solver: no new failure. Only `test_compatibles` fails, for the same reason (`torchsde`).
-- `ruff check` and `ruff format` pass. `utils/check_copies.py` reports no difference.
+Commands and results (CPU, torch 2.14.1, Python 3.14):
+
+```
+python -m pytest tests/schedulers/test_scheduler_dpm_multi.py tests/schedulers/test_scheduler_dpm_single.py \
+  tests/schedulers/test_scheduler_unipc.py tests/schedulers/test_scheduler_deis.py \
+  tests/schedulers/test_scheduler_dpm_multi_inverse.py tests/schedulers/test_scheduler_edm_dpmsolver_multistep.py \
+  tests/schedulers/test_scheduler_sasolver.py
+# this PR: 273 passed, 6 skipped. main: the 3 new tests fail, all other tests pass.
+
+python -m pytest tests/pipelines/sana
+# this PR: 68 passed, 78 skipped
+
+make style; python utils/check_copies.py; python utils/check_dummies.py
+# no changes, no errors
+```
 
 ## Not in this PR
 
-- `DPMSolverMultistepInverseScheduler` with `use_flow_sigmas=True` has the same problem before `set_timesteps`. Its timesteps are ascending, so only the flow branch needs a change.
-- `SASolverScheduler.add_noise` always uses `alphas_cumprod`. It ignores `use_flow_sigmas`, also after `set_timesteps`.
+- `DPMSolverMultistepInverseScheduler` with `use_flow_sigmas=True` has a similar problem before `set_timesteps()`.
+- `SASolverScheduler.add_noise` ignores `use_flow_sigmas`, also after `set_timesteps()`.
 
-I can add these to this PR if the maintainers want it.
+I can add these here or in a separate PR.
 
-## Links
+## Checklist of the template
 
-- Related: #5981, #6006, #5158
+GitHub adds the checklist of the diffusers template to the PR text. Tick these items: AI agent used (yes), AI agent guide read, self-review run and notes shared (below), contributor guideline read, issue link, new tests written. Leave the docs item open.
+
+## Self-review notes
+
+Rubric: `.ai/references/review-rules.md` and `code_style.md`, on the full diff.
+
+- Blocking issues: none.
+- Non-blocking, left for the review:
+  1. The tests for all four schedulers are in `test_scheduler_dpm_multi.py`. I can move them into the test file of each scheduler.
+  2. The flow branch uses `timestep / num_train_timesteps`. An alternative is to apply `flow_shift` to the sigmas in `__init__` too, but then `add_noise(t)` would differ from the value after `set_timesteps()` for the same `t`.
+  3. The two schedulers in "Not in this PR" are out of scope.
+- Dead code: none. The change adds no parameters or helpers.
+- Other users of `self.sigmas`: in these four schedulers only `add_noise` reads it before `set_timesteps()`. `step()` and the pipelines read it after `set_timesteps()`, which overwrites it.
+- Docs: no public behavior change except the corrected values, so no docs update.
+
+## Who can review?
+
+@yiyixuxu @dg845

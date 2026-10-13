@@ -16,6 +16,10 @@ The spec is a list of jobs. Each job has these keys:
 - key_on: if true, Lamp_Key renders.
 - sun_on: if true, the sun lamp Area of the base scene renders.
 - samples: the Cycles samples (the dataset used 64).
+- key_type: AREA (dataset) or SUN (direction only, no floor highlight).
+- key_strength, key_soft: the strength and the shadow softness of a SUN key lamp.
+- world_strength: the strength of the white world light (dataset: 0.2).
+- flat_ground: if true, a flat plane replaces the curved CLEVR backdrop.
 
 The script copies render_scene() and add_random_objects() of render_images.py,
 so that a job with the values of a dataset scene gives the same image.
@@ -70,6 +74,12 @@ for job in jobs:
     key.location[1] = 5.0 * math.cos(el) * math.sin(az)
     key.location[2] = 5.0 * math.sin(el)
     key.hide_render = not job.get("key_on", True)
+    if job.get("key_type", "AREA") == "SUN":
+        # A sun lamp has only a direction. The TRACK_TO constraint on the origin makes
+        # this direction equal to the label direction at every point of the scene.
+        key.data.type = "SUN"
+        key.data.shadow_soft_size = job.get("key_soft", 0.02)
+        key.data.node_tree.nodes["Emission"].inputs["Strength"].default_value = job.get("key_strength", 3.0)
 
     for name in ("Lamp_Fill", "Lamp_Back"):
         bpy.data.objects[name].data.energy = 0.0
@@ -79,7 +89,16 @@ for job in jobs:
     bg = scene.world.node_tree.nodes["Background"]
     bg.inputs[0].default_value = (1.0, 1.0, 1.0, 1.0)
     bg.inputs[1].default_value = job.get("world_strength", 0.2)
-    bpy.data.objects["Ground"].cycles.is_shadow_catcher = False
+    ground = bpy.data.objects["Ground"]
+    ground.cycles.is_shadow_catcher = False
+    if job.get("flat_ground", False):
+        # The CLEVR ground is a curved backdrop; its back wall blocks a sun lamp from
+        # behind. A large flat plane with the same material removes the wall.
+        bpy.ops.mesh.primitive_plane_add(radius=200.0, location=(0.0, 0.0, 0.0))
+        bpy.context.object.data.materials.append(ground.active_material)
+        ground.hide_render = True
+        # CLEVR's add_object moves all selected objects, so nothing may stay selected.
+        bpy.ops.object.select_all(action="DESELECT")
 
     if job.get("shape"):
         size = job["size"]
@@ -89,5 +108,8 @@ for job in jobs:
         utils.add_material("Rubber", Color=job.get("color", PURPLE))
 
     scene.update()
+    if job.get("debug"):
+        for ob in bpy.data.objects:
+            print("POS", ob.name, tuple(round(v, 3) for v in ob.location), ob.hide_render)
     bpy.ops.render.render(write_still=True)
     print("RENDERED", job["out"])

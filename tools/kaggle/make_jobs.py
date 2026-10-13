@@ -121,8 +121,30 @@ def main() -> None:
     e.add_argument("--ref", default="main")
     e.add_argument("--dtype", default=None, help="Override the dtype of the SANA runs (float16 or float32).")
     e.add_argument("--out-root", type=Path, default=Path("runs/kaggle"))
+    c = sub.add_parser("intervene")
+    c.add_argument("--name", required=True)
+    c.add_argument("--plan", required=True, help="File name of the plan in the plan data set.")
+    c.add_argument("--plan-dataset", default=f"{OWNER}/dd3d-plans")
+    c.add_argument("--kernel", action="append", default=[], help="Kaggle job with image tar files.")
+    c.add_argument("--config", default="{}", help="JSON with InterveneConfig values (block, sigma0, steps).")
+    c.add_argument("--ref", default="main")
+    c.add_argument("--out-root", type=Path, default=Path("runs/kaggle"))
     args = parser.parse_args()
     check_ref_on_github(args.ref)
+
+    if args.cmd == "intervene":
+        params = {"name": args.name, "ref": args.ref, "plan": args.plan, "config": json.loads(args.config)}
+        job = write_job(
+            args.out_root,
+            f"dd3d-intervene-{args.name}",
+            "intervene.py",
+            params,
+            gpu=True,
+            kernel_sources=args.kernel,
+            dataset_sources=[args.plan_dataset],
+        )
+        print(job)
+        return
 
     if args.cmd == "extract":
         tasks = [args.only_task] if args.only_task is not None else range(args.tasks)

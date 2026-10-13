@@ -1,0 +1,10 @@
+- Diffusers version: 0.41.0 (also checked on main at 916a579, the code is the same)
+- Platform: Linux-6.18.54.1-microsoft-standard-WSL2-x86_64-with-glibc2.43, and Kaggle for the GPU run
+- Running on Google Colab?: No
+- Python version: 3.14.4 (local), 3.13 (Kaggle)
+- PyTorch version (GPU?): 2.14.1+cpu (local), 2.11.0+cu128 (Kaggle, T4)
+- Huggingface_hub version: 1.33.0
+- Transformers version: 5.19.0
+- Accelerate version: 1.15.0
+- Using GPU in script?: Yes, a Kaggle T4 (float32, text encoder on the CPU)
+- Using distributed or parallel set-up in script?: No

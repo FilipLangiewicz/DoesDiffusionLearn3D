@@ -1,0 +1,1 @@
+`add_noise()` before `set_timesteps()` uses the wrong noise level (DPMSolverMultistep, DPMSolverSinglestep, UniPC, DEIS; also SanaPipeline)

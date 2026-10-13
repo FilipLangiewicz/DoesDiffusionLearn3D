@@ -1,0 +1,13 @@
+===== diffusers 0.41.0 (PyPI) =====
+$ python repro_sana.py --dtype float32 --text-encoder-device cpu
+   t |   a (x0)  b (eps) | error with add_noise | error with flow noise
+ 200 |  -24.528   25.528 |               36.618 |                 0.180
+ 500 |   -2.424    3.424 |                4.615 |                 0.379
+ 800 |    0.281    0.719 |                0.601 |                 0.624
+
+===== diffusers main (916a579) with my fix =====
+$ PYTHONPATH=dsrc/src python repro_sana.py --dtype float32 --text-encoder-device cpu
+   t |   a (x0)  b (eps) | error with add_noise | error with flow noise
+ 200 |    0.800    0.200 |                0.180 |                 0.180
+ 500 |    0.500    0.500 |                0.379 |                 0.379
+ 800 |    0.200    0.800 |                0.624 |                 0.624

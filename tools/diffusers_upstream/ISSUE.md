@@ -21,6 +21,20 @@ After `set_timesteps()` everything is correct.
 
 I found this in a probe study on SANA-1.6B. I can open a pull request with a fix and tests.
 
+## Results
+
+SANA-1.6B with the script below, on a Kaggle T4 (16 GB), float32, with the text encoder on the CPU. `a` and `b` are the weights of `x_t = a * x0 + b * eps` from `add_noise`. The error is the relative error of the one-step clean estimate (lower is better).
+
+| t | `a`, `b` (0.41.0) | error, 0.41.0 | error, with my fix | error, expected flow noise |
+|---:|---|---:|---:|---:|
+| 200 | -24.53, 25.53 | 36.618 | 0.180 | 0.180 |
+| 500 | -2.42, 3.42 | 4.615 | 0.379 | 0.379 |
+| 800 | 0.28, 0.72 | 0.601 | 0.624 | 0.624 |
+
+With my fix, `add_noise` gives `a, b = 0.8, 0.2 / 0.5, 0.5 / 0.2, 0.8`.
+
+The default VP config has the same problem: at `t = 200`, `DPMSolverMultistepScheduler` gives `a = 0.0391`. `DDPMScheduler` gives `0.8102` at `t = 200` and `0.0391` at `t = 799`. With a trained VP model (`google/ddpm-cifar10-32`), the one-step error at `t = 100` is 0.590 with the four schedulers and 0.045 with `DDPMScheduler`.
+
 # Reproduction
 
 The real workflow: SanaPipeline, an image through the VAE, `pipe.scheduler.add_noise`, then a one-step clean estimate from the transformer. The script compares this with the expected flow noise `(1 - t/1000) * x0 + (t/1000) * eps`. The output in "Logs" comes from `python repro_sana.py --dtype float32 --text-encoder-device cpu` on a 16 GB GPU (with bf16 on a larger GPU, the defaults work).
@@ -117,28 +131,19 @@ print("DPMSolver t=200", DPMSolverMultistepScheduler().add_noise(x0, eps, t).ite
 
 # Logs
 
-Output of the SanaPipeline script above with SANA-1.6B. Kaggle GPU T4 (16 GB), float32, the text encoder on the CPU because of the GPU memory, diffusers 0.41.0, torch 2.11. `a` and `b` are the weights of `x_t = a * x0 + b * eps` from `add_noise`. The error is the relative error of the one-step clean estimate (lower is better):
-
-```
+===== diffusers 0.41.0 (PyPI) =====
+$ python repro_sana.py --dtype float32 --text-encoder-device cpu
    t |   a (x0)  b (eps) | error with add_noise | error with flow noise
  200 |  -24.528   25.528 |               36.618 |                 0.180
  500 |   -2.424    3.424 |                4.615 |                 0.379
  800 |    0.281    0.719 |                0.601 |                 0.624
-```
 
-The same run with my fix on `main` (916a579) gives `a, b = 0.8, 0.2 / 0.5, 0.5 / 0.2, 0.8` and the same errors as the flow noise (0.180, 0.379, 0.624).
-
-Weights of `x_t = a * x0 + b * eps` from `add_noise` with the SANA scheduler:
-
-| t | `a`, `b` from `add_noise` | expected |
-|---:|---|---|
-| 200 | -24.53, 25.53 | 0.8, 0.2 |
-| 500 | -2.42, 3.42 | 0.5, 0.5 |
-| 800 | 0.28, 0.72 | 0.2, 0.8 |
-
-Default VP config, `t = 200`: `DPMSolverMultistepScheduler` gives `a = 0.0391`. `DDPMScheduler` gives `0.8102` at `t = 200` and `0.0391` at `t = 799`.
-
-With a trained VP model (`google/ddpm-cifar10-32`), the one-step error at `t = 100` is 0.590 with the four schedulers and 0.045 with `DDPMScheduler`.
+===== diffusers main (916a579) with my fix =====
+$ PYTHONPATH=dsrc/src python repro_sana.py --dtype float32 --text-encoder-device cpu
+   t |   a (x0)  b (eps) | error with add_noise | error with flow noise
+ 200 |    0.800    0.200 |                0.180 |                 0.180
+ 500 |    0.500    0.500 |                0.379 |                 0.379
+ 800 |    0.200    0.800 |                0.624 |                 0.624
 
 # System Info
 

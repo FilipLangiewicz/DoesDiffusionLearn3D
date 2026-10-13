@@ -10,10 +10,21 @@ from __future__ import annotations
 
 import argparse
 import json
+import subprocess
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 OWNER = "jankombajn"
+
+
+def check_ref_on_github(ref: str) -> None:
+    """Stop if no branch on origin contains ``ref``: the job clones the code from GitHub."""
+    subprocess.run(["git", "fetch", "-q", "origin"], check=True)
+    out = subprocess.run(
+        ["git", "branch", "-r", "--contains", ref], capture_output=True, text=True, check=False
+    ).stdout
+    if not out.strip():
+        raise SystemExit(f"commit {ref} is not on origin: push it before you write the jobs")
 
 
 def write_job(
@@ -111,6 +122,7 @@ def main() -> None:
     e.add_argument("--dtype", default=None, help="Override the dtype of the SANA runs (float16 or float32).")
     e.add_argument("--out-root", type=Path, default=Path("runs/kaggle"))
     args = parser.parse_args()
+    check_ref_on_github(args.ref)
 
     if args.cmd == "extract":
         tasks = [args.only_task] if args.only_task is not None else range(args.tasks)

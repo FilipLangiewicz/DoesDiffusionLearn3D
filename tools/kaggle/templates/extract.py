@@ -57,8 +57,10 @@ tars = sorted(glob.glob("/kaggle/input/**/*.tar", recursive=True))
 log(f"{len(tars)} tar files in the inputs")
 for t in tars:
     sh(f"tar xf '{t}' -C {img_root}", quiet=True)
-candidates = [Path(p).parent for p in glob.glob(f"{img_root}/**/Sphere", recursive=True)]
-candidates += [Path(p).parent for p in glob.glob("/kaggle/input/**/Sphere", recursive=True)]
+# Kaggle unpacks a tar file of a data set itself, so also search the inputs.
+# Only a Sphere folder with PNG files counts; the scenes folder has JSON files.
+found = glob.glob(f"{img_root}/**/Sphere", recursive=True) + glob.glob("/kaggle/input/**/Sphere", recursive=True)
+candidates = sorted({Path(p).parent for p in found if glob.glob(f"{p}/*.png")})
 if not candidates:
     raise SystemExit("no image folder with a Sphere subfolder")
 images_dir = candidates[0]

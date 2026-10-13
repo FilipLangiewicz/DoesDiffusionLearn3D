@@ -23,34 +23,75 @@ I found this in a probe study on SANA-1.6B. I can open a pull request with a fix
 
 # Reproduction
 
-The real workflow: SanaPipeline, an image through the VAE, `pipe.scheduler.add_noise`, then a one-step clean estimate from the transformer. The script compares this with the expected flow noise `(1 - t/1000) * x0 + (t/1000) * eps`.
+The real workflow: SanaPipeline, an image through the VAE, `pipe.scheduler.add_noise`, then a one-step clean estimate from the transformer. The script compares this with the expected flow noise `(1 - t/1000) * x0 + (t/1000) * eps`. The output in "Logs" comes from `python repro_sana.py --dtype float32 --text-encoder-device cpu` on a 16 GB GPU (with bf16 on a larger GPU, the defaults work).
 
 ```python
+"""Reproduction: SanaPipeline scheduler add_noise() before set_timesteps().
+
+The script encodes one image with the SANA VAE. It noises the latent with
+pipe.scheduler.add_noise and does not call set_timesteps, as a fine-tune or probe script does.
+Then the transformer gives a one-step clean estimate. The script repeats this with the
+expected flow noise x_t = (1 - t/1000) * x0 + (t/1000) * eps.
+
+Usage: python repro_sana.py [--model ID] [--device cuda] [--dtype bfloat16] [--image PATH]
+"""
+
+import argparse
+
 import torch
 from diffusers import SanaPipeline
 from diffusers.utils import load_image
 
-pipe = SanaPipeline.from_pretrained(
-    "Efficient-Large-Model/Sana_1600M_1024px_BF16_diffusers", torch_dtype=torch.bfloat16
-).to("cuda")
-url = "https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/diffusers/astronaut.jpg"
-image = pipe.image_processor.preprocess(load_image(url), height=1024, width=1024).to("cuda", torch.bfloat16)
+parser = argparse.ArgumentParser()
+parser.add_argument("--model", default="Efficient-Large-Model/Sana_1600M_1024px_BF16_diffusers")
+parser.add_argument("--device", default="cuda")
+parser.add_argument("--dtype", default="bfloat16", choices=["bfloat16", "float32"])
+parser.add_argument("--size", type=int, default=1024)
+parser.add_argument(
+    "--text-encoder-device", default=None, help="Run the text encoder here, for example cpu on a 16 GB GPU."
+)
+parser.add_argument(
+    "--image",
+    default="https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/diffusers/astronaut.jpg",
+)
+args = parser.parse_args()
+dtype = getattr(torch, args.dtype)
 
+pipe = SanaPipeline.from_pretrained(args.model, torch_dtype=dtype)
+te_device = args.text_encoder_device or args.device
+pipe.text_encoder.to(te_device)
 with torch.no_grad():
-    x0 = pipe.vae.encode(image).latent * pipe.vae.config.scaling_factor
-    embeds, mask, _, _ = pipe.encode_prompt("", do_classifier_free_guidance=False, device="cuda")
-    eps = torch.randn(x0.shape, generator=torch.Generator().manual_seed(0)).to("cuda", torch.bfloat16)
+    embeds, mask, _, _ = pipe.encode_prompt("", do_classifier_free_guidance=False, device=te_device)
+embeds, mask = embeds.to(args.device), mask.to(args.device)
+pipe.text_encoder = None
+pipe.transformer.to(args.device)
+pipe.vae.to(args.device)
+image = pipe.image_processor.preprocess(load_image(args.image), height=args.size, width=args.size)
+with torch.no_grad():
+    x0 = pipe.vae.encode(image.to(args.device, dtype)).latent * pipe.vae.config.scaling_factor
+    eps = torch.randn(x0.shape, generator=torch.Generator().manual_seed(0)).to(args.device, dtype)
+
+    print(f"{'t':>4} | {'a (x0)':>8} {'b (eps)':>8} | error with add_noise | error with flow noise")
     for t in (200, 500, 800):
-        timestep = torch.tensor([t], device="cuda")
-        for name, x_t in [
-            ("add_noise", pipe.scheduler.add_noise(x0, eps, timestep)),
-            ("expected", (1 - t / 1000) * x0 + t / 1000 * eps),
-        ]:
+        timestep = torch.tensor([t], device=args.device)
+        sigma = t / 1000
+        expected = (1 - sigma) * x0 + sigma * eps
+        noised = pipe.scheduler.add_noise(x0, eps, timestep)
+        # Least squares fit noised = a * x0 + b * eps shows the noise level that add_noise used.
+        design = torch.stack([x0.flatten(), eps.flatten()], 1).float()
+        a, b = torch.linalg.lstsq(design, noised.flatten().float()[:, None]).solution.flatten().tolist()
+        errors = []
+        for x_t in (noised, expected):
             v = pipe.transformer(
-                x_t, encoder_hidden_states=embeds, encoder_attention_mask=mask, timestep=timestep, return_dict=False
+                x_t,
+                encoder_hidden_states=embeds,
+                encoder_attention_mask=mask,
+                timestep=timestep,
+                return_dict=False,
             )[0]
-            x0_hat = x_t.float() - t / 1000 * v.float()
-            print(t, name, ((x0_hat - x0.float()).norm() / x0.float().norm()).item())
+            x0_hat = x_t.float() - sigma * v.float()
+            errors.append(((x0_hat - x0.float()).norm() / x0.float().norm()).item())
+        print(f"{t:>4} | {a:8.3f} {b:8.3f} | {errors[0]:20.3f} | {errors[1]:21.3f}")
 ```
 
 The same problem without model weights (only the scheduler config):
@@ -85,7 +126,7 @@ Output of the SanaPipeline script above with SANA-1.6B. Kaggle GPU T4 (16 GB), f
  800 |    0.281    0.719 |                0.601 |                 0.624
 ```
 
-The same run with the fix of the linked PR on `main` (916a579) gives `a, b = 0.8, 0.2 / 0.5, 0.5 / 0.2, 0.8` and the same errors as the flow noise (0.180, 0.379, 0.624).
+The same run with my fix on `main` (916a579) gives `a, b = 0.8, 0.2 / 0.5, 0.5 / 0.2, 0.8` and the same errors as the flow noise (0.180, 0.379, 0.624).
 
 Weights of `x_t = a * x0 + b * eps` from `add_noise` with the SANA scheduler:
 
@@ -101,7 +142,6 @@ With a trained VP model (`google/ddpm-cifar10-32`), the one-step error at `t = 1
 
 # System Info
 
-<!-- Paste the output of `diffusers-cli env`. -->
 Also checked on `main` at commit 916a579 (2026-10-13). The code is the same as in 0.41.0.
 
 # Who can help?

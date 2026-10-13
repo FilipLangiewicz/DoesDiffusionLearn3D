@@ -20,14 +20,17 @@ from dd3d.probe import ProbeConfig, run
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--images", type=Path, default=Path("data/final/images"))
-    parser.add_argument("--scenes", type=Path, default=Path("data/final/scenes"))
+    parser.add_argument("--scenes", type=Path, default=Path("data/final/scenes"), help="'none' for v2.")
     parser.add_argument("--splits", type=Path, default=Path("data/splits"))
     parser.add_argument("--out", type=Path, default=Path("reports/experiments/pixel_cues"))
     parser.add_argument("--resolution", type=int, default=64)
     args = parser.parse_args()
     args.out.mkdir(parents=True, exist_ok=True)
 
-    splits = {k: add_scene_columns(v, args.scenes) for k, v in load_splits(args.splits).items()}
+    splits = load_splits(args.splits)
+    # Data set v2 has no scene files; its split files have the local columns already.
+    if str(args.scenes) != "none":
+        splits = {k: add_scene_columns(v, args.scenes) for k, v in splits.items()}
     feats = {k: cue_features(v, args.images, args.resolution) for k, v in splits.items()}
     rows = []
     for variant in feats["train"]:

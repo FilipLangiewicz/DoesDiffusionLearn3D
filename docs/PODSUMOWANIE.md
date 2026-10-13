@@ -293,23 +293,56 @@ Skrypty tych testów: `tools/diffusers_upstream/functional/`.
 
 ---
 
-## 10. Propozycja nowego datasetu (v2)
+## 10. Nowy dataset (v2) i pierwsze wyniki na nim
 
 Zasady (generator: `scripts/data/make_v2_spec.py`):
 
 - **jedno źródło światła**: lampa typu SUN, czyli sam kierunek, więc etykieta jest dokładna dla obiektu;
 - lampa „Area” wyłączona;
 - płaska podłoga zamiast zakrzywionego tła, bez plamy;
-- **obiekt w środku sceny**, losowe tylko wielkość (0,8–1,4) i obrót (poprawnie w radianach);
-- kamera bez losowego przesunięcia;
-- osobny mały zbiór testowy z obiektem w innych miejscach (opcja `--random-position`), żeby sprawdzić, czy wynik nie zależy od pozycji;
+- siła światła tła 0,2, elewacja 30–75° (jak w ZZSN), azymut 0–360°;
+- losowe wielkość (0,8–1,4) i obrót (poprawnie w radianach), kamera bez losowego przesunięcia;
 - etykiety zapisywane razem z parametrami renderu (`labels.csv`).
 
-Próbka (6 obrazów):
+**Stan (13.10, wieczór):** v2 jest wyrenderowany na Kaggle: 3000 obrazów, 6 jobów CPU, ok. 7 s na obraz. Leży w `data/v2/`, a podziały są takie jak w v1 (1600 / 200 / 200 kul i walców, 1000 sześcianów).
 
-![Próbka datasetu v2](figures/v2_sample.png)
+![12 obrazów v2: kule, walce, sześciany](figures/v2_grid.png)
 
-Czas: ok. 25 s na obraz na tym laptopie, czyli ok. 21 h dla 3000 obrazów. Na węzłach CPU klastra dużo szybciej.
+### Co pokazała sonda na pikselach v2
+
+| Wariant (piksele 64×64) | Kule i walce | Sześciany | Elewacja (sześciany) |
+|---|---:|---:|---:|
+| cały obraz | **2,5°** | 13,7° | 3,4° |
+| sama podłoga (obiekt usunięty) | 6,4° | 12,4° | **1,7°** |
+| sam obiekt (wycinek) | 3,2° | 24,8° | 7,7° |
+| 2 liczby: najjaśniejsze miejsce podłogi | 12,0° | 18,0° | 11,2° |
+| cały obraz, **test na obiektach w losowych miejscach** (300 obrazów) | **69,0°** | | 11,6° |
+
+Wnioski:
+
+1. **Gdy obiekt stoi zawsze w środku, piksele odczytują kierunek prawie idealnie (2,5°).** Cień leży wtedy zawsze w tym samym miejscu kadru, więc liniowa sonda nie potrzebuje żadnej wiedzy o 3D. Na takim zbiorze żaden model nie pokaże przewagi nad pikselami.
+2. **Elewację zdradza jasność podłogi** (lampa SUN oświetla podłogę słabiej, gdy jest nisko). Elewacja nie nadaje się więc na dowód wiedzy 3D. Główną miarą zostaje azymut.
+3. **Ta sama sonda na obiektach w losowych miejscach daje 69°**, prawie jak zgadywanie (90°). Piksele nie przenoszą kierunku światła na nowe pozycje.
+
+### Dlatego powstał v2r: obiekt w losowym miejscu
+
+Decydujący test to zbiór, w którym obiekt stoi w losowym miejscu. Wtedy położenie cienia zależy od pozycji obiektu i liniowa sonda na pikselach nie ma prostego skrótu. Model, który naprawdę reprezentuje kierunek światła, powinien tu wyraźnie wygrać z pikselami.
+
+- **v2r** ma dokładnie te same kierunki światła, wielkości i obroty co v2. Różni się tylko pozycją, więc to czysta para do porównania.
+- Pozycja jest losowana z obszaru, w którym największy obiekt mieści się cały w kadrze (funkcja `object_in_frame`). Obszar zależy tylko od kamery, a nie od światła, więc pozycja nie koreluje z kierunkiem (r ≈ 0,00). Koniec cienia mieści się w kadrze w 99% przypadków.
+- Zakres ±2 bez tego sprawdzenia był za duży: obiekty wychodziły poza kadr (`figures/v2r_corners_rejected.png`).
+
+### Warianty do pytania „która wskazówka” (RQ3)
+
+Na tych samych scenach co v2r renderują się dwa warianty:
+- **v2rns:** obiekt nie rzuca cienia, zostaje tylko jego cieniowanie;
+- **v2rso:** kamera nie widzi obiektu, ale jego cień zostaje.
+
+Pary obrazów różnią się tylko jedną wskazówką. Jest też v2ns (bez cienia, obiekt w środku).
+
+![Ta sama scena: pełna, bez cienia, sam cień](figures/v2_variants.png)
+
+Czarny kwadrat w wariancie „sam cień” to podłoga pod sześcianem, do której nie dochodzi żadne światło. Fizycznie to poprawne.
 
 ---
 
@@ -318,7 +351,10 @@ Czas: ok. 25 s na obraz na tym laptopie, czyli ok. 21 h dla 3000 obrazów. Na w�
 | Element | Gdzie | Status |
 |---|---|---|
 | Pakiet Pythona `dd3d` (geometria, szum, ekstrakcja, sonda, wskazówki, rysunki, CLI) | `src/dd3d/` | gotowe |
-| Poprawiona ekstrakcja (dobry szum, stałe ziarno, maska promptu, zapis 287 KB zamiast 9,2 MB na obraz) | `src/dd3d/extract.py`, `configs/` | gotowe, nieprzetestowane na GPU |
+| Poprawiona ekstrakcja (dobry szum, stałe ziarno, maska promptu, float16, wszystkie kroki t w jednym przebiegu) | `src/dd3d/extract.py` | gotowe, sprawdzone na T4 |
+| Ekstrakcja SD 1.5 i SDXL (kontrola uogólnienia) | `src/dd3d/extract_unet.py` | gotowe, SDXL sprawdzony na T4 |
+| Testy przyczynowe: przesunięcie wzdłuż sondy, kontrola losowa, wymazanie LEACE | `src/dd3d/intervene.py`, `scripts/experiments/make_intervention_plan.py`, `analyze_interventions.py` | gotowe, próba na GPU w kolejce |
+| Narzędzia Kaggle i kolejka jobów | `tools/kaggle/` | działa |
 | Joby SLURM pod nową ekstrakcję + kontrole | `scripts/slurm/` | gotowe |
 | Testy jednostkowe (34, ok. 10 s, bez GPU) | `tests/unit/` | przechodzą |
 | ruff, Makefile, pre-commit, konwencjonalne commity | katalog główny | gotowe |
@@ -354,23 +390,34 @@ Uruchamianie: `make install`, `make test`, `make audit`, `make cues`; wszystkie 
 - **SANA na tym laptopie się nie da**:
   - w bfloat16 procesor nie ma sprzętowego wsparcia i obliczenia stoją; test mnożenia macierzy nie skończył się w kilka minut, a w float32 trwa 0,3 s;
   - w float32 model ma 6,4 GB i nie mieści się w pamięci.
-- **Klaster (do listopada):** pierwsze w kolejce są poprawiona ekstrakcja v1 i kontrole (`scripts/slurm/README.md`), potem ekstrakcja v2. Całe GPU trzeba skończyć przed wygaśnięciem dostępu.
+- **Klaster Athena odpada:** przydział GPU grantu się wyczerpał (5147 / 5000 h), a SLURM odrzuca wszystkie joby.
+- **Całe GPU i rendery idą na Kaggle** (konto jankombajn, narzędzia w `tools/kaggle/`, instrukcja w `docs/usage.md`, rozdział 6):
+  - Kaggle uruchamia najwyżej 5 jobów CPU i 2 joby GPU naraz; limit GPU to 30 h na tydzień;
+  - render Blenderem na CPU Kaggle: ok. 7 s na obraz (laptop: 25 s). Blender 2.78c nie działa na GPU Kaggle;
+  - SANA na T4 w float16: ok. 1 s na obraz. Daje te same cechy co float32 (różnica 0,1%), a jest 4 razy szybsza. Stary szum przepełnia się w float16, więc ten przebieg idzie w float32;
+  - SD 1.5: 0,5 s, SDXL: 2 s na obraz;
+  - cała zaplanowana praca GPU to ok. 20 h, więc jedno konto wystarcza.
+- **Kolejka jobów** (`tools/kaggle/kqueue.py`) działa jako osobny proces. Sama wysyła joby, gdy zwalnia się miejsce, pobiera wyniki i przetrwa zamknięcie sesji. Stan każdego joba zapisuje w plikach w jego folderze, więc po restarcie komputera wystarczy uruchomić ją ponownie. Dziennik: `runs/kaggle/logs/queue.log`.
+- **Sprawdzenie zgodności:** ze starym szumem nowa ekstrakcja daje normę tokenu 11 147 (blok 4, t = 200), a stare aktywacje z ZZSN ok. 11 100. Z poprawnym szumem norma wynosi 718. Nowy pipeline jest więc zgodny ze starym we wszystkim poza szumem.
 - **Przerwy sesji w nocy i w dzień** to restart całego WSL (uśpienie lub restart Windowsa), a nie błąd w pracy. Na przyszłość: ustawić w Windowsie „nie usypiaj na zasilaczu” i „zamknięcie klapy: nic nie rób”.
+- **GitHub z WSL:** logowanie trzyma Git Credential Manager z Git for Windows, więc push działa w każdym terminalu.
 
 ---
 
 ## 14. Decyzje do podjęcia
 
-1. **Dataset v2:** czy przyjmujecie zasady z rozdziału 10? Do ustalenia:
-   - siła światła tła: 0,2 (miękkie cienie, naturalnie) czy 0,05 (większy kontrast);
-   - zakres elewacji: proponuję 20–70°.
-2. **Gdzie renderować v2:** laptop (ok. 21 h, laptop nie może zasnąć) czy klaster CPU.
-3. **Zgłoszenie do diffusers:** czy wysyłacie issue i PR (rozdział 9)?
-4. **Termin dostępu do klastra:** od niego zależy cały plan GPU.
-5. **Sprawy z prowadzącym:**
+Podjęte 13.10:
+- dataset v2: tło 0,2, elewacja 30–75°;
+- rendery i GPU na Kaggle, nigdy na laptopie;
+- issue #15021 w diffusers wysłane; PR czeka na odpowiedź opiekunów;
+- `siwy-xai` scalone do `main` i wypchnięte; bieżąca praca jest na gałęzi `feat/kaggle-pipeline`.
+
+Otwarte:
+1. **Sprawy z prowadzącym:**
    - zespół ma być 3-osobowy, a jesteście we dwoje;
-   - potrzebna zgoda na kontynuację projektu z ZZSN, z jasnym podziałem, co jest nowe.
-6. **Scalenie `siwy-xai` do `main` i wypchnięcie na GitHub?**
+   - potrzebna zgoda na kontynuację projektu z ZZSN, z jasnym podziałem, co jest nowe;
+   - czy wystawiony PR daje ocenę 5 (rozdział 9).
+2. **Scalenie `feat/kaggle-pipeline` do `main`:** proponuję po pierwszych wynikach z GPU.
 
 ---
 

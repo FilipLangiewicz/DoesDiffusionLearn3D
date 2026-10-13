@@ -16,6 +16,7 @@ __pycache__/
 data/features/
 data/audit_renders/
 data/v2/
+data/v2*/
 runs/
 docs/article/build/
 data/v2_sample/

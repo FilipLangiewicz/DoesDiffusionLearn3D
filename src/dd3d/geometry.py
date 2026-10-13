@@ -115,6 +115,20 @@ def fit_camera_jitter(obj_xyz, pixel_coords, bound: float = CAMERA_JITTER) -> tu
     return sol.x, float(np.abs(sol.fun[:2]).max())
 
 
+def object_in_frame(x: float, y: float, size: float = 1.4, margin: float = 16.0) -> bool:
+    """Return True if an object of ``size`` at ground position (x, y) is fully in the image.
+
+    The test projects a cylinder that contains the object in every rotation: the
+    radius is size * sqrt(2) and the height is 2 * size. The base camera has no jitter.
+    """
+    ang = np.linspace(0.0, 2.0 * np.pi, 16, endpoint=False)
+    r = size * math.sqrt(2.0)
+    ring = np.stack([x + r * np.cos(ang), y + r * np.sin(ang)], axis=1)
+    pts = np.concatenate([np.c_[ring, np.full(16, z)] for z in (0.0, 2.0 * size)])
+    px = project(pts)[:, :2]
+    return bool((px >= margin).all() and (px <= IMAGE_SIZE - margin).all())
+
+
 def shadow_point(point, lamp) -> np.ndarray:
     """Return the ground point (z = 0) of the shadow of ``point`` for a point lamp."""
     p = np.asarray(point, dtype=float)

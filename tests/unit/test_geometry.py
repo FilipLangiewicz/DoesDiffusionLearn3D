@@ -12,6 +12,7 @@ from dd3d.geometry import (
     fit_camera_jitter,
     lamp_position,
     local_light_direction,
+    object_in_frame,
     project,
     real_rotation_deg,
     shadow_point,
@@ -106,3 +107,12 @@ def test_sun_position():
     az, el = sun_position_az_el()
     assert az == pytest.approx(334.85, abs=0.05)
     assert el == pytest.approx(62.75, abs=0.05)
+
+
+def test_object_in_frame():
+    # The centre is inside. The renders at (2, 2) and (-2, -2) cut a large cube at the image edge.
+    assert object_in_frame(0.0, 0.0)
+    assert not object_in_frame(2.0, 2.0)
+    assert not object_in_frame(-2.0, -2.0)
+    # A small object fits where a large one does not.
+    assert object_in_frame(2.0, 2.0, size=0.3)

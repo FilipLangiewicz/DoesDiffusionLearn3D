@@ -19,9 +19,14 @@ import argparse
 import json
 import math
 import random
+import sys
 from pathlib import Path
 
 import pandas as pd
+
+# The Kaggle render job runs this script without an installed dd3d package.
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "src"))
+from dd3d.geometry import object_in_frame  # noqa: E402
 
 SHAPES = ("Sphere", "SmoothCylinder", "SmoothCube_v2")
 
@@ -40,11 +45,19 @@ def main() -> None:
     parser.add_argument("--samples", type=int, default=64)
     parser.add_argument("--seed", type=int, default=2026)
     parser.add_argument("--prefix", default="v2")
+    parser.add_argument(
+        "--frame-position",
+        action="store_true",
+        help="Random position in [-3, 3]^2 where the largest object is fully in the image.",
+    )
     parser.add_argument("--no-object-shadow", action="store_true", help="The object casts no shadow.")
     parser.add_argument("--shadow-only", action="store_true", help="The camera sees only the shadow.")
     args = parser.parse_args()
 
     rng = random.Random(args.seed)
+    # A second generator for the positions keeps the light, size and rotation
+    # equal to those of the same seed without --frame-position.
+    pos_rng = random.Random(args.seed + 1_000_003)
     image_dir = (args.out_dir / "images").resolve()
     jobs, rows = [], []
     for shape in SHAPES:
@@ -62,6 +75,14 @@ def main() -> None:
                 "x": round(rng.uniform(-r, r), 3) if r else 0.0,
                 "y": round(rng.uniform(-r, r), 3) if r else 0.0,
             }
+            if args.frame_position:
+                # The test uses the largest size, so the region does not depend on the
+                # light or on the size of this object.
+                while True:
+                    x, y = pos_rng.uniform(-3.0, 3.0), pos_rng.uniform(-3.0, 3.0)
+                    if object_in_frame(x, y, size=args.size_max):
+                        break
+                row["x"], row["y"] = round(x, 3), round(y, 3)
             rows.append(row)
             jobs.append(
                 {

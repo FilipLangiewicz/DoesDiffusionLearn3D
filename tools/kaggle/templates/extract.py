@@ -9,7 +9,6 @@ import glob
 import json
 import os
 import subprocess
-import sys
 import time
 from pathlib import Path
 
@@ -68,27 +67,55 @@ images_dir = candidates[0]
 counts = {s: len(list((images_dir / s).glob("*.png"))) for s in ("Sphere", "SmoothCylinder", "SmoothCube_v2")}
 log(f"images: {images_dir} {counts}")
 
-sys.path.insert(0, f"{repo}/src")
-from dd3d.extract import ExtractConfig, run  # noqa: E402
-from dd3d.extract_unet import UNetExtractConfig  # noqa: E402
-from dd3d.extract_unet import run as run_unet  # noqa: E402
+# The runs go to a worker program, one copy for each GPU. Kaggle runs this script
+# as a notebook, so the script cannot start itself again.
+WORKER = r"""
+import glob, json, os, sys, time
+from pathlib import Path
 
-name = PARAMS["name"]
-prompt_cache = Path(f"{TMP}/prompt_empty.pt")
-for run_name, overrides in PARAMS["runs"].items():
+cfg_in = json.load(open(sys.argv[1]))
+part = int(sys.argv[2])
+sys.path.insert(0, cfg_in["repo"] + "/src")
+from dd3d.extract import ExtractConfig, encode_prompt, run
+from dd3d.extract_unet import UNetExtractConfig
+from dd3d.extract_unet import run as run_unet
+import torch
+
+LOG = open(cfg_in["log"], "a")
+
+
+def log(msg):
+    line = f"[{time.strftime('%H:%M:%S')}] part {part}: {msg}"
+    print(line, flush=True)
+    LOG.write(line + "\n")
+    LOG.flush()
+
+
+images_dir = Path(cfg_in["images_dir"])
+prompt_cache = Path(cfg_in["prompt_cache"])
+if part < 0:
+    # Only the empty prompt of SANA, on the CPU, before the GPU workers start.
+    sana = [o for o in cfg_in["runs"].values() if o.get("kind", "sana") == "sana"]
+    if sana:
+        o = sana[0]
+        c = ExtractConfig(images_dir=images_dir, out_dir=Path(cfg_in["out_root"]), prompt_cache=prompt_cache,
+                          dtype=o.get("dtype", "float16"), device="cpu", text_encoder_device="cpu")
+        encode_prompt(c, getattr(torch, c.dtype))
+        log("prompt cache ready")
+    sys.exit(0)
+
+task_id = cfg_in["task_id"] * cfg_in["gpus"] + part
+num_tasks = cfg_in["num_tasks"] * cfg_in["gpus"]
+for run_name, overrides in cfg_in["runs"].items():
     overrides = dict(overrides)
-    common = {
-        "images_dir": images_dir,
-        "out_dir": Path(f"{TMP}/out/{run_name}"),
-        "task_id": PARAMS["task_id"],
-        "num_tasks": PARAMS["num_tasks"],
-    }
+    common = {"images_dir": images_dir, "out_dir": Path(cfg_in["out_root"]) / run_name,
+              "task_id": task_id, "num_tasks": num_tasks}
     if overrides.pop("kind", "sana") == "unet":
         cfg, runner = UNetExtractConfig(**common, **overrides), run_unet
     else:
         cfg, runner = ExtractConfig(**common, prompt_cache=prompt_cache, **overrides), run
     t0 = time.time()
-    log(f"run {run_name}: {overrides}")
+    log(f"run {run_name} (task {task_id} of {num_tasks}): {overrides}")
     # Anonymous downloads from Hugging Face can fail with HTTP 429, so try again later.
     # If a run fails four times, the job keeps the output of the other runs.
     ok = False
@@ -97,21 +124,59 @@ for run_name, overrides in PARAMS["runs"].items():
             runner(cfg)
             ok = True
             break
-        except Exception as err:  # noqa: BLE001
+        except Exception as err:
             log(f"run {run_name}: attempt {attempt + 1} failed: {err!r}"[:500])
             time.sleep(120 * (attempt + 1))
     if not ok:
         log(f"run {run_name}: FAILED, no output")
-        sh(f"rm -rf {cfg.out_dir}")
         continue
     log(f"run {run_name}: done in {time.time() - t0:.0f} s")
-    stats = sorted(glob.glob(f"{cfg.out_dir}/stats/*.csv"))
+    stats = sorted(glob.glob(f"{cfg.out_dir}/stats/chunk_{task_id:04d}.csv"))
     if stats:
         import pandas as pd
 
-        df = pd.concat(pd.read_csv(s) for s in stats)
+        df = pd.read_csv(stats[0])
         table = df.groupby(["block", "t"])["mean_token_norm"].mean().unstack("t").round(1)
         log(f"mean token norm ({run_name}):\n{table.to_string()}")
+"""
+
+name = PARAMS["name"]
+gpus = PARAMS.get("gpus", 1)
+worker = Path(f"{TMP}/worker.py")
+worker.write_text(WORKER)
+cfg_file = Path(f"{TMP}/worker.json")
+cfg_file.write_text(
+    json.dumps(
+        {
+            "repo": repo,
+            "images_dir": str(images_dir),
+            "out_root": f"{TMP}/out",
+            "prompt_cache": f"{TMP}/prompt_empty.pt",
+            "runs": PARAMS["runs"],
+            "task_id": PARAMS["task_id"],
+            "num_tasks": PARAMS["num_tasks"],
+            "gpus": gpus,
+            "log": f"{WORK}/results.txt",
+        }
+    )
+)
+LOG.flush()
+sh(f"python {worker} {cfg_file} -1", quiet=True)
+t0 = time.time()
+procs = []
+for k in range(gpus):
+    env = dict(os.environ, CUDA_VISIBLE_DEVICES=str(k))
+    out = open(f"{TMP}/worker_{k}.log", "w")
+    procs.append(
+        subprocess.Popen(
+            ["python", str(worker), str(cfg_file), str(k)], env=env, stdout=out, stderr=subprocess.STDOUT
+        )
+    )
+codes = [p.wait() for p in procs]
+log(f"workers ended with codes {codes} after {time.time() - t0:.0f} s")
+for k in range(gpus):
+    tail = Path(f"{TMP}/worker_{k}.log").read_text().splitlines()[-8:]
+    log(f"worker {k} log tail:\n" + "\n".join(tail))
 
 out_tar = f"{WORK}/{name}_task{PARAMS['task_id']:02d}.tar"
 sh(f"cd {TMP}/out && tar cf {out_tar} . && ls -la {WORK} && du -sh {TMP}/out")

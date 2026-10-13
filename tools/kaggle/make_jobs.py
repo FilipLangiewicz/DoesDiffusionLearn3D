@@ -120,6 +120,7 @@ def main() -> None:
     e.add_argument("--kernel", action="append", default=[], help="Kaggle job with image tar files.")
     e.add_argument("--ref", default="main")
     e.add_argument("--dtype", default=None, help="Override the dtype of the SANA runs (float16 or float32).")
+    e.add_argument("--gpus", type=int, default=1, help="GPUs of the Kaggle session; each runs one half.")
     e.add_argument("--out-root", type=Path, default=Path("runs/kaggle"))
     c = sub.add_parser("intervene")
     c.add_argument("--name", required=True)
@@ -162,6 +163,7 @@ def main() -> None:
                 "task_id": task,
                 "num_tasks": args.tasks,
                 "runs": runs,
+                "gpus": args.gpus,
             }
             slug = f"dd3d-extract-{args.name}-{task}"
             job = write_job(

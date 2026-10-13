@@ -79,6 +79,10 @@ flowchart TD
 
 ![12 obrazów v2](figures/v2_grid.png)
 
+Ta sama scena i to samo światło: v2 (góra, obiekt w środku) i v2r (dół, obiekt w losowym miejscu):
+
+![Pary v2 i v2r](figures/v2_v2r_pairs.png)
+
 Pozycja w v2r jest losowana tylko tam, gdzie największy obiekt mieści się cały w kadrze. Ten obszar zależy wyłącznie od kamery, więc pozycja nie koreluje ze światłem ($|r| < 0{,}01$).
 
 ---

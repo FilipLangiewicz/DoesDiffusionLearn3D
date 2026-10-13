@@ -2,7 +2,7 @@
 
 The queue file has one job on each line, in the order of priority:
 
-    <job folder> <CPU|GPU> [after=<slug prefix>]
+    <job folder> <CPU|GPU> [after=<slug prefix>] [acc=<Kaggle accelerator>]
 
 A job with after=<prefix> starts only when all jobs whose slug starts with this
 prefix are done. Empty lines and lines that start with # are ignored.
@@ -48,10 +48,12 @@ def read_queue(path: Path) -> list[dict]:
         if not line or line.startswith("#"):
             continue
         parts = line.split()
-        job = {"dir": Path(parts[0]), "kind": parts[1], "after": None}
+        job = {"dir": Path(parts[0]), "kind": parts[1], "after": None, "acc": ACCELERATOR[parts[1]]}
         for p in parts[2:]:
             if p.startswith("after="):
                 job["after"] = p.split("=", 1)[1]
+            if p.startswith("acc="):
+                job["acc"] = p.split("=", 1)[1]
         job["slug"] = job["dir"].name
         job["id"] = json.loads((job["dir"] / "kernel-metadata.json").read_text())["id"]
         jobs.append(job)
@@ -71,7 +73,7 @@ def state(job: dict) -> str:
 
 def push(job: dict) -> str:
     args = ["kernels", "push", "-p", str(job["dir"])]
-    acc = ACCELERATOR[job["kind"]]
+    acc = job["acc"]
     if acc:
         args += ["--accelerator", acc]
     out = retry(*args).strip()

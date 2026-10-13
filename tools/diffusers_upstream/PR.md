@@ -4,7 +4,7 @@
 
 # What does this PR do?
 
-Fixes #<ISSUE NUMBER>
+Fixes #15021
 
 After `__init__`, `self.timesteps` goes from 999 down to 0, but `self.sigmas` (added in #6006) went from step 0 up to step 999. So `add_noise(x0, noise, t)` before `set_timesteps()` used the noise level of `999 - t`. With `use_flow_sigmas=True` (the SanaPipeline scheduler), it also used a VP sigma in the flow formula: for `t = 200` the input was `-24.5 * x0 + 25.5 * eps` instead of `0.8 * x0 + 0.2 * eps`.
 

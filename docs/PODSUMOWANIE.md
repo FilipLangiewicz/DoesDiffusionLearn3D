@@ -289,7 +289,7 @@ Skrypty tych testów: `tools/diffusers_upstream/functional/`.
 - czy zwalnia z kolokwiów (regulamin tego nie mówi);
 - czy ta poprawka to dla prowadzącego „sensowna kontrybucja”.
 
-Nic nie zostało wysłane. Gotowe teksty: `tools/diffusers_upstream/ISSUE.md` i `PR.md`.
+**Stan (13.10.2026):** zgłoszenie jest wysłane: https://github.com/huggingface/diffusers/issues/15021. PR czeka na odpowiedź opiekunów. Gotowy tekst: `tools/diffusers_upstream/PR.md`.
 
 ---
 

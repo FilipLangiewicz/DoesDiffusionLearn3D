@@ -1,0 +1,280 @@
+\documentclass[10pt]{article}
+% Anonymous submission format of TMLR. Use [preprint] for an arXiv version.
+\usepackage{tmlr}
+\input{math_commands.tex}
+\usepackage{hyperref}
+\usepackage{url}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{xcolor}
+\usepackage{amssymb}
+\usepackage{siunitx}
+
+% Results that need the GPU runs. Search for \pending before submission.
+\newcommand{\pending}[1]{\textcolor{red}{[pending: #1]}}
+\newcommand{\degr}{^\circ}
+
+\title{Do Linear Probes Show That a Diffusion Transformer Knows the Light Direction? An Audit with Controls}
+
+\author{\name Anonymous Authors \email anonymous@example.com}
+
+\def\month{MM}
+\def\year{YYYY}
+\def\openreview{\url{https://openreview.net/forum?id=XXXX}}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Linear probes on the activations of generative models often serve as evidence that these models represent the 3D structure of a scene.
+We examine this evidence for one simple property, the direction of the light, in the text-to-image diffusion transformer SANA-1.6B.
+A first study with controlled Blender renders reported that a Ridge probe on transformer activations predicts the light azimuth with a mean absolute error (MAE) of $14\degr$, also on an object shape that the probe did not see in training.
+We audit this pipeline and find four problems.
+First, the same probe on raw $64\times64$ pixels gives the same error ($14.1\degr$ against $14.0\degr$).
+Second, the noise injection called a library function before its schedule was ready; for $t=200$ the transformer received $-24.5\,x_0 + 25.5\,\epsilon$ instead of $0.8\,x_0 + 0.2\,\epsilon$.
+Third, the label described the lamp position around the scene centre, which differs from the light direction at the object by $35\degr$ on average.
+Fourth, a large floor highlight under the lamp gives a cue that does not depend on the object.
+Probes on image regions show where the information is: \pending{one sentence with the floor-only and object-only numbers}.
+We release an exact re-implementation of the render geometry, a corrected extraction pipeline, unit tests, and a fix for the library pitfall, which affects four schedulers.
+We close with a checklist for probe studies of generative models and with the plan for causal tests.
+\end{abstract}
+
+\section{Introduction}
+\label{sec:intro}
+
+Text-to-image diffusion models make images with plausible light, shadows and perspective.
+Do they build an internal model of the 3D scene, or do they only reproduce 2D image statistics?
+Probe studies try to answer this question with linear models on frozen activations: if a linear probe can read depth, surface normals or the light direction, the activations encode this property \citep{alain2016probes,chen2023beyond,elbanani2024probing,zhan2024protocol}.
+
+A probe result alone is weak evidence.
+A probe can read a property that the input already shows in a simple form, and a flexible probe can learn the task itself \citep{hewitt2019control,belinkov2022probing}.
+Thus a claim about the knowledge of a model needs controls: a baseline on the input, a baseline on a model without training \citep{adebayo2018sanity}, labels that describe the physical quantity, and data without shortcut cues \citep{geirhos2019texture}.
+
+This paper examines one probe study in detail.
+The study used SANA-1.6B \citep{xie2025sana}, a linear diffusion transformer with a flow-matching objective, and renders from a modified CLEVR generator \citep{johnson2017clevr} with one object and one key lamp.
+It reported that a Ridge probe on block~10 at timestep $t=200$ predicts the lamp azimuth with an MAE of $14.0\degr$ on cubes, a shape that the probe did not see in training (Table~\ref{tab:original}).
+The study concluded that SANA encodes the light direction as a physical property of the scene.
+
+We re-examine every step of this pipeline: the render geometry, the labels, the noise injection, the probe fit and the figures.
+Our contributions are:
+\begin{enumerate}
+    \item An audit that finds four problems that each can explain the result without 3D knowledge (Section~\ref{sec:audit}).
+    \item Control probes on pixels and on image regions, which show that the floor of the image carries the information (Section~\ref{sec:controls}).
+    \item Tools: an exact model of the render geometry (to $0.56$~px), a corrected extraction pipeline with unit tests, and a fix with tests for a pitfall in the noise schedulers of a popular diffusion library (Section~\ref{sec:pipeline}).
+    \item A checklist for probe studies of generative models, and a pre-registered plan for causal tests with concept erasure and steering (Section~\ref{sec:discussion}).
+\end{enumerate}
+
+\section{Related work}
+\label{sec:related}
+
+\paragraph{Probes and their controls.}
+Linear probes test whether a layer encodes a property in a linearly decodable form \citep{alain2016probes}.
+\citet{hewitt2019control} showed that a probe can be accurate because it learns the task, and proposed control tasks and selectivity.
+\citet{belinkov2022probing} reviews these and other limits.
+Concept vectors such as TCAV \citep{kim2018tcav} and regression concept vectors \citep{graziani2018rcv} use the same linear directions as explanations.
+Erasure methods remove a linear concept from the activations and test whether the model needs it \citep{ravfogel2020inlp,elazar2021amnesic,belrose2023leace}.
+Randomized models give a baseline for explanations \citep{adebayo2018sanity}.
+
+\paragraph{3D and physical knowledge in generative models.}
+\citet{chen2023beyond} found linear representations of depth and of the salient object in a latent diffusion model, and changed the output with interventions on these representations.
+\citet{zhan2024protocol} probed Stable Diffusion features for scene geometry, support relations, shadows, occlusion and depth.
+\citet{elbanani2024probing} compared the 3D awareness of visual foundation models with depth and normal probes.
+\citet{du2023generative} and \citet{bhattad2023stylegan} extracted normals, depth, albedo and shading from generative models with small adapters.
+In contrast, \citet{sarkar2024shadows} found that generated images often have inconsistent shadows and perspective.
+
+\paragraph{Light in diffusion models.}
+Several methods control the light of generated images \citep{zhang2025iclight,zeng2024dilightnet,kocsis2024lightit}, and a diffusion model can estimate the scene light from an image \citep{phongthawee2024light}.
+These results show that diffusion models can use light information, but not where or how the model represents it.
+
+\section{The original study}
+\label{sec:original}
+
+\paragraph{Data.}
+A modified CLEVR script renders one purple rubber object (sphere, cylinder or cube) in each scene with Blender 2.78c and Cycles at $512\times512$ px.
+The key lamp has a random azimuth $\phi\sim\mathcal{U}(0\degr,360\degr)$ and elevation $\theta\sim\mathcal{U}(30\degr,75\degr)$ on a sphere of radius~5 around the scene centre.
+There are 1000 images for each shape.
+The probe trains on 1600 spheres and cylinders; 200 images are for validation and 200 for the test.
+The 1000 cubes form the set \texttt{test\_cubes}.
+
+\paragraph{Activations.}
+Each image goes through the DC-AE encoder of SANA-1.6B ($1024\times1024$ input, $32\times32\times32$ latent).
+Noise for timestep $t\in\{200,500,800\}$ is added, and forward hooks record the output of transformer blocks 4, 10 and 18 (1024 tokens with 2240 channels) for the empty prompt.
+
+\paragraph{Probe.}
+A $4\times4$ average pool gives $8\times8\times2240$ features.
+Incremental PCA (256 components) and a Ridge regression ($\alpha=1$) predict $[\sin\phi,\cos\phi,\theta]$.
+The azimuth is $\hat\phi=\operatorname{atan2}(\hat s,\hat c)$.
+
+\begin{table}[t]
+\centering
+\caption{Result of the original study on \texttt{test\_cubes} (1000 cubes), and our control with the same probe recipe on raw pixels. The control uses the same splits; its Ridge $\alpha$ comes from the validation split.}
+\label{tab:original}
+\begin{tabular}{lrr}
+\toprule
+Method & Azimuth MAE & Elevation MAE \\
+\midrule
+Random guess & $89.9\degr$ & $14.6\degr$ \\
+Mean of the train set & $88.9\degr$ & $11.4\degr$ \\
+Probe on SANA-1.6B, block 10, $t=200$ (original) & $14.0\degr$ & $6.9\degr$ \\
+Same probe on $64\times64$ RGB pixels (ours) & $14.1\degr$ & $6.3\degr$ \\
+Same probe on $32\times32$ RGB pixels (ours) & $13.8\degr$ & $6.5\degr$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Audit of the pipeline}
+\label{sec:audit}
+
+\subsection{An exact model of the render geometry}
+\label{sec:geometry}
+
+To check labels and figures, we need the exact camera of each image.
+The CLEVR camera has a track-to constraint on the scene centre, a 35~mm lens on a 32~mm sensor, and a random jitter in $[-0.5,0.5]$ on each axis that the scene files do not store.
+We wrote the projection of Blender in NumPy and fitted the jitter of each image to the object position in the scene file (pixel position and depth).
+The fit reproduces the pixel position of all 3000 objects with a maximum error of $0.56$~px, and the fitted jitter is uniform in $[-0.5,0.5]$.
+A new render of a dataset scene with these values equals the dataset image (mean absolute difference $0.14/255$, object-mask IoU $0.98$).
+
+The azimuth turns counter-clockwise in the world and in the image: $0\degr$ means light from the front right, $90\degr$ from the back right, $180\degr$ from the back left and $270\degr$ from the front left (Figure~\ref{fig:conventions}).
+The original report described the opposite direction.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{figures/conventions.png}
+\caption{Renders with the key lamp at four azimuths ($\theta=45\degr$, sphere at the scene centre). The yellow line points to the lamp, as our geometry model predicts. The large floor highlight lies under the lamp and moves with the label.}
+\label{fig:conventions}
+\end{figure}
+
+\subsection{The label is the lamp position, not the light at the object}
+
+The lamp turns around the scene centre, but the object stands up to $2.8$ units from the centre.
+The light direction at the object, $\mathrm{dir}(L-p)$ for lamp $L$ and object centre $p$, differs from the label by $35.0\degr$ in azimuth (mean; median $27.2\degr$) and by $16.2\degr$ in elevation (mean absolute value).
+At the object, the light elevation spans $8\degr$ to $89\degr$, not $30\degr$ to $75\degr$.
+The original probe follows the label: its azimuth MAE on cubes is $14.0\degr$ for the label and $35.5\degr$ for the light at the object.
+So the probe reads the position of the lamp in the scene, and not the light that falls on the object.
+
+\subsection{Scene lights and a shortcut cue}
+
+The key lamp is an area lamp that always faces the scene centre.
+It makes a bright spot on the floor between the lamp and the centre, and the position of this spot follows the label (Figure~\ref{fig:conventions}).
+The spot is larger and brighter than the cast shadow of the object, and it does not depend on the object shape.
+The CLEVR base scene also contains a sun lamp (strength $0.45$, from azimuth $334.9\degr$ and elevation $62.7\degr$) that the modified script did not switch off.
+With the white world light, it gives $19\%$ of the floor brightness.
+Its shadow falls behind the object as the camera sees it, so the effect is a constant front light.
+
+\subsection{A pitfall in the noise schedule}
+\label{sec:noise}
+
+The original code noised the latent with \texttt{scheduler.add\_noise} of the SANA scheduler (\texttt{DPMSolverMultistepScheduler} with flow sigmas) before any call to \texttt{set\_timesteps}.
+After construction, this scheduler stores variance-preserving sigmas in ascending order of the training step, while its timesteps are in descending order.
+The function finds the index of $t$ in the descending list and reads the sigma of step $999-t$.
+With flow sigmas it then computes $x_t=(1-\sigma)x_0+\sigma\epsilon$ with this value of $\sigma$.
+Table~\ref{tab:noise} shows the result: for $t=200$ the transformer receives an input with $35$ times the expected norm and an inverted signal, while its timestep embedding says $\sigma=0.2$.
+The stored activations agree with this: in block 4 the mean token norm is about $11{,}100$ at $t=200$ and $720$ at $t=800$.
+The same order problem affects the variance-preserving case of four schedulers of the library; we prepared a fix and tests for the library \pending{link after the report is public}.
+
+\begin{table}[t]
+\centering
+\caption{Noise rule of the original code against the flow rule that SANA expects. Coefficients of the least-squares fit $x_t=a\,x_0+b\,\epsilon$.}
+\label{tab:noise}
+\begin{tabular}{rrrrr}
+\toprule
+$t$ & $a$ (original) & $b$ (original) & $a$ (flow) & $b$ (flow) \\
+\midrule
+200 & $-24.53$ & $25.53$ & $0.80$ & $0.20$ \\
+500 & $-2.42$ & $3.42$ & $0.50$ & $0.50$ \\
+800 & $0.28$ & $0.72$ & $0.20$ & $0.80$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Figures and probe fit}
+
+The figures of the original study drew the shadow direction with the default Blender camera instead of the CLEVR camera and with an orthographic projection.
+The mean direction error is $5.2\degr$, and $16\%$ of the scenes have an error above $10\degr$.
+Because the arrows had a fixed length from the object centre, about $18\%$ of them ended outside the image and the plot library did not draw them.
+Renders without the object confirm our exact arrows: for scenes with long shadows, the mean angle between our arrow and the measured shadow is $4.7\degr$ ($7.6\degr$ for the original arrows).
+Finally, the Ridge $\alpha$ had no effect (the same MAE for $\alpha$ from $10^{-3}$ to $10^{3}$), because the PCA scores were not scaled, and the final configuration was selected with test data.
+
+\section{Controls on the existing data}
+\label{sec:controls}
+
+All controls use the original splits.
+The probe is the same recipe (PCA with 256 components, then Ridge), with standard scores after the PCA and $\alpha$ from a log grid selected on the validation split only.
+Intervals are 95\% bootstrap intervals over the test images.
+
+\paragraph{Pixels.}
+Table~\ref{tab:original} shows that a probe on raw pixels is as good as the probe on SANA activations, on spheres and cylinders ($11.5\degr$ against $13.0\degr$) and on cubes ($14.1\degr$ against $14.0\degr$).
+The input image already contains the label in a linearly decodable form.
+
+\paragraph{Image regions.}
+To find the region that carries the information, we fit the probe on four variants of each image (Table~\ref{tab:cues}): the full image; the image with the object replaced by the floor colour (the cast shadow and the floor highlight stay); a crop of the object alone on a grey background; and only the position of the brightest floor region (two numbers).
+\pending{interpretation after the run}
+
+\begin{table}[t]
+\centering
+\caption{Pixel probes on image regions (test split: spheres and cylinders; cubes: \texttt{test\_cubes}). Global: the dataset label (lamp position). Local: the light direction at the object.}
+\label{tab:cues}
+\input{tables/cues.tex}
+\end{table}
+
+\section{A corrected pipeline}
+\label{sec:pipeline}
+
+The corrected extraction (package \texttt{dd3d}) uses the flow rule $x_t=(1-t/1000)\,x_0+(t/1000)\,\epsilon$, a fixed noise seed for each image, and the attention mask of the empty prompt.
+It stores the average-pooled features in float16 (287~KB for each image, block and timestep instead of 9.2~MB), which makes a sweep over all 20 blocks feasible.
+A CPU smoke test on SANA-1.6B checks the code path and compares the two noise rules on the same images: \pending{token norms and one-step reconstruction error from reports/smoke}.
+\pending{E0: corrected probe sweep over 20 blocks and 5 timesteps, with the pixel, DC-AE latent and random-weight controls.}
+
+\section{Discussion}
+\label{sec:discussion}
+
+\paragraph{What the original result shows.}
+The original probe reads the lamp position, and pixels give the same accuracy.
+The floor highlight and the shadow are visible in 2D and do not depend on the object shape, which explains the transfer to cubes.
+Therefore, the result does not show that SANA represents the light direction as a 3D property.
+It also does not show the opposite: the corrected extraction and the controls in Section~\ref{sec:pipeline} must decide whether SANA adds information that the input does not make linearly available.
+
+\paragraph{A checklist for probe studies of generative models.}
+\begin{enumerate}
+    \item Compare every probe with the same probe on the input pixels and on the latent of the autoencoder.
+    \item Compare with the same architecture with random weights.
+    \item Check the noise that the model receives: fit $x_t=a\,x_0+b\,\epsilon$ and compare with the schedule of the model.
+    \item Define the label at the place of the effect (here, the light at the object), and store all scene parameters (camera, all lamps).
+    \item Remove or randomize shortcut cues (floor highlights, constant extra lights) before a claim about 3D knowledge, and test cue-conflict images.
+    \item Select hyperparameters on validation data only, and report intervals.
+    \item Test causal use, for example with concept erasure \citep{belrose2023leace} and with steering along the probe direction \citep{chen2023beyond}.
+    \item Check figures against the true geometry.
+\end{enumerate}
+
+\paragraph{Planned causal tests.}
+We plan a second dataset with a directional key lamp (no floor highlight, the same direction at every point) and without the extra sun lamp, cue-conflict renders, exact spatial maps of the linear probe, LEACE erasure of the probe subspace during denoising, and steering along the probe direction, with the pixel probe as a measurement of the shadow direction in the output.
+\pending{results}
+
+\section{Limitations}
+One model, one property and synthetic scenes limit the scope of this study.
+The controls in Section~\ref{sec:controls} use the original dataset, which has the shortcut cues that we describe.
+The results of the corrected extraction need GPU time and are not part of this draft.
+
+\section{Conclusion}
+A probe that reads a scene property from a generative model is a starting point, not evidence of 3D knowledge.
+In the case that we studied, input baselines, exact labels and a check of the noise schedule change the conclusion.
+We release the tools so that other studies can run the same checks.
+
+\paragraph{Reproducibility.}
+The code, the configurations, the audit tables and the unit tests are in the supplementary material.
+The geometry model reproduces the scene files to $0.56$~px, and every number in this draft comes from a script in the repository.
+
+\bibliography{references}
+\bibliographystyle{tmlr}
+
+\appendix
+\section{Geometry of the renders}
+\label{app:geometry}
+The camera position is $c=c_0+j$ with $c_0=(7.481,-6.508,5.344)$ and jitter $j\in[-0.5,0.5]^3$.
+The view direction is $f=-c/\lVert c\rVert$, the right axis is $r=f\times e_z/\lVert f\times e_z\rVert$ and the up axis is $u=r\times f$.
+For a point $p$, let $d=p-c$; the pixel position is $x=W\,(0.5+\tfrac{35}{32}\,\tfrac{d\cdot r}{d\cdot f})$ and $y=H-H\,(0.5+\tfrac{35}{32}\,\tfrac{d\cdot u}{d\cdot f})$ with $W=H=512$.
+The key lamp is at $L=5(\cos\theta\cos\phi,\cos\theta\sin\phi,\sin\theta)$.
+The shadow of the object centre $p$ on the floor is $L+\tfrac{L_z}{L_z-p_z}(p-L)$.
+
+\end{document}

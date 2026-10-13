@@ -21,6 +21,9 @@ The spec is a list of jobs. Each job has these keys:
 - world_strength: the strength of the white world light (dataset: 0.2).
 - flat_ground: if true, a flat plane replaces the curved CLEVR backdrop.
 
+The environment variable DD3D_DEVICE=GPU renders with CUDA. Use one device for
+a full data set, because the CPU and the GPU give different noise.
+
 The script copies render_scene() and add_random_objects() of render_images.py,
 so that a job with the values of a dataset scene gives the same image.
 """
@@ -44,6 +47,10 @@ PURPLE = [129 / 255.0, 38 / 255.0, 192 / 255.0, 1.0]
 with open(SPEC_PATH) as f:
     jobs = json.load(f)
 
+USE_GPU = os.environ.get("DD3D_DEVICE", "CPU").upper() == "GPU"
+# Small tiles keep all CPU cores busy; the GPU is fastest with one large tile.
+TILE = 256 if USE_GPU else 32
+
 for job in jobs:
     bpy.ops.wm.open_mainfile(filepath=os.path.join(DATA, "base_scene.blend"))
     utils.load_materials(os.path.join(DATA, "materials"))
@@ -55,8 +62,11 @@ for job in jobs:
     render.resolution_x = job.get("width", 512)
     render.resolution_y = job.get("height", 512)
     render.resolution_percentage = 100
-    render.tile_x = 256
-    render.tile_y = 256
+    render.tile_x = TILE
+    render.tile_y = TILE
+    if USE_GPU:
+        bpy.context.user_preferences.addons["cycles"].preferences.compute_device_type = "CUDA"
+        scene.cycles.device = "GPU"
     bpy.data.worlds["World"].cycles.sample_as_light = True
     scene.cycles.blur_glossy = 2.0
     scene.cycles.samples = job.get("samples", 64)

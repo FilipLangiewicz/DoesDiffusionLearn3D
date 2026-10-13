@@ -211,20 +211,77 @@ W ZZSN wywołaliście `add_noise` **zanim** scheduler dostał `set_timesteps`. W
 
 Zapisane aktywacje z ZZSN się z tym zgadzają: w bloku 4 średnia norma tokenu wynosi ok. 11 100 dla t = 200 i ok. 720 dla t = 800. Oś „timestep” w wynikach ZZSN jest więc błędna, a t = 200 i t = 500 to wejścia, jakich model nigdy nie widział w treningu.
 
+### Repozytorium i proponowane zmiany
+
+- Repozytorium: https://github.com/huggingface/diffusers (licencja **Apache-2.0**, czyli open source; ok. 34 700 gwiazdek).
+- Zmiana dotyczy 4 plików, w każdym tej samej linii w `__init__`, gdzie tworzona jest tablica `self.sigmas`:
+  - `src/diffusers/schedulers/scheduling_dpmsolver_multistep.py`
+  - `src/diffusers/schedulers/scheduling_dpmsolver_singlestep.py`
+  - `src/diffusers/schedulers/scheduling_unipc_multistep.py`
+  - `src/diffusers/schedulers/scheduling_deis_multistep.py`
+- Treść zmiany:
+  - **zwykłe (VP) schedulery:** tablica dostaje odwrotną kolejność (`.flip(0)`), żeby `sigmas[i]` pasowało do `timesteps[i]`, które idą od 999 do 0;
+  - **tryb flow (`use_flow_sigmas`, np. SANA):** zamiast złego formatu VP jest `sigma = t / 1000`, czyli dokładnie to, co daje `set_timesteps`.
+- Do tego 3 nowe testy w `tests/schedulers/test_scheduler_dpm_multi.py`.
+- Razem 5 plików, +104 i −4 linie. Plik z różnicami: `tools/diffusers_upstream/fix.patch`.
+- `add_noise`, `set_timesteps` i `step` pozostają bez zmian, więc zwykłe generowanie działa identycznie jak dotąd.
+
 ### Czy to na pewno błąd i czy poprawka działa?
 
-Sprawdziłem to osobiście:
+**Wersja:** sprawdzone na najnowszym wydaniu z PyPI (**0.41.0**) i na najnowszym `main` (commit `916a579` z 13.10.2026). Od wcześniejszego klonu doszły tylko 2 commity, które nie dotykają schedulerów.
 
-- **Błąd jest realny.** Na oficjalnym kodzie diffusers (wersja 0.41 i gałąź main z 12.10.2026) `add_noise` przed `set_timesteps` daje złe wartości. Dotyczy to nie tylko SANA: zwykłe (VP) schedulery DPM-Solver multistep i singlestep, UniPC oraz DEIS też dają poziom szumu z kroku 999−t. Przyczyna to zmiana scalona w diffusers w PR #6006.
-- **Nowe testy bez poprawki failują, a z poprawką przechodzą.**
-- **Poprawka nic nie psuje:** w 7 plikach testów schedulerów przechodzi 273 testy z poprawką i 270 bez niej. Różnica to dokładnie 3 nowe testy, regresji nie ma.
-- **Ograniczenie:** dwa inne schedulery (SASolver i DPMSolverMultistepInverse w trybie flow) dalej są błędne. Poprawka ich nie obejmuje, jest to opisane w zgłoszeniu.
-- **Zgłoszenia jeszcze nie ma:** nie znalazłem otwartego issue ani PR o tym samym.
-- Nie mogę zagwarantować, że opiekunowie biblioteki przyjmą poprawkę. Część z odwróconą kolejnością (VP) to jednoznaczny błąd. Część „flow” mogą chcieć rozwiązać inaczej.
+**Test na prawdziwych modelach.** Model dostaje obraz zaszumiony przez scheduler i ma odtworzyć czysty obraz. Mniejszy błąd jest lepszy. Wzorcem jest poprawny poziom szumu.
 
-**Dla naszego projektu poprawka w diffusers nie jest potrzebna:** nowa ekstrakcja (`src/dd3d/noise.py`) liczy szum wprost ze wzoru. Zgłoszenie to osobna szansa: PR do projektu open source to według §1.4 regulaminu SIWY automatyczna 5.
+Mały model VP (`google/ddpm-cifar10-32`); wzorzec to `DDPMScheduler`, prosty scheduler, który robi ten krok poprawnie:
 
-Gotowe pliki: `tools/diffusers_upstream/` (`ISSUE.md`, `PR.md`, `fix.patch`, `repro.py`, testy). **Nic nie zostało wysłane** i wysłać to musicie wy ze swojego konta.
+| t | wzorzec | 4 schedulery bez poprawki | 4 schedulery z poprawką |
+|---:|---:|---:|---:|
+| 100 | 0,045 | **0,590** | 0,045 |
+| 300 | 0,115 | **0,294** | 0,115 |
+| 500 | 0,191 | 0,190 | 0,191 |
+
+**SANA 600M 512 px** (ta sama rodzina co SANA 1.6B, float32); wzorzec to wzór (1 − t/1000)·x0 + (t/1000)·ε:
+
+| t | wzorzec | diffusers bez poprawki | diffusers z poprawką |
+|---:|---:|---:|---:|
+| 200 | 0,228 | **45,5** | 0,228 |
+| 500 | 0,383 | **5,76** | 0,383 |
+| 800 | 0,590 | 0,556 | 0,590 |
+
+Z poprawką wyniki są identyczne ze wzorcem. Bez niej model przy małym t dostaje wejście, z którego nie da się odtworzyć obrazu.
+
+**Testy biblioteki:** na najnowszym `main` z poprawką przechodzi 276 testów schedulerów. Bez poprawki failują tylko 3 nowe testy, a 270 istniejących przechodzi, więc niczego nie psuję.
+
+**Ograniczenie:** dwa inne schedulery (SASolver i DPMSolverMultistepInverse w trybie flow) mają podobny problem i poprawka ich nie obejmuje. Jest to opisane w zgłoszeniu.
+
+### Dlaczego nikt tego nie zauważył, skoro to popularna biblioteka?
+
+- Każdy standardowy pipeline (generowanie, img2img, inpainting) najpierw wywołuje `set_timesteps`, a dopiero potem `add_noise`. W tej kolejności wszystko działa poprawnie.
+- Błąd wychodzi tylko przy `add_noise` wywołanym od razu po wczytaniu schedulera. Robią tak skrypty treningowe i badania typu sondowanie, takie jak wasze w ZZSN.
+- Oficjalne skrypty treningowe używają innych schedulerów (`DDPMScheduler`, `FlowMatchEulerDiscreteScheduler`).
+- Tablica `sigmas` w `__init__` pojawiła się w PR #6006 (2023), żeby ta kolejność wywołań przestała kończyć się wyjątkiem. Wyjątek zniknął, ale nikt nie sprawdził, czy wartości są dobre.
+
+### Czy ktoś to już zgłosił albo naprawiał?
+
+Przeszukałem issue i PR w diffusers (otwarte i zamknięte) przez API GitHuba, kilkunastoma zapytaniami.
+
+- Ten sam obszar kodu, ale inny problem:
+  - #5158: zamknięte, zmieniło `add_noise`, żeby czytało `sigmas`;
+  - #5981: zamknięte, wyjątek „brak atrybutu sigmas”;
+  - #6006: scalone, dodało `sigmas` w `__init__` i spowodowało ten błąd.
+- Zgłoszenia o odwróconej kolejności albo złym poziomie szumu nie znalazłem. Nie znalazłem też otwartego PR, który zmienia te linie.
+- Inne otwarte PR przy tych schedulerach dotyczą innych rzeczy, np. #14356, #13450 i #14572.
+- Zastrzeżenie: to przeszukanie wyszukiwarką GitHuba, a nie ręczne przeczytanie wszystkich ok. 15 000 zgłoszeń. Przed wysłaniem warto jeszcze raz sprawdzić na stronie.
+
+Skrypty tych testów: `tools/diffusers_upstream/functional/`.
+
+**Czy PR daje 5 z przedmiotu? Nie da się tego stwierdzić z samego regulaminu, trzeba zapytać prowadzącego.** §1 pkt 4 mówi: „Wystawienie PR zawierającej sensowną kontrybucję do wybranego projektu open source automatycznie skutkuje oceną 5 z przedmiotu”. Otwarte pytania:
+- czy wystarczy wystawienie PR, czy musi zostać przyjęty;
+- czy PR liczy się dla całego zespołu, czy tylko dla autora;
+- czy zwalnia z kolokwiów (regulamin tego nie mówi);
+- czy ta poprawka to dla prowadzącego „sensowna kontrybucja”.
+
+Nic nie zostało wysłane. Gotowe teksty: `tools/diffusers_upstream/ISSUE.md` i `PR.md`.
 
 ---
 

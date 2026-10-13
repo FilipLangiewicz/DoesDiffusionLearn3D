@@ -110,3 +110,25 @@ In `__init__`, make `self.sigmas` match `self.timesteps` (same order):
 - Flow: use `timesteps / num_train_timesteps`.
 
 A pull request is ready, with tests. `set_timesteps()` is not changed, so the behavior after `set_timesteps()` is the same as before.
+
+## Functional check with trained models
+
+We noise real images with `add_noise` before `set_timesteps`. Then the model predicts the clean image in one step. The value is the relative error of this estimate (lower is better).
+
+`google/ddpm-cifar10-32` (VP; the reference is `DDPMScheduler.add_noise`):
+
+| t | reference | four schedulers, main | four schedulers, this fix |
+|---:|---:|---:|---:|
+| 100 | 0.045 | 0.590 | 0.045 |
+| 300 | 0.115 | 0.294 | 0.115 |
+| 500 | 0.191 | 0.190 | 0.191 |
+
+`Efficient-Large-Model/Sana_600M_512px_diffusers` (flow sigmas, float32; the reference is `(1 - t/1000) x0 + (t/1000) eps`):
+
+| t | reference | main | this fix |
+|---:|---:|---:|---:|
+| 200 | 0.228 | 45.5 | 0.228 |
+| 500 | 0.383 | 5.76 | 0.383 |
+| 800 | 0.590 | 0.556 | 0.590 |
+
+Tested on main at commit 916a579 (2026-10-13) and on the release 0.41.0.

@@ -265,6 +265,14 @@ With the object always at the same place, the shadow always falls in the same pa
 The floor brightness also shows the elevation: the floor alone gives an elevation MAE of $1.7\degr$ on cubes, because a low sun lights the floor less.
 Thus the elevation is not a useful target for a claim about 3D knowledge, and we use the azimuth.
 The same pixel probe on 300 images with the object at random positions has an azimuth MAE of $69.0\degr$, close to chance ($90\degr$).
+Figure~\ref{fig:maps} shows where the pixel probe reads the azimuth: on v1, the weight spreads over the floor, where the highlight moves; on v2, it lies around the object and its shadow.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{figures/probe_maps_pixels.png}
+\caption{Exact spatial decomposition of the linear pixel probe ($16\times16$ cells; brighter cells have a larger share of the azimuth output) on the original data (left) and on v2 (right).}
+\label{fig:maps}
+\end{figure}
 
 \paragraph{Data set v2r: a random position.}
 The decisive test needs data in which the shadow position depends on the object position.
@@ -294,6 +302,7 @@ It also does not show the opposite: the corrected extraction and the controls in
     \item Check the noise that the model receives: fit $x_t=a\,x_0+b\,\epsilon$ and compare with the schedule of the model.
     \item Define the label at the place of the effect (here, the light at the object), and store all scene parameters (camera, all lamps).
     \item Remove or randomize shortcut cues (floor highlights, constant extra lights) before a claim about 3D knowledge, and test cue-conflict images.
+    \item Vary the object position. With a fixed position, a linear probe reads the image location of the shadow, and the pixel control is almost perfect.
     \item Select hyperparameters on validation data only, and report intervals.
     \item Test causal use, for example with concept erasure \citep{belrose2023leace} and with steering along the probe direction \citep{chen2023beyond}.
     \item Check figures against the true geometry.

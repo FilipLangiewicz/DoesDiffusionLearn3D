@@ -88,3 +88,11 @@ These papers define the flow-based objective that SANA uses. We need them to set
 |---|---|---|---|---|---|---|---|
 | ["Flow Matching for Generative Modeling"](https://arxiv.org/abs/2210.02747) (Lipman et al.) | ICLR 2023 | Trains a continuous flow by regression on a vector field along a path from noise to data. Needs no simulation during the fit. | Defines the path between noise and data. We must use the same path to add noise to the latent. | no code of the paper found. Related library: [facebookresearch/flow_matching](https://github.com/facebookresearch/flow_matching) | not found | Negative log-likelihood (bits per dimension) and FID on CIFAR-10 and ImageNet. | 2 to 32 GPUs, by data set (type not stated) |
 | ["Flow Straight and Fast: Learning to Generate and Transfer Data with Rectified Flow"](https://arxiv.org/abs/2209.03003) (Liu, Gong, Liu) | ICLR 2023 | Learns an ODE that moves noise to data on straight paths. A reflow step makes the paths straighter. | Gives the straight-path rule for the noisy latent. It is the check for the wrong noise level that we found. | [gnobitab/RectifiedFlow](https://github.com/gnobitab/RectifiedFlow) | not found | FID and recall on CIFAR-10. | not stated |
+
+## 9. Search for prior work on light probes (2026-10-13)
+
+We searched the web for work that probes the light direction in a diffusion model and compares the probe with a pixel control. We found no such work. We also found no work that shows with a causal test that a diffusion model has an internal representation of the light direction.
+
+The closest work is in section 4: Zhan et al. (NeurIPS 2024) use linear probes on Stable Diffusion features for shadows and other scene properties, but without a pixel control. Chen et al. (2023) say that a high probe accuracy alone does not show a causal link, and they use interventions.
+
+To read next: ["Relighting as a Probe of Visual Priors via Augmented Latent Intrinsics"](https://arxiv.org/abs/2602.01391) (arXiv, 2026). It measures visual priors with a behavioral test (a change of the light in an image), not with a probe on activations.

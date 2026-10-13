@@ -43,6 +43,24 @@ def retry(*args: str, tries: int = 8, timeout: int = 600) -> str:
     raise SystemExit(f"[kjob] gave up: kaggle {' '.join(args)}")
 
 
+def push(job_dir: Path, accelerator: str | None, max_hours: float) -> None:
+    """Push the job. Wait and push again while Kaggle has no free session."""
+    args = ["kernels", "push", "-p", str(job_dir)]
+    if accelerator:
+        args += ["--accelerator", accelerator]
+    start = time.time()
+    while True:
+        # The CLI gives exit code 0 also for a push error, so the text decides.
+        out = retry(*args).strip()
+        if "error" not in out.lower():
+            print(out.splitlines()[-1], flush=True)
+            return
+        print(f"[kjob] {time.strftime('%H:%M:%S')} push refused: {out[-200:]}", flush=True)
+        if "session count" not in out.lower() or time.time() - start > max_hours * 3600:
+            raise SystemExit("[kjob] push failed")
+        time.sleep(300)
+
+
 def status(kernel_id: str) -> str:
     code, out = kaggle("kernels", "status", kernel_id, timeout=120)
     if code != 0:
@@ -56,7 +74,7 @@ def status(kernel_id: str) -> str:
 def wait(kernel_id: str, max_hours: float) -> str:
     # The first status after a push can still be the one of the old version.
     time.sleep(60)
-    last, start = "", time.time()
+    last, start, unknown = "", time.time(), 0
     while time.time() - start < max_hours * 3600:
         s = status(kernel_id)
         if s != last:
@@ -64,6 +82,10 @@ def wait(kernel_id: str, max_hours: float) -> str:
             last = s
         if s in DONE:
             return s
+        # A short API failure gives UNKNOWN; 20 minutes of it means a lost job.
+        unknown = unknown + 1 if s == "UNKNOWN" else 0
+        if unknown >= 20:
+            return "LOST"
         time.sleep(60)
     return "WAIT_TIMEOUT"
 
@@ -105,10 +127,7 @@ def main() -> None:
         return
 
     kernel_id = json.loads((args.job_dir / "kernel-metadata.json").read_text())["id"]
-    push = ["kernels", "push", "-p", str(args.job_dir)]
-    if args.accelerator:
-        push += ["--accelerator", args.accelerator]
-    print(retry(*push).strip().splitlines()[-1], flush=True)
+    push(args.job_dir, args.accelerator, args.max_hours)
     final = wait(kernel_id, args.max_hours)
     print(f"[kjob] final status: {final}", flush=True)
     out = args.out or args.job_dir / "output"

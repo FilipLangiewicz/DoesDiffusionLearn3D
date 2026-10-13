@@ -17,7 +17,7 @@ esac
 if [ ! -d "$FEAT" ]; then
   $PY tools/kaggle/collect.py runs/kaggle/extract "dd3d-extract-$SET-" "$FEAT" --merge
   # The chunk files are in the merged files now; keep only the merged files.
-  find "$FEAT" -name 'chunk_*' -delete
+  find "$FEAT" \( -name 'chunk_*.npy' -o -name 'chunk_*_ids.txt' \) -delete
 fi
 RUNS=$(find "$FEAT" -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | sort | paste -sd,)
 $PY scripts/experiments/feature_scan.py --features "$FEAT" --runs "$RUNS" --splits "$SPLITS" \

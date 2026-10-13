@@ -1,0 +1,14 @@
+Kaggle, GPU T4 x2 (one used), torch 2.11.0+cu128, transformers 5.19.0, run time 251 s.
+Command: python repro_sana.py --dtype float32 --text-encoder-device cpu
+
+===== A: diffusers 0.41.0 from PyPI =====
+   t |   a (x0)  b (eps) | error with add_noise | error with flow noise
+ 200 |  -24.528   25.528 |               36.618 |                 0.180
+ 500 |   -2.424    3.424 |                4.615 |                 0.379
+ 800 |    0.281    0.719 |                0.601 |                 0.624
+
+===== B: diffusers main (916a579) with fix.patch =====
+   t |   a (x0)  b (eps) | error with add_noise | error with flow noise
+ 200 |    0.800    0.200 |                0.180 |                 0.180
+ 500 |    0.500    0.500 |                0.379 |                 0.379
+ 800 |    0.200    0.800 |                0.624 |                 0.624

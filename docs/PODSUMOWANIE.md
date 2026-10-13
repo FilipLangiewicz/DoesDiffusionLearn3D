@@ -240,7 +240,15 @@ Mały model VP (`google/ddpm-cifar10-32`); wzorzec to `DDPMScheduler`, prosty sc
 | 300 | 0,115 | **0,294** | 0,115 |
 | 500 | 0,191 | 0,190 | 0,191 |
 
-**SANA 600M 512 px** (ta sama rodzina co SANA 1.6B, float32); wzorzec to wzór (1 − t/1000)·x0 + (t/1000)·ε:
+**SANA 1.6B, wasz model** (Kaggle, GPU T4, float32, skrypt `repro_sana.py`); wzorzec to wzór (1 − t/1000)·x0 + (t/1000)·ε:
+
+| t | wzorzec | diffusers bez poprawki | diffusers z poprawką |
+|---:|---:|---:|---:|
+| 200 | 0,180 | **36,6** | 0,180 |
+| 500 | 0,379 | **4,62** | 0,379 |
+| 800 | 0,624 | 0,601 | 0,624 |
+
+**SANA 600M 512 px** (ta sama rodzina, float32, CPU laptopa):
 
 | t | wzorzec | diffusers bez poprawki | diffusers z poprawką |
 |---:|---:|---:|---:|

@@ -23,8 +23,6 @@ I found this in a probe study on SANA-1.6B. I can open a pull request with a fix
 
 # Reproduction
 
-Note: I have no GPU now, so I could not run the SanaPipeline script below with SANA-1.6B. The second snippet runs on a CPU and loads the real SANA-1.6B scheduler config. The numbers in "Logs" come from the closest run that I could do (see there).
-
 The real workflow: SanaPipeline, an image through the VAE, `pipe.scheduler.add_noise`, then a one-step clean estimate from the transformer. The script compares this with the expected flow noise `(1 - t/1000) * x0 + (t/1000) * eps`.
 
 ```python
@@ -78,13 +76,16 @@ print("DPMSolver t=200", DPMSolverMultistepScheduler().add_noise(x0, eps, t).ite
 
 # Logs
 
-Relative error of the one-step clean estimate (lower is better). This is the closest run that I could do on a CPU: `Efficient-Large-Model/Sana_600M_512px_diffusers` (the same scheduler config as the 1.6B model), float32, 512 px, four of my renders as images, and the empty-prompt embeddings computed once with the Gemma-2 text encoder:
+Output of the SanaPipeline script above with SANA-1.6B. Kaggle GPU T4 (16 GB), float32, the text encoder on the CPU because of the GPU memory, diffusers 0.41.0, torch 2.11. `a` and `b` are the weights of `x_t = a * x0 + b * eps` from `add_noise`. The error is the relative error of the one-step clean estimate (lower is better):
 
-| t | `add_noise` | expected flow noise |
-|---:|---:|---:|
-| 200 | 45.5 | 0.228 |
-| 500 | 5.76 | 0.383 |
-| 800 | 0.556 | 0.590 |
+```
+   t |   a (x0)  b (eps) | error with add_noise | error with flow noise
+ 200 |  -24.528   25.528 |               36.618 |                 0.180
+ 500 |   -2.424    3.424 |                4.615 |                 0.379
+ 800 |    0.281    0.719 |                0.601 |                 0.624
+```
+
+The same run with the fix of the linked PR on `main` (916a579) gives `a, b = 0.8, 0.2 / 0.5, 0.5 / 0.2, 0.8` and the same errors as the flow noise (0.180, 0.379, 0.624).
 
 Weights of `x_t = a * x0 + b * eps` from `add_noise` with the SANA scheduler:
 

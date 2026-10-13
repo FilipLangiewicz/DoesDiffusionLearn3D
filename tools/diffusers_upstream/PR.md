@@ -17,15 +17,15 @@ The change is one block in `__init__` of four schedulers (`DPMSolverMultistep`, 
 
 ## Effect on a real model
 
-One-step clean estimate of a real image after `pipe.scheduler.add_noise` (relative error, lower is better). `Efficient-Large-Model/Sana_600M_512px_diffusers`, float32, CPU:
+One-step clean estimate of a real image after `pipe.scheduler.add_noise` (relative error, lower is better). SanaPipeline with SANA-1.6B, the script of the issue, float32 on a T4:
 
 | t | main | this PR | expected flow noise |
 |---:|---:|---:|---:|
-| 200 | 45.5 | 0.228 | 0.228 |
-| 500 | 5.76 | 0.383 | 0.383 |
-| 800 | 0.556 | 0.590 | 0.590 |
+| 200 | 36.618 | 0.180 | 0.180 |
+| 500 | 4.615 | 0.379 | 0.379 |
+| 800 | 0.601 | 0.624 | 0.624 |
 
-<!-- Add the SANA-1.6B numbers from the GPU run, if available. -->
+`Efficient-Large-Model/Sana_600M_512px_diffusers` (float32, CPU) gives the same picture: 45.5 against 0.228 at `t = 200`.
 
 `google/ddpm-cifar10-32` with the four schedulers at `t = 100`: 0.590 on main, 0.045 with this PR, 0.045 with `DDPMScheduler`.
 

@@ -89,7 +89,16 @@ for run_name, overrides in PARAMS["runs"].items():
         cfg, runner = ExtractConfig(**common, prompt_cache=prompt_cache, **overrides), run
     t0 = time.time()
     log(f"run {run_name}: {overrides}")
-    runner(cfg)
+    # Anonymous downloads from Hugging Face can fail with HTTP 429, so try again later.
+    for attempt in range(4):
+        try:
+            runner(cfg)
+            break
+        except Exception as err:  # noqa: BLE001
+            log(f"run {run_name}: attempt {attempt + 1} failed: {err!r}"[:500])
+            if attempt == 3:
+                raise
+            time.sleep(120 * (attempt + 1))
     log(f"run {run_name}: done in {time.time() - t0:.0f} s")
     stats = sorted(glob.glob(f"{cfg.out_dir}/stats/*.csv"))
     if stats:

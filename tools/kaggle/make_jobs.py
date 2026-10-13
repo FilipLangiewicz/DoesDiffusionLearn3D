@@ -104,6 +104,7 @@ def main() -> None:
     e.add_argument("--dataset", action="append", default=[], help="Kaggle data set with image tar files.")
     e.add_argument("--kernel", action="append", default=[], help="Kaggle job with image tar files.")
     e.add_argument("--ref", default="main")
+    e.add_argument("--dtype", default=None, help="Override the dtype of the SANA runs (float16 or float32).")
     e.add_argument("--out-root", type=Path, default=Path("runs/kaggle"))
     args = parser.parse_args()
 
@@ -115,6 +116,8 @@ def main() -> None:
                 runs[r] = {**RUNS[r], "max_per_shape": args.max_per_shape}
                 if args.limit:
                     runs[r]["limit"] = args.limit
+                if args.dtype and runs[r].get("kind", "sana") == "sana":
+                    runs[r]["dtype"] = args.dtype
             params = {
                 "name": args.name,
                 "ref": args.ref,

@@ -177,28 +177,29 @@ The package `dd3d` is a library. All logic is in `src/dd3d/`. The command line i
 | Config | YAML files, with a small loader | Config separate from code |
 | Quality | `ruff`, `pytest`, `pre-commit` | Format, lint, tests |
 | Environment | `venv` and `pyproject.toml` | Install of the package |
-| Cluster | Athena (PLGrid), SLURM | GPU and CPU jobs |
+| Compute | Kaggle jobs (T4 GPU, 4-core CPU), tools in `tools/kaggle/` | GPU and CPU jobs |
 | Figures | Matplotlib | Plots |
 | Article | LaTeX | Paper, in `docs/article/` |
 
 ## 7. Compute plan
 
-| Task | Resource | Estimate | Deadline |
+The GPU allocation of the Athena cluster is exhausted (2026-10-13). All GPU and render work runs on Kaggle. Kaggle runs at most 5 CPU jobs and 2 GPU jobs at the same time, with 30 GPU hours each week. A queue program (`tools/kaggle/kqueue.py`) pushes the jobs and downloads the results.
+
+| Task | Resource | Measured speed | Estimate |
 |---|---|---|---|
-| Render data set v2 | CPU nodes, array job | About 25 s for each image on 8 cores. A laptop needs 21 h for 3000 images. | Render finished on 2026-11-06 |
-| Extraction v1 (3000 images, 5 timesteps, 2 models) | 1 GPU A100, about 16 GB | About 30,000 passes at 0.15 to 0.3 s. About 2 to 3 GPU hours plus load time. | 2026-11-06 |
-| Extraction v2 (same size) | 1 GPU A100 | About 2 to 3 GPU hours | 2026-11-13 |
-| Storage of pooled features | Cluster disk | 20 blocks, 5 timesteps, 3000 images: about 86 GB. One block and one timestep: 860 MB. | Keep until 2026-11-30 |
-| Probes and baselines | CPU | Minutes for each block and timestep | Continuous |
-| Erasure and steer | 1 GPU A100 | About 1 to 2 GPU hours | 2026-11-13 |
-| Total | GPU | About 10 to 15 A100 hours, with repeats | 2026-11-15 |
+| Render v2, v2r and the variants (3000 images each) | Kaggle CPU jobs | 7 s for each image | 6 CPU hours for each set |
+| SANA extraction (20 blocks, 5 timesteps) | Kaggle T4, float16 | 1 s for each image | 1 GPU hour for each set |
+| Old noise rule (control, v1 only) | Kaggle T4, float32 | 2.5 s for each image | 2 GPU hours |
+| Random weights (control) | Kaggle T4, float16 | 1 s for each image | 1 GPU hour for each set |
+| SD 1.5 and SDXL (generality) | Kaggle T4, float16 | 0.5 s and 2 s for each image | 2.5 GPU hours for each set |
+| Causal tests (shift, erase) | Kaggle T4, float16 | 20 steps for each image | 1 to 2 GPU hours |
+| Probes and baselines | Laptop CPU | Minutes for each block and timestep | Continuous |
+| Total | GPU | | About 20 GPU hours |
 
 Notes:
 
-- The access to the Athena cluster ends in November 2026. All GPU work comes first, before 2026-11-15.
-- We download only the blocks that we need for analysis (860 MB each) and keep the rest on the cluster.
-- After November, we use Kaggle or Colab GPUs for small runs, or we ask for a new PLGrid grant.
-- We save the merged features and the final models early, so that a loss of access does not stop the analysis.
+- SANA in float16 gives the same features as in float32 (relative difference 0.1%). The old noise rule overflows in float16, so that run uses float32.
+- The features of one data set take about 50 GB. The laptop has enough disk for all sets.
 
 ## 8. Schedule
 
@@ -206,11 +207,11 @@ The semester runs from October 2026 to mid-February 2027. The date of the last l
 
 | Week | Dates (Monday to Sunday) | Planned progress | Deliverable |
 |---|---|---|---|
-| 1 | 2026-10-12 to 2026-10-18 | Audit of the old pipeline (F1 to F8). Package `dd3d` with corrected extraction. Blender runs on Linux. Literature table and venue list. Upstream issue and patch. | Audit results, package `dd3d`, `docs/literature.md`, this proposal |
-| 2 | 2026-10-19 to 2026-10-25 | Ask the coordinator about the team size and the old project. Get cluster access. Test the extraction on 100 images. Start the v2 render jobs. Add unit tests. | Approval from the coordinator. Tested extraction on the cluster. |
+| 1 | 2026-10-12 to 2026-10-18 | Audit of the old pipeline (F1 to F10). Package `dd3d` with corrected extraction. Kaggle jobs and queue. Render of v2. Start of the extraction of v1 and v2. Upstream issue. | Audit results, package `dd3d`, `docs/literature.md`, this proposal, data set v2 |
+| 2 | 2026-10-19 to 2026-10-25 | Ask the coordinator about the team size and the old project. Finish the extraction of v1, v2, v2r and the variants. E0 and RQ1 tables. First causal tests. | Approval from the coordinator. Feature files. Tables of E0 and RQ1. |
 | 3 | 2026-10-26 to 2026-11-01 | Run extraction v1 for all blocks and 5 timesteps. Run the random-weight model. Pixel and latent baselines. | Feature files v1. Baseline tables. |
 | 4 | 2026-11-02 to 2026-11-08 | E0 results. Prototype demo: one CLI run from image to light prediction with a figure. Finish v2 render. Start extraction v2. | Prototype demo. Table of E0. |
-| 5 | 2026-11-09 to 2026-11-15 | Finish extraction v2. Run erasure and steer on the GPU. Copy needed features from the cluster. Last GPU job on 2026-11-13. | All feature files. Erased and steered images. End of GPU work. |
+| 5 | 2026-11-09 to 2026-11-15 | Finish extraction v2. Run erasure and steer on the GPU. Last planned GPU job on 2026-11-13. | All feature files. Erased and steered images. End of GPU work. |
 | 6 | 2026-11-16 to 2026-11-22 | RQ1 analysis: baselines, random weights, selectivity. Send the upstream issue and patch. | RQ1 tables and figures |
 | 7 | 2026-11-23 to 2026-11-29 | RQ2 analysis: local and global labels, spatial decomposition, occlusion. | RQ2 tables and figures |
 | 8 | 2026-11-30 to 2026-12-06 | RQ3 analysis on v2. Article draft with all sections. | Article draft v1 |
@@ -229,7 +230,7 @@ The semester runs from October 2026 to mid-February 2027. The date of the last l
 
 | Role | Tasks |
 |---|---|
-| Member A | Extraction, cluster jobs, probes and baselines, tests |
+| Member A | Extraction, Kaggle jobs, probes and baselines, tests |
 | Member B | Blender renders, data set v2, figures, spatial analysis |
 | Member C (if a third member joins) | Erasure and steer, article text, video |
 
@@ -239,7 +240,7 @@ All members write the weekly note in `docs/worklog.md` and review the code of th
 
 | Risk | Effect | Mitigation |
 |---|---|---|
-| The cluster access ends in November. | No GPU after 2026-11-15. | Do all GPU work first. Copy the features early. Use Kaggle or Colab for small runs. Ask for a new grant. |
+| The GPU allocation of the cluster is exhausted (2026-10-13). | No cluster GPU. | All GPU work runs on Kaggle (30 GPU hours each week, plan about 20). Ask for a new PLGrid grant if more is necessary. |
 | The course asks for teams of 3 persons and the team has 2. | The grade or scope can change. | Ask the coordinator in week 2. Or add a member. Section 9 shows the plan for both cases. |
 | The project continues a project of another course. | A claim of double credit. | State what is new. Ask for approval in week 2. |
 | Negative results (SANA is not better than pixels). | The story is less strong. | Plan the study as a careful negative result. TMLR accepts such work. |

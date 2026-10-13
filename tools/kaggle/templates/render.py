@@ -38,7 +38,8 @@ os.makedirs(TMP, exist_ok=True)
 log(f"params: {json.dumps(PARAMS)}")
 sh("nproc; nvidia-smi --query-gpu=name --format=csv,noheader || true")
 sh(
-    "apt-get -qq update && apt-get -qq install -y libglu1-mesa libxi6 libxrender1 libxxf86vm1 libxfixes3 libgl1 bzip2",
+    "apt-get -qq update && apt-get -qq install -y "
+    "libglu1-mesa libxi6 libxrender1 libxxf86vm1 libxfixes3 libgl1 bzip2",
     quiet=True,
 )
 url = "https://download.blender.org/release/Blender2.78/blender-2.78c-linux-glibc219-x86_64.tar.bz2"
@@ -46,9 +47,8 @@ sh(f"cd {TMP} && wget -q {url} && tar xjf blender-2.78c-linux-glibc219-x86_64.ta
 blender = f"{TMP}/blender-2.78c-linux-glibc219-x86_64/blender"
 sh(f"{blender} -b -noaudio --version | head -1")
 repo = f"{TMP}/repo"
-sh(
-    f"git clone -q https://github.com/FilipLangiewicz/DoesDiffusionLearn3D {repo} && cd {repo} && git checkout -q {PARAMS['ref']} && git log -1 --format=%h"
-)
+GIT = "https://github.com/FilipLangiewicz/DoesDiffusionLearn3D"
+sh(f"git clone -q {GIT} {repo} && cd {repo} && git checkout -q {PARAMS['ref']} && git log -1 --format=%h")
 
 out_dir = f"{TMP}/{PARAMS['name']}"
 sh(f"cd {repo} && python scripts/data/make_v2_spec.py --out-dir {out_dir} {PARAMS['spec_args']}")
@@ -60,7 +60,8 @@ log(f"{len(shard)} of {len(jobs)} jobs in this shard")
 env = f"DD3D_DEVICE={PARAMS.get('device', 'CPU')}"
 t0 = time.time()
 proc = subprocess.Popen(
-    f"{env} {blender} -b -noaudio --python {repo}/tools/blender/render_spec.py -- {out_dir}/shard.json {repo}",
+    f"{env} {blender} -b -noaudio --python {repo}/tools/blender/render_spec.py"
+    f" -- {out_dir}/shard.json {repo}",
     shell=True,
     stdout=subprocess.PIPE,
     stderr=subprocess.STDOUT,

@@ -40,6 +40,8 @@ def main() -> None:
     parser.add_argument("--samples", type=int, default=64)
     parser.add_argument("--seed", type=int, default=2026)
     parser.add_argument("--prefix", default="v2")
+    parser.add_argument("--no-object-shadow", action="store_true", help="The object casts no shadow.")
+    parser.add_argument("--shadow-only", action="store_true", help="The camera sees only the shadow.")
     args = parser.parse_args()
 
     rng = random.Random(args.seed)
@@ -79,6 +81,8 @@ def main() -> None:
                     "flat_ground": True,
                     "world_strength": args.world_strength,
                     "samples": args.samples,
+                    "object_shadow": not args.no_object_shadow,
+                    "object_camera": not args.shadow_only,
                 }
             )
     args.out_dir.mkdir(parents=True, exist_ok=True)

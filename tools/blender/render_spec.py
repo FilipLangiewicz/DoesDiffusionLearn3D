@@ -20,6 +20,9 @@ The spec is a list of jobs. Each job has these keys:
 - key_strength, key_soft: the strength and the shadow softness of a SUN key lamp.
 - world_strength: the strength of the white world light (dataset: 0.2).
 - flat_ground: if true, a flat plane replaces the curved CLEVR backdrop.
+- object_shadow: if false, the object casts no shadow (only its shade is left).
+- object_camera: if false, the camera does not see the object, but the object
+  still casts its shadow (only the shadow is left).
 
 The environment variable DD3D_DEVICE=GPU renders with CUDA. Use one device for
 a full data set, because the CPU and the GPU give different noise.
@@ -116,6 +119,10 @@ for job in jobs:
             os.path.join(DATA, "shapes"), job["shape"], size, tuple(job["xy"]), theta=job["theta"]
         )
         utils.add_material("Rubber", Color=job.get("color", PURPLE))
+        # add_object leaves the new object as the active object.
+        obj = bpy.context.scene.objects.active
+        obj.cycles_visibility.shadow = job.get("object_shadow", True)
+        obj.cycles_visibility.camera = job.get("object_camera", True)
 
     scene.update()
     if job.get("debug"):

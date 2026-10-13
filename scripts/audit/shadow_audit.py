@@ -62,7 +62,9 @@ def main() -> None:
     parser.add_argument("--images", type=Path, default=Path("data/final/images"))
     parser.add_argument("--scenes", type=Path, default=Path("data/final/scenes"))
     parser.add_argument("--out", type=Path, default=Path("reports/audit"))
-    parser.add_argument("--thr", type=float, default=4.0, help="Luminance difference (0-255) for shadow pixels.")
+    parser.add_argument(
+        "--thr", type=float, default=4.0, help="Luminance difference (0-255) for shadow pixels."
+    )
     args = parser.parse_args()
     args.out.mkdir(parents=True, exist_ok=True)
 
@@ -119,15 +121,26 @@ def main() -> None:
     df.to_csv(args.out / "shadow_audit.csv", index=False, float_format="%.2f")
     print(df[["image_id", "err_exact", "err_legacy", "err_sun", "sun_to_key_shadow_mass"]].to_string())
     print(
-        f"mean error vs measured key shadow: exact {df.err_exact.mean():.1f} deg, legacy {df.err_legacy.mean():.1f}"
+        f"mean error vs measured key shadow: exact {df.err_exact.mean():.1f} deg,"
+        f" legacy {df.err_legacy.mean():.1f}"
     )
     print(f"key lamp share of the mean floor brightness: {df.floor_light_from_key_lamp.mean():.2f}")
 
     n = min(4, len(panels))
     fig, axes = plt.subplots(n, 3, figsize=(10.5, 3.5 * n))
-    for row_axes, (image_id, rgb, key_diff, sun_diff, start, end, legacy, _sun_exact, cam, base, ground) in zip(
-        np.atleast_2d(axes), panels[:n], strict=False
-    ):
+    for row_axes, (
+        image_id,
+        rgb,
+        key_diff,
+        sun_diff,
+        start,
+        end,
+        legacy,
+        _sun_exact,
+        cam,
+        base,
+        ground,
+    ) in zip(np.atleast_2d(axes), panels[:n], strict=False):
         ax0, ax1, ax2 = row_axes
         ax0.imshow(rgb)
         length = np.linalg.norm(end - start)
@@ -135,7 +148,9 @@ def main() -> None:
         ax0.annotate("", xy=end, xytext=start, arrowprops={"arrowstyle": "->", "color": "#00c853", "lw": 2.5})
         ax0.annotate("", xy=leg, xytext=start, arrowprops={"arrowstyle": "->", "color": "#ffab00", "lw": 2})
         sun_tip = project(base + 2.0 * ground / np.linalg.norm(ground), cam)[:2]
-        ax0.annotate("", xy=sun_tip, xytext=start, arrowprops={"arrowstyle": "->", "color": "#616161", "lw": 2})
+        ax0.annotate(
+            "", xy=sun_tip, xytext=start, arrowprops={"arrowstyle": "->", "color": "#616161", "lw": 2}
+        )
         ax0.set_title(f"{image_id}\ngreen: exact key shadow, orange: old arrow, grey: sun", fontsize=7)
         ax1.imshow(key_diff, cmap="magma", vmin=0, vmax=40)
         ax1.set_title("shadow of the key lamp (render difference)", fontsize=7)

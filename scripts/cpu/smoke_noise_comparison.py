@@ -110,7 +110,9 @@ def main() -> None:
         for (stem, rule), x0_hat in estimates.items():
             img = vae.decode((x0_hat / scale).to(dtype)).sample[0].float().clamp(-1, 1)
             arr = ((img.permute(1, 2, 0).numpy() + 1) * 127.5).astype(np.uint8)
-            Image.fromarray(arr).resize((512, 512)).save(args.out / f"{stem}_{rule}_t{args.timesteps[0]}_x0hat.png")
+            Image.fromarray(arr).resize((512, 512)).save(
+                args.out / f"{stem}_{rule}_t{args.timesteps[0]}_x0hat.png"
+            )
         print("decoded", flush=True)
     print(f"done after {time.time() - t0:.0f} s -> {args.out}")
 

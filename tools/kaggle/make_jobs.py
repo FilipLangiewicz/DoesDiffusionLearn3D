@@ -46,8 +46,11 @@ def write_job(
     return job
 
 
-# Settings of the SANA runs on a T4: float32 (no bfloat16 on the T4), text encoder on the CPU.
-T4 = {"device": "cuda", "dtype": "float32", "text_encoder_device": "cpu", "transformer_variant": "bf16"}
+# Settings of the SANA runs on a T4: no bfloat16 on the T4, text encoder on the CPU.
+# A test on 12 images gave the same features in float16 and float32 (relative
+# difference 0.1%), and float16 is 4 times faster. The ZZSN noise gives inputs
+# that are 35 times too large, which overflow in float16, so that run uses float32.
+T4 = {"device": "cuda", "dtype": "float16", "text_encoder_device": "cpu", "transformer_variant": "bf16"}
 MAIN_BLOCKS = [4, 10, 18]
 RUNS = {
     # All blocks with a 4 x 4 grid and the main blocks with an 8 x 8 grid.
@@ -62,6 +65,7 @@ RUNS = {
     # The ZZSN noise rule, only for the comparison with the old features.
     "sana_legacy_noise": {
         **T4,
+        "dtype": "float32",
         "blocks": MAIN_BLOCKS,
         "timesteps": [200, 500, 800],
         "grid": 8,

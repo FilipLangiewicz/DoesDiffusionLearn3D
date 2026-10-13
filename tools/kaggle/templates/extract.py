@@ -90,15 +90,20 @@ for run_name, overrides in PARAMS["runs"].items():
     t0 = time.time()
     log(f"run {run_name}: {overrides}")
     # Anonymous downloads from Hugging Face can fail with HTTP 429, so try again later.
+    # If a run fails four times, the job keeps the output of the other runs.
+    ok = False
     for attempt in range(4):
         try:
             runner(cfg)
+            ok = True
             break
         except Exception as err:  # noqa: BLE001
             log(f"run {run_name}: attempt {attempt + 1} failed: {err!r}"[:500])
-            if attempt == 3:
-                raise
             time.sleep(120 * (attempt + 1))
+    if not ok:
+        log(f"run {run_name}: FAILED, no output")
+        sh(f"rm -rf {cfg.out_dir}")
+        continue
     log(f"run {run_name}: done in {time.time() - t0:.0f} s")
     stats = sorted(glob.glob(f"{cfg.out_dir}/stats/*.csv"))
     if stats:

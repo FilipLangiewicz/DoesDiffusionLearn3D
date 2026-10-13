@@ -35,7 +35,7 @@ First, the same probe on raw $64\times64$ pixels gives the same error ($14.1\deg
 Second, the noise injection called a library function before its schedule was ready; for $t=200$ the transformer received $-24.5\,x_0 + 25.5\,\epsilon$ instead of $0.8\,x_0 + 0.2\,\epsilon$.
 Third, the label described the lamp position around the scene centre, which differs from the light direction at the object by $35\degr$ on average.
 Fourth, a large floor highlight under the lamp gives a cue that does not depend on the object.
-Probes on image regions show where the information is: \pending{one sentence with the floor-only and object-only numbers}.
+Probes on image regions show where the information is: the floor alone, without the object, predicts the label on cubes with an MAE of $9.4\degr$, better than the full image ($14.3\degr$), while the object alone fails on cubes ($44.3\degr$).
 We release an exact re-implementation of the render geometry, a corrected extraction pipeline, unit tests, and a fix for the library pitfall, which affects four schedulers.
 We close with a checklist for probe studies of generative models and with the plan for causal tests.
 \end{abstract}
@@ -209,7 +209,19 @@ The input image already contains the label in a linearly decodable form.
 
 \paragraph{Image regions.}
 To find the region that carries the information, we fit the probe on four variants of each image (Table~\ref{tab:cues}): the full image; the image with the object replaced by the floor colour (the cast shadow and the floor highlight stay); a crop of the object alone on a grey background; and only the position of the brightest floor region (two numbers).
-\pending{interpretation after the run}
+The floor carries the label.
+Without the object, the probe is better than with it ($9.4\degr$ against $14.3\degr$ on cubes), because the object only adds shape-specific variance.
+The position of the floor highlight alone, two numbers, gives $12.2\degr$ on the test split and $17.6\degr$ on cubes.
+The object alone predicts the light at the object well on known shapes ($7.7\degr$), which is the expected physical cue, but this cue does not transfer to cubes ($21.5\degr$) and it does not predict the lamp label ($44.3\degr$ on cubes).
+Thus the transfer to cubes that the original study reported is a property of the floor cues, which do not depend on the object shape.
+Figure~\ref{fig:cues} shows the variants and the errors.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{figures/cues.png}
+\caption{Left: the image variants for the region probes (the red dot marks the floor highlight). Right: azimuth MAE with 95\% intervals. The dashed line is the original SANA probe on cubes.}
+\label{fig:cues}
+\end{figure}
 
 \begin{table}[t]
 \centering

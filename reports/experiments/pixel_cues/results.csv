@@ -1,0 +1,17 @@
+variant,target,split,alpha,az_mae,az_ci_low,az_ci_high,el_mae,el_ci_low,el_ci_high
+full image,global,test,6.202,11.843,9.859,14.156,5.615,5.032,6.159
+full image,global,test_cubes,6.202,14.321,13.106,15.509,6.242,5.914,6.564
+full image,local,test,28.786,11.291,9.327,13.301,8.754,7.821,9.686
+full image,local,test_cubes,28.786,11.556,10.560,12.681,7.712,7.310,8.140
+floor only (object removed),global,test,0.939,7.945,7.013,9.002,3.944,3.544,4.362
+floor only (object removed),global,test_cubes,0.939,9.393,8.765,10.040,4.337,4.118,4.563
+floor only (object removed),local,test,4.357,13.517,11.554,15.488,7.310,6.367,8.315
+floor only (object removed),local,test_cubes,4.357,12.254,11.182,13.372,7.195,6.815,7.598
+object only (crop),global,test,1.226,19.752,17.492,22.266,7.969,7.183,8.814
+object only (crop),global,test_cubes,1.226,44.344,41.894,46.626,11.812,11.266,12.312
+object only (crop),local,test,1.226,7.667,6.762,8.663,5.578,4.996,6.176
+object only (crop),local,test_cubes,1.226,21.501,20.269,22.842,8.364,7.938,8.786
+floor highlight position (2 numbers),global,test,0.000,12.245,10.341,14.528,7.390,6.752,8.057
+floor highlight position (2 numbers),global,test_cubes,0.000,17.587,16.108,19.306,8.114,7.706,8.571
+floor highlight position (2 numbers),local,test,0.000,30.444,26.685,34.491,13.815,12.542,15.187
+floor highlight position (2 numbers),local,test_cubes,0.000,30.703,29.046,32.443,14.129,13.507,14.743

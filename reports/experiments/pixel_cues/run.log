@@ -1,0 +1,10 @@
+full image                               global test  11.84 cubes  14.32 / el  6.24
+full image                               local  test  11.29 cubes  11.56 / el  7.71
+floor only (object removed)              global test   7.94 cubes   9.39 / el  4.34
+floor only (object removed)              local  test  13.52 cubes  12.25 / el  7.19
+object only (crop)                       global test  19.75 cubes  44.34 / el 11.81
+object only (crop)                       local  test   7.67 cubes  21.50 / el  8.36
+floor highlight position (2 numbers)     global test  12.25 cubes  17.59 / el  8.11
+floor highlight position (2 numbers)     local  test  30.44 cubes  30.70 / el 14.13
+figures -> docs/article/figures
+FINISHED

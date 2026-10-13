@@ -8,20 +8,25 @@ Changes against the ZZSN script src/extract_activations.py:
 - The script averages the 32 x 32 token grid to a small grid and stores float16.
   This is 287 KB for each image, block and timestep instead of 9.2 MB.
 - The model parts load one after the other, so a CPU smoke test needs less RAM.
+- All timesteps of one image go through the transformer as one batch.
+- Blocks in ``fine_blocks`` use ``fine_grid`` and the other blocks use ``grid``.
+  A small grid for most blocks keeps a full scan of the blocks small.
 
 Output for each block ``b`` and timestep ``t``:
 ``<out>/block_<bb>/t_<ttt>/chunk_<task>.npy`` (images x features) and
 ``chunk_<task>_ids.txt``. The command ``dd3d merge`` joins the chunks.
+The file ``<out>/meta.json`` gives the grid of each block and the run settings.
 """
 
 from __future__ import annotations
 
 import csv
 import gc
+import json
 import math
 import os
 import time
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
 import numpy as np
@@ -56,6 +61,14 @@ class ExtractConfig:
     save_vae_latents: bool = True
     full_blocks: list[int] = field(default_factory=list)
     full_timesteps: list[int] = field(default_factory=list)
+    fine_blocks: list[int] = field(default_factory=list)
+    fine_grid: int = 8
+    # A GPU without bfloat16 support (for example the T4) needs float32.
+    dtype: str = "bfloat16"
+    text_encoder_device: str | None = None
+
+    def grid_of(self, block: int) -> int:
+        return self.fine_grid if block in self.fine_blocks else self.grid
 
 
 def list_images(images_dir: Path, max_per_shape: int) -> list[Path]:
@@ -107,9 +120,10 @@ def encode_prompt(cfg: ExtractConfig, dtype: torch.dtype) -> tuple[torch.Tensor,
 
     # Only the text encoder is necessary here; the large parts load later.
     pipe = SanaPipeline.from_pretrained(cfg.model_id, transformer=None, vae=None, torch_dtype=dtype)
-    pipe.text_encoder.to(cfg.device)
+    device = cfg.text_encoder_device or cfg.device
+    pipe.text_encoder.to(device)
     with torch.no_grad():
-        embeds, mask, _, _ = pipe.encode_prompt("", do_classifier_free_guidance=False, device=cfg.device)
+        embeds, mask, _, _ = pipe.encode_prompt("", do_classifier_free_guidance=False, device=device)
     embeds, mask = embeds.cpu(), mask.cpu()
     if cfg.prompt_cache:
         Path(cfg.prompt_cache).parent.mkdir(parents=True, exist_ok=True)
@@ -151,7 +165,7 @@ def load_transformer(cfg: ExtractConfig, dtype: torch.dtype):
 
 def run(cfg: ExtractConfig) -> Path:
     """Extract the features of one task and return the output folder."""
-    dtype = torch.bfloat16
+    dtype = getattr(torch, cfg.dtype)
     torch.set_grad_enabled(False)
     paths = task_slice(list_images(cfg.images_dir, cfg.max_per_shape), cfg.task_id, cfg.num_tasks)
     if cfg.limit is not None:
@@ -172,6 +186,11 @@ def run(cfg: ExtractConfig) -> Path:
         np.save(vae_dir / f"chunk_{cfg.task_id:04d}.npy", arr)
         (vae_dir / f"chunk_{cfg.task_id:04d}_ids.txt").write_text("\n".join(p.stem for p in paths) + "\n")
 
+    cfg.out_dir.mkdir(parents=True, exist_ok=True)
+    meta = {k: (str(v) if isinstance(v, Path) else v) for k, v in asdict(cfg).items()}
+    meta["grid_of_block"] = {str(b): cfg.grid_of(b) for b in cfg.blocks}
+    (cfg.out_dir / "meta.json").write_text(json.dumps(meta, indent=1))
+
     model = load_transformer(cfg, dtype)
     scheduler = None
     if cfg.legacy_noise:
@@ -190,33 +209,40 @@ def run(cfg: ExtractConfig) -> Path:
 
     feats = {(b, t): [] for b in cfg.blocks for t in cfg.timesteps}
     stats_rows = []
-    embeds_d, mask_d = embeds.to(cfg.device), mask.to(cfg.device)
+    n_t = len(cfg.timesteps)
+    embeds_d = embeds.to(cfg.device).expand(n_t, *embeds.shape[1:])
+    mask_d = mask.to(cfg.device).expand(n_t, *mask.shape[1:])
+    t_batch = torch.tensor(cfg.timesteps, device=cfg.device)
     for i, p in enumerate(paths):
         x0 = latents[p.stem].to(cfg.device, dtype=dtype)
         gen = torch.Generator().manual_seed(image_seed(cfg.seed, p.stem))
         eps = torch.randn(x0.shape, generator=gen).to(cfg.device, dtype=dtype)
-        for t in cfg.timesteps:
-            if cfg.legacy_noise:
-                xt = scheduler.add_noise(x0, eps, torch.tensor([t]))
-            else:
-                xt = flow_noise(x0, eps, t)
-            model(
-                hidden_states=xt.to(dtype),
-                encoder_hidden_states=embeds_d,
-                encoder_attention_mask=mask_d,
-                timestep=torch.tensor([t], device=cfg.device),
-                return_dict=False,
-            )
-            for b in cfg.blocks:
-                hidden = captured[b]
-                feats[(b, t)].append(pool_tokens(hidden, cfg.grid))
+        if cfg.legacy_noise:
+            xt = torch.cat([scheduler.add_noise(x0, eps, torch.tensor([t])) for t in cfg.timesteps])
+        else:
+            xt = torch.cat([flow_noise(x0, eps, t) for t in cfg.timesteps])
+        model(
+            hidden_states=xt.to(dtype),
+            encoder_hidden_states=embeds_d,
+            encoder_attention_mask=mask_d,
+            timestep=t_batch,
+            return_dict=False,
+        )
+        for b in cfg.blocks:
+            out = captured[b]
+            if out.dim() == 4:  # (B, C, H, W) layout of some diffusers versions
+                out = out.flatten(2).transpose(1, 2)
+            for j, t in enumerate(cfg.timesteps):
+                hidden = out[j : j + 1]
+                feats[(b, t)].append(pool_tokens(hidden, cfg.grid_of(b)))
                 norm = hidden.float().flatten(0, -2).norm(dim=-1).mean().item()
                 stats_rows.append({"image_id": p.stem, "block": b, "t": t, "mean_token_norm": norm})
                 if b in cfg.full_blocks and t in cfg.full_timesteps:
                     full_dir = cfg.out_dir / "full" / f"block_{b:02d}" / f"t_{t:03d}"
                     full_dir.mkdir(parents=True, exist_ok=True)
                     np.save(full_dir / f"{p.stem}.npy", hidden[0].float().cpu().numpy().astype(np.float16))
-        print(f"[{i + 1}/{len(paths)}] {p.stem} done after {time.time() - t0:.0f} s", flush=True)
+        if i < 3 or (i + 1) % 25 == 0:
+            print(f"[{i + 1}/{len(paths)}] {p.stem} done after {time.time() - t0:.0f} s", flush=True)
 
     for h in handles:
         h.remove()

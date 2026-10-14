@@ -189,6 +189,8 @@ def main() -> None:
             s: sum(state(j) == s for j in jobs) for s in ("new", "pushed", "complete", "done", "failed")
         }
         log(f"state {counts} running {running}")
+        # Keep the list of the Kaggle data (docs/KAGGLE_DATA.md) up to date.
+        subprocess.run([sys.executable, str(Path(__file__).resolve().parent / "data_list.py")], check=False)
         if counts["new"] == 0 and counts["pushed"] == 0 and counts["complete"] == 0:
             log("queue finished")
             return

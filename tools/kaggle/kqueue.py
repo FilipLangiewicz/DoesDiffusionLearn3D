@@ -109,7 +109,11 @@ def start_fetch(job: dict) -> None:
     done = job["dir"] / ".done"
     # The feature tars of the extraction jobs (about 10 GB each) stay on Kaggle;
     # the laptop disk is too small for them. Only the logs come here.
-    small = " --pattern 'results|[.]log$'" if "/extract/" in str(job["dir"]) or job["slug"] == "dd3d-renders" else ""
+    small = (
+        " --pattern 'results|[.]log$'"
+        if "/extract/" in str(job["dir"]) or job["slug"] == "dd3d-renders"
+        else ""
+    )
     cmd = f"{sys.executable} -u {kfetch} {job['id']} {out}{small} && date > {done}"
     logf = open(job["dir"] / "fetch.log", "a")
     proc = subprocess.Popen(

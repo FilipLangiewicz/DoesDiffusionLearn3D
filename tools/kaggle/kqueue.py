@@ -107,7 +107,10 @@ def start_fetch(job: dict) -> None:
     kfetch = Path(__file__).resolve().parent / "kfetch.py"
     out = job["dir"] / "output"
     done = job["dir"] / ".done"
-    cmd = f"{sys.executable} -u {kfetch} {job['id']} {out} && date > {done}"
+    # The feature tars of the extraction jobs (about 10 GB each) stay on Kaggle;
+    # the laptop disk is too small for them. Only the logs come here.
+    small = " --pattern 'results|[.]log$'" if "/extract/" in str(job["dir"]) else ""
+    cmd = f"{sys.executable} -u {kfetch} {job['id']} {out}{small} && date > {done}"
     logf = open(job["dir"] / "fetch.log", "a")
     proc = subprocess.Popen(
         ["bash", "-c", cmd], stdout=logf, stderr=subprocess.STDOUT, start_new_session=True

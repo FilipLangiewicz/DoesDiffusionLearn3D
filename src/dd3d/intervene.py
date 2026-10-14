@@ -167,8 +167,13 @@ def run(cfg: InterveneConfig) -> Path:
                 return_dict=False,
             )[0]
             xt = xt + (s_next - s_now) * v.float()
-        images = vae.decode((xt / vae.config.scaling_factor).to(dtype)).sample
-        images = ((images.float().clamp(-1, 1) + 1) * 127.5).round().byte().permute(0, 2, 3, 1).cpu().numpy()
+        # One image at a time: the DC-AE decoder needs about 3 GB for one 1024 x 1024 image.
+        images = []
+        for c in range(n_c):
+            img = vae.decode((xt[c : c + 1] / vae.config.scaling_factor).to(dtype)).sample
+            img = ((img.float().clamp(-1, 1) + 1) * 127.5).round().byte().permute(0, 2, 3, 1).cpu().numpy()[0]
+            images.append(img)
+            torch.cuda.empty_cache()
         for c, name in enumerate(conditions):
             out = cfg.out_dir / name.replace(":", "_") / shape
             out.mkdir(parents=True, exist_ok=True)

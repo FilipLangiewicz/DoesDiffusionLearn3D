@@ -280,6 +280,19 @@ Data set v2r has the same lights, sizes and rotations as v2, image for image; on
 The position is uniform on the part of $[-3,3]^2$ where the largest object is fully in the image; this region depends only on the camera, so the position does not correlate with the light ($|r|<0.01$).
 The tip of the shadow is in the image for $99\%$ of the scenes.
 
+\paragraph{A random position removes the linear shortcut.}
+On v2r, the pixel probe has an azimuth MAE of $25.1\degr$ on spheres and cylinders and $25.8\degr$ on cubes, against $2.5\degr$ and $13.7\degr$ on v2.
+A pixel probe fitted on v2 and tested on v2r has $71.2\degr$ and $70.4\degr$, close to chance.
+The information is still in the image: a crop of the object alone, which removes the position, gives $4.4\degr$ on spheres and cylinders.
+Thus the light direction is present, but a linear read-out of the pixels cannot find it at an arbitrary place in the image.
+A model with a representation of the light that does not depend on the position must do better than $25\degr$ on v2r.
+The floor brightness still gives the elevation ($2\degr$).
+
+\paragraph{Weak cues remain.}
+Without the cast shadow (the first variant, object at the centre), the floor alone still predicts the azimuth ($4.6\degr$; $10.2\degr$ on cubes).
+The cue is the light that the purple object reflects onto the floor on its lit side.
+This cue is physically correct, but it is one more 2D cue that a probe can read.
+
 \paragraph{Cue variants.}
 Two more variants have the same scenes as v2r: in the first, the object casts no shadow (only its shading is left); in the second, the camera does not see the object, but its shadow stays.
 A pair of images thus differs in one cue only.

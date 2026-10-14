@@ -1,4 +1,4 @@
-# Stan prac: czy SANA „wie”, skąd pada światło? (13.10.2026, 23:50)
+# Stan prac: czy SANA „wie”, skąd pada światło? (14.10.2026, 5:30)
 
 Krótki przegląd dla prowadzącego: co sprawdzamy, co już wiemy, co się teraz liczy i co rozstrzygnie wynik. Pełne szczegóły są w `docs/PODSUMOWANIE.md`.
 
@@ -95,6 +95,9 @@ Pozycja w v2r jest losowana tylko tam, gdzie największy obiekt mieści się ca�
 | v2: test na obiektach w losowych miejscach (v2pos) | **69,0°** (losowo: 90°) | |
 | uczona na v2, test na **tych samych scenach bez cienia** | **77,4°** | |
 | uczona i testowana na v2ns (samo cieniowanie obiektu) | 4,2° | |
+| **v2r: uczona i testowana na v2r** (losowa pozycja) | **25,1°** | **25,8°** |
+| v2r: sam obiekt, wycięty i wyśrodkowany | 4,4° | 22,2° |
+| uczona na v2 (środek), test na v2r (3000 obrazów) | 71,2° | 70,4° |
 
 Ta sama scena z cieniem (góra) i bez cienia (dół):
 
@@ -103,8 +106,9 @@ Ta sama scena z cieniem (góra) i bez cienia (dół):
 Wnioski:
 1. Przy obiekcie w środku **piksele wystarczają** do kierunku (2,5°). Na takim zbiorze nie da się pokazać przewagi modelu.
 2. Sonda pikselowa **opiera się na cieniu**: po jego usunięciu błąd rośnie z 2,5° do 77°.
-3. Piksele **nie przenoszą** kierunku na nowe pozycje (69°). To jest próg, który SANA musi pobić na v2r.
-4. **Elewację zdradza jasność podłogi** (1,7° z samej podłogi), więc główną miarą jest azymut.
+3. Piksele **nie przenoszą** kierunku na nowe pozycje (ok. 70°).
+4. Przy losowej pozycji (v2r) liniowa sonda na całym obrazie spada z 2,5° do **25°**. To jest próg, który SANA musi wyraźnie pobić. Wycięcie obiektu (ręczne wyrównanie pozycji) przywraca 4,4°: informacja jest w cieniowaniu, tylko liniowa sonda nie znajduje jej w dowolnym miejscu kadru.
+5. **Elewację zdradza jasność podłogi** (1,7° z samej podłogi, ok. 2° także na v2r), więc główną miarą jest azymut.
 
 ---
 
@@ -147,29 +151,31 @@ Jeśli kierunek jest przyczynowy, przesunięcie wzdłuż sondy obraca cień w st
 
 ## 7. Co się teraz liczy
 
-Wszystko liczy się na Kaggle (klaster Athena wyczerpał przydział GPU). Kolejka sama wysyła joby (najwyżej 5 CPU i 2 GPU naraz) i pobiera wyniki, a automat na laptopie sam liczy sondy, gdy zestaw jest kompletny. Czasy poniżej to szacunek.
+Wszystko liczy się na Kaggle (klaster Athena wyczerpał przydział GPU). Kolejka sama wysyła joby i pobiera wyniki, a automat na laptopie sam liczy sondy, gdy zestaw jest kompletny.
+
+**Noc 13/14.10:** od 0:20 do 5:05 kolejka stała. Wynik jednej części v1 ma 10,9 GB, a narzędzie Kaggle wczytuje cały plik do pamięci (laptop ma 5,4 GB RAM), więc pobieranie się zawieszało. Naprawione: pobieranie idzie teraz strumieniowo na dysk, z wznawianiem, w osobnym procesie. Od 5:21 każdy job liczy się na **dwóch kartach T4 naraz** (sesja „T4 x2”), czyli na 4 kartach w sumie.
 
 ```mermaid
 gantt
-    title Obliczenia na Kaggle, 13-14.10 (szacunek)
+    title Obliczenia na Kaggle, 13-14.10 (od 5:30 szacunek)
     dateFormat YYYY-MM-DD HH:mm
     axisFormat %H:%M
     section CPU: rendery
-    v2 (3000)              :done, 2026-10-13 21:07, 2026-10-13 22:33
-    v2pos (300)            :done, 2026-10-13 22:07, 2026-10-13 22:54
-    v2ns (3000)            :active, 2026-10-13 22:25, 2026-10-14 01:00
-    v2r (3000)             :active, 2026-10-13 22:55, 2026-10-14 01:00
-    v2rns, v2rso (6000)    :2026-10-14 01:00, 2026-10-14 04:00
+    v2, v2pos              :done, 2026-10-13 21:07, 2026-10-13 22:54
+    v2ns, v2r              :done, 2026-10-13 22:25, 2026-10-14 05:20
+    v2rns, v2rso           :active, 2026-10-14 00:32, 2026-10-14 07:30
     section GPU: cechy i testy
     próby techniczne       :done, 2026-10-13 21:09, 2026-10-13 22:32
-    v1 (5 modeli i kontroli) :active, 2026-10-13 22:36, 2026-10-14 02:00
-    próba testu przyczynowego :2026-10-13 23:55, 2026-10-14 00:10
-    v2                     :2026-10-14 02:00, 2026-10-14 04:30
-    v2pos, v2r             :2026-10-14 04:30, 2026-10-14 07:00
-    v2rns, v2rso           :2026-10-14 07:00, 2026-10-14 09:00
+    v1 części 0-1 (1 karta) :done, 2026-10-13 22:36, 2026-10-14 00:20
+    zator pobierania       :crit, done, 2026-10-14 00:20, 2026-10-14 05:05
+    testy: 2 karty, test przyczynowy :done, 2026-10-14 05:05, 2026-10-14 05:21
+    v2r (2 x 2 karty)      :active, 2026-10-14 05:21, 2026-10-14 07:45
+    v2pos, v1 części 2-5   :2026-10-14 07:45, 2026-10-14 10:00
+    v2, test przyczynowy   :2026-10-14 10:00, 2026-10-14 11:30
+    v2rns, v2rso           :2026-10-14 11:00, 2026-10-14 12:45
 ```
 
-Zużycie GPU: ok. 20 h z tygodniowego limitu 30 h na jednym koncie.
+Zużycie GPU: ok. 6 h z tygodniowego limitu 30 h; cały plan mieści się w ok. 20 h.
 
 ---
 

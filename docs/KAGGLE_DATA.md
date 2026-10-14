@@ -6,6 +6,18 @@
 |---|---|
 | [dd3d-v1-images](https://www.kaggle.com/datasets/jankombajn/dd3d-v1-images) | oryginalny zbiór v1 (ZZSN); kule, walce, sześciany; 3000 obrazów + opisy scen |
 | [dd3d-plans](https://www.kaggle.com/datasets/jankombajn/dd3d-plans) | plany testów przyczynowych (przesunięcie, wymazanie kierunku światła) |
+| [dd3d-features-v2r-0](https://www.kaggle.com/datasets/jankombajn/dd3d-features-v2r-0) | (v2r-0) kule 0–499; losowa pozycja; nowa podłoga i światło; aktywacje: SANA, SANA losowe wagi, SD 1.5, SDXL |
+| [dd3d-features-v2r-1](https://www.kaggle.com/datasets/jankombajn/dd3d-features-v2r-1) | (v2r-1) kule 500–999; losowa pozycja; nowa podłoga i światło; aktywacje: SANA, SANA losowe wagi, SD 1.5, SDXL |
+| [dd3d-features-v2r-2](https://www.kaggle.com/datasets/jankombajn/dd3d-features-v2r-2) | (v2r-2) walce 0–499; losowa pozycja; nowa podłoga i światło; aktywacje: SANA, SANA losowe wagi, SD 1.5, SDXL |
+| [dd3d-features-v2r-3](https://www.kaggle.com/datasets/jankombajn/dd3d-features-v2r-3) | (v2r-3) walce 500–999; losowa pozycja; nowa podłoga i światło; aktywacje: SANA, SANA losowe wagi, SD 1.5, SDXL |
+| [dd3d-features-v2r-4](https://www.kaggle.com/datasets/jankombajn/dd3d-features-v2r-4) | (v2r-4) sześciany 0–499; losowa pozycja; nowa podłoga i światło; aktywacje: SANA, SANA losowe wagi, SD 1.5, SDXL |
+| [dd3d-features-v2r-5](https://www.kaggle.com/datasets/jankombajn/dd3d-features-v2r-5) | (v2r-5) sześciany 500–999; losowa pozycja; nowa podłoga i światło; aktywacje: SANA, SANA losowe wagi, SD 1.5, SDXL |
+| [dd3d-features-v1-0](https://www.kaggle.com/datasets/jankombajn/dd3d-features-v1-0) | (v1-0) kule 0–499; oryginalny zbiór v1 (ZZSN); aktywacje: SANA, SANA losowe wagi, SANA stary szum, SD 1.5, SDXL |
+| [dd3d-features-v1-1](https://www.kaggle.com/datasets/jankombajn/dd3d-features-v1-1) | (v1-1) kule 500–999; oryginalny zbiór v1 (ZZSN); aktywacje: SANA, SANA losowe wagi, SANA stary szum, SD 1.5, SDXL |
+| [dd3d-features-v1-2](https://www.kaggle.com/datasets/jankombajn/dd3d-features-v1-2) | (v1-2) walce 0–499; oryginalny zbiór v1 (ZZSN); aktywacje: SANA, SANA losowe wagi, SANA stary szum, SD 1.5, SDXL |
+| [dd3d-features-v1-3](https://www.kaggle.com/datasets/jankombajn/dd3d-features-v1-3) | (v1-3) walce 500–999; oryginalny zbiór v1 (ZZSN); aktywacje: SANA, SANA losowe wagi, SANA stary szum, SD 1.5, SDXL |
+| [dd3d-features-v1-4](https://www.kaggle.com/datasets/jankombajn/dd3d-features-v1-4) | (v1-4) sześciany 0–499; oryginalny zbiór v1 (ZZSN); aktywacje: SANA, SANA losowe wagi, SANA stary szum, SD 1.5, SDXL |
+| [dd3d-features-v1-5](https://www.kaggle.com/datasets/jankombajn/dd3d-features-v1-5) | (v1-5) sześciany 500–999; oryginalny zbiór v1 (ZZSN); aktywacje: SANA, SANA losowe wagi, SANA stary szum, SD 1.5, SDXL |
 
 ## Wyjścia notatników
 
@@ -46,10 +58,10 @@
 | [dd3d-extract-v1-1](https://www.kaggle.com/code/jankombajn/dd3d-extract-v1-1) | [output](https://www.kaggle.com/code/jankombajn/dd3d-extract-v1-1/output) | (v1-1) kule 500–999; oryginalny zbiór v1 (ZZSN); aktywacje: SANA, SANA losowe wagi, SANA stary szum, SD 1.5, SDXL | gotowe |
 | [dd3d-extract-v1-2](https://www.kaggle.com/code/jankombajn/dd3d-extract-v1-2) | [output](https://www.kaggle.com/code/jankombajn/dd3d-extract-v1-2/output) | (v1-2) walce 0–499; oryginalny zbiór v1 (ZZSN); aktywacje: SANA, SANA losowe wagi, SANA stary szum, SD 1.5, SDXL | gotowe |
 | [dd3d-extract-v1-3](https://www.kaggle.com/code/jankombajn/dd3d-extract-v1-3) | [output](https://www.kaggle.com/code/jankombajn/dd3d-extract-v1-3/output) | (v1-3) walce 500–999; oryginalny zbiór v1 (ZZSN); aktywacje: SANA, SANA losowe wagi, SANA stary szum, SD 1.5, SDXL | gotowe |
-| [dd3d-extract-v1-4](https://www.kaggle.com/code/jankombajn/dd3d-extract-v1-4) | [output](https://www.kaggle.com/code/jankombajn/dd3d-extract-v1-4/output) | (v1-4) sześciany 0–499; oryginalny zbiór v1 (ZZSN); aktywacje: SANA, SANA losowe wagi, SANA stary szum, SD 1.5, SDXL | liczy się |
-| [dd3d-extract-v1-5](https://www.kaggle.com/code/jankombajn/dd3d-extract-v1-5) | [output](https://www.kaggle.com/code/jankombajn/dd3d-extract-v1-5/output) | (v1-5) sześciany 500–999; oryginalny zbiór v1 (ZZSN); aktywacje: SANA, SANA losowe wagi, SANA stary szum, SD 1.5, SDXL | liczy się |
-| [dd3d-extract-v2-0](https://www.kaggle.com/code/jankombajn/dd3d-extract-v2-0) | [output](https://www.kaggle.com/code/jankombajn/dd3d-extract-v2-0/output) | (v2-0) kule 0–499; obiekt na środku; nowa podłoga i światło; aktywacje: SANA, SD 1.5 | w kolejce |
-| [dd3d-extract-v2-1](https://www.kaggle.com/code/jankombajn/dd3d-extract-v2-1) | [output](https://www.kaggle.com/code/jankombajn/dd3d-extract-v2-1/output) | (v2-1) kule 500–999; obiekt na środku; nowa podłoga i światło; aktywacje: SANA, SD 1.5 | w kolejce |
+| [dd3d-extract-v1-4](https://www.kaggle.com/code/jankombajn/dd3d-extract-v1-4) | [output](https://www.kaggle.com/code/jankombajn/dd3d-extract-v1-4/output) | (v1-4) sześciany 0–499; oryginalny zbiór v1 (ZZSN); aktywacje: SANA, SANA losowe wagi, SANA stary szum, SD 1.5, SDXL | gotowe |
+| [dd3d-extract-v1-5](https://www.kaggle.com/code/jankombajn/dd3d-extract-v1-5) | [output](https://www.kaggle.com/code/jankombajn/dd3d-extract-v1-5/output) | (v1-5) sześciany 500–999; oryginalny zbiór v1 (ZZSN); aktywacje: SANA, SANA losowe wagi, SANA stary szum, SD 1.5, SDXL | gotowe |
+| [dd3d-extract-v2-0](https://www.kaggle.com/code/jankombajn/dd3d-extract-v2-0) | [output](https://www.kaggle.com/code/jankombajn/dd3d-extract-v2-0/output) | (v2-0) kule 0–499; obiekt na środku; nowa podłoga i światło; aktywacje: SANA, SD 1.5 | liczy się |
+| [dd3d-extract-v2-1](https://www.kaggle.com/code/jankombajn/dd3d-extract-v2-1) | [output](https://www.kaggle.com/code/jankombajn/dd3d-extract-v2-1/output) | (v2-1) kule 500–999; obiekt na środku; nowa podłoga i światło; aktywacje: SANA, SD 1.5 | liczy się |
 | [dd3d-extract-v2-2](https://www.kaggle.com/code/jankombajn/dd3d-extract-v2-2) | [output](https://www.kaggle.com/code/jankombajn/dd3d-extract-v2-2/output) | (v2-2) walce 0–499; obiekt na środku; nowa podłoga i światło; aktywacje: SANA, SD 1.5 | w kolejce |
 | [dd3d-extract-v2-3](https://www.kaggle.com/code/jankombajn/dd3d-extract-v2-3) | [output](https://www.kaggle.com/code/jankombajn/dd3d-extract-v2-3/output) | (v2-3) walce 500–999; obiekt na środku; nowa podłoga i światło; aktywacje: SANA, SD 1.5 | w kolejce |
 | [dd3d-extract-v2-4](https://www.kaggle.com/code/jankombajn/dd3d-extract-v2-4) | [output](https://www.kaggle.com/code/jankombajn/dd3d-extract-v2-4/output) | (v2-4) sześciany 0–499; obiekt na środku; nowa podłoga i światło; aktywacje: SANA, SD 1.5 | w kolejce |

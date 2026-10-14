@@ -56,6 +56,14 @@ rows = [
     "|---|---|",
     "| [dd3d-v1-images](https://www.kaggle.com/datasets/jankombajn/dd3d-v1-images) | oryginalny zbiór v1 (ZZSN); kule, walce, sześciany; 3000 obrazów + opisy scen |",
     "| [dd3d-plans](https://www.kaggle.com/datasets/jankombajn/dd3d-plans) | plany testów przyczynowych (przesunięcie, wymazanie kierunku światła) |",
+    *[
+        f"| [dd3d-features-{n}-{i}](https://www.kaggle.com/datasets/jankombajn/dd3d-features-{n}-{i}) | ({n}-{i}) {PART[i]}; {d} |"
+        for n, d in (
+            ("v2r", f"losowa pozycja; {NEW}; aktywacje: SANA, SANA losowe wagi, SD 1.5, SDXL"),
+            ("v1", "oryginalny zbiór v1 (ZZSN); aktywacje: SANA, SANA losowe wagi, SANA stary szum, SD 1.5, SDXL"),
+        )
+        for i in range(6)
+    ],
     "",
     "## Wyjścia notatników",
     "",

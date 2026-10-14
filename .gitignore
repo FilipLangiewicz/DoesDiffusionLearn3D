@@ -25,3 +25,10 @@ data/v2_sample/
 docs/Siwy regulamin 26Z.pdf
 docs/regulamin_projektów.pdf
 *:Zone.Identifier
+
+# Local markers of scripts/experiments/auto_process.sh
+reports/experiments/**/.processed_*
+reports/experiments/**/.failed_*
+reports/experiments/transfer/.pos_pixels
+reports/experiments/transfer/.cue_pixels
+reports/experiments/causal/.v2b10_queued

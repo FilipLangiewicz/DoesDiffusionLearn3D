@@ -3,9 +3,11 @@
 The plan has these conditions for each selected test image:
 
 - base: no change (the SDEdit reconstruction);
-- shift:probe_x<s>: the shortest feature change that moves the probe output to
-  the azimuth label + 90 deg, times the scale s;
-- shift:random_x<s>: a random change with the same norm as shift:probe_x<s>;
+- shift:probe_r<r>: the shortest feature change that moves the probe output to
+  the azimuth label + 90 deg, scaled so that the mean norm of a cell vector is
+  r times the mean token norm of the block (from the stats of the extraction);
+- shift:random_r<r>: a random change with the same norm in each cell as the
+  largest probe shift;
 - erase: the LEACE eraser of the azimuth (sin and cos) in this block.
 
 The probe and the eraser come from the grid features of one block and one
@@ -28,13 +30,25 @@ from dd3d.metrics import encode_targets
 from dd3d.probe import ProbeConfig, probe_direction, run
 
 
+def mean_token_norm(features: Path | None) -> float:
+    """Return the mean token norm of the block and timestep of a feature folder."""
+    if features is None:
+        return 1.0
+    block = int(features.parent.name.split("_")[1])
+    t = int(features.name.split("_")[1])
+    stats = pd.concat(pd.read_csv(f) for f in sorted((features.parents[1] / "stats").glob("*.csv")))
+    sel = stats[(stats["block"] == block) & (stats["t"] == t)]
+    return float(sel["mean_token_norm"].mean())
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--features", type=Path, help="Folder block_<bb>/t_<ttt> with grid features.")
     parser.add_argument("--splits", type=Path, default=Path("data/v2/splits"))
     parser.add_argument("--split", default="test", help="Split of the images to change.")
     parser.add_argument("--n-images", type=int, default=60)
-    parser.add_argument("--scales", default="1,4,16")
+    parser.add_argument("--relative", default="0.1,0.3,1.0", help="Shift norm / mean token norm.")
+    parser.add_argument("--token-norm", type=float, default=None, help="Default: from the stats files.")
     parser.add_argument("--rotate", type=float, default=90.0, help="Target azimuth = label + rotate.")
     parser.add_argument("--leace-rows", type=int, default=30000, help="Cell rows for the LEACE fit.")
     parser.add_argument("--channels", type=int, default=2240)
@@ -79,19 +93,25 @@ def main() -> None:
     now = encode_targets(az, pick["light_elevation_deg"].to_numpy())[:, :2]
     target = encode_targets(az + args.rotate, pick["light_elevation_deg"].to_numpy())[:, :2]
     unit = make_shift(w, target - now)
+    token_norm = args.token_norm or mean_token_norm(args.features)
+    cells_of = lambda v: v.reshape(len(v), args.grid * args.grid, args.channels)  # noqa: E731
+    # One factor for each image, so that every image gets the same relative shift.
+    unit = unit / np.linalg.norm(cells_of(unit), axis=2).mean(axis=1)[:, None] * token_norm
     conditions, shifts = ["base"], [np.zeros_like(unit)]
-    for s in [float(v) for v in args.scales.split(",")]:
-        conditions.append(f"shift:probe_x{s:g}")
-        shifts.append(s * unit)
-    s_max = max(float(v) for v in args.scales.split(","))
-    rand = rng.normal(size=unit.shape)
-    rand *= (np.linalg.norm(s_max * unit, axis=1) / np.linalg.norm(rand, axis=1))[:, None]
-    conditions.append(f"shift:random_x{s_max:g}")
-    shifts.append(rand)
+    rel = [float(v) for v in args.relative.split(",")]
+    for r in rel:
+        conditions.append(f"shift:probe_r{r:g}")
+        shifts.append(r * unit)
+    big = cells_of(max(rel) * unit)
+    rand = cells_of(rng.normal(size=unit.shape))
+    rand *= (np.linalg.norm(big, axis=2) / np.linalg.norm(rand, axis=2))[:, :, None]
+    conditions.append(f"shift:random_r{max(rel):g}")
+    shifts.append(rand.reshape(len(rand), -1))
     conditions.append("erase")
     shifts.append(np.zeros_like(unit))
     shifts = np.stack(shifts, axis=1).astype(np.float16)  # (n_img, n_cond, D)
-    report["shift_norm_x1"] = float(np.linalg.norm(unit, axis=1).mean())
+    report["mean_token_norm"] = token_norm
+    report["relative_shifts"] = rel
     report["conditions"] = conditions
 
     args.out.mkdir(parents=True, exist_ok=True)

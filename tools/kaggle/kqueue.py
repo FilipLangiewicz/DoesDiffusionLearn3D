@@ -11,6 +11,8 @@ Marker files in the job folder keep the state of each job. Thus the queue
 continues after a restart of the computer. The markers are:
 
 - .pushed: the job is on Kaggle.
+- .complete: the job ended on Kaggle; its output waits for the download.
+- .fetching: a download process runs (the file has its process id).
 - .done: the output is downloaded.
 - .failed: Kaggle gave ERROR or CANCEL.
 
@@ -26,6 +28,8 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
+import subprocess
 import sys
 import time
 from pathlib import Path
@@ -66,6 +70,8 @@ def state(job: dict) -> str:
         return "done"
     if (d / ".failed").exists():
         return "failed"
+    if (d / ".complete").exists():
+        return "complete"
     if (d / ".pushed").exists():
         return "pushed"
     return "new"
@@ -83,6 +89,33 @@ def push(job: dict) -> str:
     return "pushed"
 
 
+def fetching(job: dict) -> bool:
+    """Return True if a download process for this job still runs."""
+    f = job["dir"] / ".fetching"
+    if not f.exists():
+        return False
+    try:
+        os.kill(int(f.read_text().strip()), 0)
+        return True
+    except (ValueError, ProcessLookupError, PermissionError):
+        f.unlink(missing_ok=True)
+        return False
+
+
+def start_fetch(job: dict) -> None:
+    """Start the download in its own process, so a large file never stops the queue."""
+    kfetch = Path(__file__).resolve().parent / "kfetch.py"
+    out = job["dir"] / "output"
+    done = job["dir"] / ".done"
+    cmd = f"{sys.executable} -u {kfetch} {job['id']} {out} && date > {done}"
+    logf = open(job["dir"] / "fetch.log", "a")
+    proc = subprocess.Popen(
+        ["bash", "-c", cmd], stdout=logf, stderr=subprocess.STDOUT, start_new_session=True
+    )
+    (job["dir"] / ".fetching").write_text(str(proc.pid))
+    log(f"{job['slug']}: download started (pid {proc.pid})")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("queue", type=Path)
@@ -95,20 +128,14 @@ def main() -> None:
         for job in jobs:
             by_state.setdefault(state(job), []).append(job)
 
-        # Check the jobs on Kaggle and download the output of the complete jobs.
+        # Check the jobs on Kaggle. A complete job frees its session at once; its
+        # download runs in a separate process (one at a time, see start_fetch).
         running = {"CPU": 0, "GPU": 0}
         for job in by_state.get("pushed", []):
             s = status(job["id"])
             if s == "COMPLETE":
-                out = job["dir"] / "output"
-                try:
-                    fetch(job["id"], out, None)
-                except SystemExit as err:
-                    log(f"{job['slug']}: download failed ({err}), next round again")
-                    running[job["kind"]] += 1
-                    continue
-                (job["dir"] / ".done").write_text(time.strftime("%Y-%m-%d %H:%M:%S\n"))
-                log(f"{job['slug']}: done, output in {out}")
+                (job["dir"] / ".complete").write_text(time.strftime("%Y-%m-%d %H:%M:%S\n"))
+                log(f"{job['slug']}: complete on Kaggle")
             elif s in ("ERROR", "CANCEL"):
                 try:
                     fetch(job["id"], job["dir"] / "output", r"results\.txt|.*\.log")
@@ -120,8 +147,22 @@ def main() -> None:
                 # RUNNING, QUEUED or a short API failure: the job keeps its session.
                 running[job["kind"]] += 1
 
-        # Push new jobs while Kaggle has free sessions.
+        # Two downloads at a time, so a small file does not wait for a large one.
         jobs = read_queue(args.queue)
+        waiting = [j for j in jobs if state(j) == "complete"]
+        active = sum(fetching(j) for j in waiting)
+        for job in waiting:
+            if active >= 2:
+                break
+            if not fetching(job):
+                start_fetch(job)
+                active += 1
+        for job in jobs:
+            if state(job) == "done" and (job["dir"] / ".fetching").exists():
+                (job["dir"] / ".fetching").unlink(missing_ok=True)
+                log(f"{job['slug']}: done, output in {job['dir'] / 'output'}")
+
+        # Push new jobs while Kaggle has free sessions.
         done_slugs = {j["slug"] for j in jobs if state(j) == "done"}
         refused = set()
         for job in jobs:
@@ -141,9 +182,11 @@ def main() -> None:
             else:
                 log(f"{job['slug']}: push {result}")
 
-        counts = {s: sum(state(j) == s for j in jobs) for s in ("new", "pushed", "done", "failed")}
+        counts = {
+            s: sum(state(j) == s for j in jobs) for s in ("new", "pushed", "complete", "done", "failed")
+        }
         log(f"state {counts} running {running}")
-        if counts["new"] == 0 and counts["pushed"] == 0:
+        if counts["new"] == 0 and counts["pushed"] == 0 and counts["complete"] == 0:
             log("queue finished")
             return
         time.sleep(args.interval)

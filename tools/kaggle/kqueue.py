@@ -111,7 +111,7 @@ def start_fetch(job: dict) -> None:
     # the laptop disk is too small for them. Only the logs come here.
     small = (
         " --pattern 'results|[.]log$'"
-        if "/extract/" in str(job["dir"]) or job["slug"] == "dd3d-renders"
+        if "/extract/" in str(job["dir"]) or job["slug"].startswith("dd3d-renders")
         else ""
     )
     cmd = f"{sys.executable} -u {kfetch} {job['id']} {out}{small} && date > {done}"

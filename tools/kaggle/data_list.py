@@ -35,6 +35,8 @@ GROUPS = [
     ("extract", "v2r", 6, f"losowa pozycja; {NEW}; aktywacje: SANA, SANA losowe wagi, SD 1.5, SDXL"),
     ("extract", "v2rns", 6, f"losowa pozycja; {NEW}; bez cienia obiektu; aktywacje: SANA"),
     ("extract", "v2rso", 6, f"losowa pozycja; {NEW}; sam cień; aktywacje: SANA"),
+    ("misc", "renders", 0, f"wszystkie nowe obrazy w tarach (v2, v2pos, v2ns, v2r, v2rns, v2rso); {NEW}; źródło datasetu dd3d-renders-tar"),
+    ("misc", "renders-png", 0, f"wszystkie nowe obrazy rozpakowane; {NEW}; niepełne: limit 500 plików na wyjście"),
     ("intervene", "test", 0, "test przyczynowy, próba techniczna; obiekt na środku; 4 obrazy"),
 ]
 
@@ -56,11 +58,15 @@ rows = [
     "|---|---|",
     "| [dd3d-v1-images](https://www.kaggle.com/datasets/jankombajn/dd3d-v1-images) | oryginalny zbiór v1 (ZZSN); kule, walce, sześciany; 3000 obrazów + opisy scen |",
     "| [dd3d-plans](https://www.kaggle.com/datasets/jankombajn/dd3d-plans) | plany testów przyczynowych (przesunięcie, wymazanie kierunku światła) |",
+    f"| [dd3d-renders-tar](https://www.kaggle.com/datasets/jankombajn/dd3d-renders-tar) | wszystkie nowe obrazy: v2, v2pos, v2ns (obiekt na środku), v2r, v2rns, v2rso (losowa pozycja); {NEW}; obrazy do przeglądania + etykiety |",
     *[
         f"| [dd3d-features-{n}-{i}](https://www.kaggle.com/datasets/jankombajn/dd3d-features-{n}-{i}) | ({n}-{i}) {PART[i]}; {d} |"
         for n, d in (
             ("v2r", f"losowa pozycja; {NEW}; aktywacje: SANA, SANA losowe wagi, SD 1.5, SDXL"),
-            ("v1", "oryginalny zbiór v1 (ZZSN); aktywacje: SANA, SANA losowe wagi, SANA stary szum, SD 1.5, SDXL"),
+            (
+                "v1",
+                "oryginalny zbiór v1 (ZZSN); aktywacje: SANA, SANA losowe wagi, SANA stary szum, SD 1.5, SDXL",
+            ),
         )
         for i in range(6)
     ],
@@ -72,7 +78,7 @@ rows = [
 ]
 for kind, name, n, desc in GROUPS:
     for i in range(max(n, 1)):
-        slug = f"dd3d-{kind}-{name}" + (f"-{i}" if n else "")
+        slug = (f"dd3d-{name}" if kind == "misc" else f"dd3d-{kind}-{name}") + (f"-{i}" if n else "")
         tag = f"{name}-{i}" if n else name
         which = f"{PART[i]}; " if n == 6 else ""
         st = state(Path(f"runs/kaggle/{kind}/{slug}"))

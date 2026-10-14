@@ -108,7 +108,8 @@ Wnioski:
 2. Sonda pikselowa **opiera się na cieniu**: po jego usunięciu błąd rośnie z 2,5° do 77°.
 3. Piksele **nie przenoszą** kierunku na nowe pozycje (ok. 70°).
 4. Przy losowej pozycji (v2r) liniowa sonda na całym obrazie spada z 2,5° do **25°**. To jest próg, który SANA musi wyraźnie pobić. Wycięcie obiektu (ręczne wyrównanie pozycji) przywraca 4,4°: informacja jest w cieniowaniu, tylko liniowa sonda nie znajduje jej w dowolnym miejscu kadru.
-5. **Elewację zdradza jasność podłogi** (1,7° z samej podłogi, ok. 2° także na v2r), więc główną miarą jest azymut.
+5. **Bez cienia podłoga dalej zdradza kierunek** (v2ns, obiekt usunięty: 4,6° / 10,2° na sześcianach). To światło odbite od fioletowego obiektu, czyli słaba poświata po oświetlonej stronie. Fizycznie poprawne, ale to kolejna wskazówka 2D. Samo cieniowanie obiektu nie przenosi się na sześciany (70°).
+6. **Elewację zdradza jasność podłogi** (1,7° z samej podłogi, ok. 2° także na v2r), więc główną miarą jest azymut.
 
 ---
 

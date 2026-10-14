@@ -1,0 +1,6 @@
+{
+ "fit": "v2",
+ "tests": "v2r",
+ "features": "",
+ "out": "reports/experiments/transfer/position_pixels"
+}

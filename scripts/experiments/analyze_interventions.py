@@ -6,7 +6,9 @@ each output image. For each condition the script reports:
 - rotation: the signed azimuth change against the base condition (the shift
   aims at +rotate deg). A causal direction gives a rotation near the target;
 - label error: the azimuth error against the label of the input render;
-- pixel change: the mean absolute pixel difference against the base image.
+- pixel change: the mean absolute pixel difference against the base image;
+- shadow rotation: the same rotation, measured from the dark shadow region
+  (dd3d.cues.shadow_azimuth). This measure uses no fitted model.
 
 All means have 95% bootstrap intervals over the images.
 """
@@ -25,6 +27,7 @@ import numpy as np  # noqa: E402
 import pandas as pd  # noqa: E402
 from PIL import Image  # noqa: E402
 
+from dd3d.cues import shadow_azimuth  # noqa: E402
 from dd3d.data import pixel_features  # noqa: E402
 from dd3d.metrics import bootstrap_ci, circular_abs_error, decode_azimuth  # noqa: E402
 from dd3d.probe import ProbeConfig, run  # noqa: E402
@@ -62,7 +65,7 @@ def main() -> None:
     conditions = [str(c) for c in plan["conditions"]]
     frame = pd.DataFrame({"image_id": ids, "shape": shapes})
 
-    preds, pixels = {}, {}
+    preds, pixels, shadow = {}, {}, {}
     for cond in conditions:
         folder = args.outputs / cond.replace(":", "_")
         x = pixel_features(frame, folder, 64)
@@ -74,12 +77,16 @@ def main() -> None:
                 for i, s in zip(ids, shapes, strict=True)
             ]
         )
+        # The second measure: the direction of the dark shadow region (no fitted model).
+        shadow[cond] = np.array([shadow_azimuth(img.astype(np.uint8)) for img in pixels[cond]])
 
     rows = []
     for cond in conditions:
         rot = signed_diff(preds[cond], preds["base"])
         err = circular_abs_error(preds[cond], az_label)
         change = np.abs(pixels[cond] - pixels["base"]).mean(axis=(1, 2, 3))
+        srot = signed_diff(shadow[cond], shadow["base"])
+        srot = srot[~np.isnan(srot)]
         rows.append(
             {
                 "condition": cond,
@@ -89,6 +96,10 @@ def main() -> None:
                 "label_az_error": float(err.mean()),
                 "label_az_error_ci": bootstrap_ci(err),
                 "pixel_change": float(change.mean()),
+                "shadow_rotation_median": float(np.median(srot)) if len(srot) else float("nan"),
+                "shadow_rotation_mean": float(srot.mean()) if len(srot) else float("nan"),
+                "shadow_rotation_ci": bootstrap_ci(srot) if len(srot) else (float("nan"), float("nan")),
+                "shadow_n": int(len(srot)),
             }
         )
     df = pd.DataFrame(rows)
@@ -97,7 +108,13 @@ def main() -> None:
     (args.out / "results.json").write_text(json.dumps(rows, indent=1))
     per_image = pd.DataFrame(
         [
-            {"image_id": i, "condition": c, "label_az": float(az_label[k]), "pred_az": float(preds[c][k])}
+            {
+                "image_id": i,
+                "condition": c,
+                "label_az": float(az_label[k]),
+                "pred_az": float(preds[c][k]),
+                "shadow_az": float(shadow[c][k]),
+            }
             for c in conditions
             for k, i in enumerate(ids)
         ]

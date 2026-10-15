@@ -113,3 +113,34 @@ def cue_features(df: pd.DataFrame, images_dir: Path, resolution: int = 64) -> di
         "object only (crop)": np.stack(obj) / 255.0,
         "floor highlight position (2 numbers)": np.asarray(hl, dtype=np.float32),
     }
+
+
+def shadow_azimuth(rgb: np.ndarray, base_px: np.ndarray | None = None, drop: float = 20.0) -> float:
+    """Return the light azimuth that the cast shadow shows, in degrees (NaN if no shadow).
+
+    The shadow is the floor region that is darker than the floor median by more
+    than ``drop`` grey levels. The vector from the object base to the darkness
+    centroid of this region gives the image angle of the shadow. The camera model
+    turns this angle into a ground azimuth, and the light comes from the opposite
+    side. ``base_px`` is the image point of the object base (default: the scene
+    centre, as in data set v2).
+    """
+    from dd3d.geometry import IMAGE_SIZE, azimuth_to_image_angle, image_angle_deg, project
+
+    scale = rgb.shape[0] / IMAGE_SIZE
+    base = (project(np.zeros(3))[:2] if base_px is None else np.asarray(base_px)) * scale
+    obj = object_mask(rgb)
+    lum = rgb.astype(np.float32).mean(axis=2)
+    floor = ~dilate(obj, 3)
+    level = np.median(lum[floor])
+    dark = np.clip(level - drop - lum, 0.0, None) * floor
+    if dark.sum() < 50.0:
+        return float("nan")
+    ys, xs = np.mgrid[0 : rgb.shape[0], 0 : rgb.shape[1]]
+    centroid = np.array([(xs * dark).sum(), (ys * dark).sum()]) / dark.sum()
+    angle = image_angle_deg(base, centroid)
+    grid = np.arange(0.0, 360.0, 0.25)
+    table = azimuth_to_image_angle(grid)
+    d = np.abs((table - angle + 180.0) % 360.0 - 180.0)
+    shadow_dir = grid[int(np.argmin(d))]
+    return float((shadow_dir + 180.0) % 360.0)

@@ -1,0 +1,13 @@
+\begin{tabular}{llllll}
+\toprule
+Data & Features & Block, $t$, grid & Test & Cubes & Cubes $-$ pixels \\
+\midrule
+v2r, no shadow & Pixels (best grid) & 16 px & $24.6$ \scriptsize{[20.7, 28.8]} & $23.3$ \scriptsize{[21.6, 24.9]} & -- \\
+v2r, no shadow & DC-AE latent & -- & $29.0$ \scriptsize{[25.2, 33.0]} & $30.7$ \scriptsize{[29.0, 32.5]} & $+7.4$ \scriptsize{[+5.5, +9.6]} \\
+v2r, no shadow & SANA-1.6B & 5, 100, 2 & $6.9$ \scriptsize{[6.2, 7.6]} & $9.9$ \scriptsize{[9.4, 10.4]} & $-13.4$ \scriptsize{[-14.9, -11.7]} \\
+\midrule
+v2r, only shadow & Pixels (best grid) & 8 px & $24.6$ \scriptsize{[20.7, 29.0]} & $16.9$ \scriptsize{[15.6, 18.1]} & -- \\
+v2r, only shadow & DC-AE latent & -- & $15.7$ \scriptsize{[13.4, 18.2]} & $17.8$ \scriptsize{[16.5, 19.1]} & $+1.0$ \scriptsize{[-0.4, +2.4]} \\
+v2r, only shadow & SANA-1.6B & 7, 100, 4 & $5.9$ \scriptsize{[5.2, 6.7]} & $7.9$ \scriptsize{[7.6, 8.3]} & $-8.9$ \scriptsize{[-10.2, -7.6]} \\
+\bottomrule
+\end{tabular}

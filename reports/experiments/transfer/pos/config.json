@@ -4,6 +4,7 @@
  "data_root": "/kaggle/temp/data",
  "feature_root": "/kaggle/temp/feat",
  "features": "",
+ "pooled_grids": "1,2",
  "scan": "/kaggle/temp/prev/dd3d-analyze-scan-v2/out/v2/scan/scan.csv",
  "runs": "sana,sd15",
  "out": "/kaggle/working/out/transfer/pos"

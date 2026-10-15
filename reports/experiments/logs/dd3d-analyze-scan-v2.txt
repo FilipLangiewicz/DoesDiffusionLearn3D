@@ -1,0 +1,143 @@
+[18:14:08] params: {"name": "scan-v2", "ref": "dc95b5b", "sets": ["v2pos", "v2"], "features": {"v2": ["dd3d-extract-v2-", "dd3d-extract-v2pos-"]}, "split_md5": {"v2": "067ad25419c8b1beb3b2a0f4f9b20167"}, "commands": ["python scripts/experiments/feature_scan.py --features {FEAT}/v2 --runs all --splits {DATA}/v2/splits --images {DATA}/v2/images --out {OUT}/v2/scan", "python scripts/experiments/plot_scan.py --scan {OUT}/v2/scan/scan.csv --title v2 --out {OUT}/v2/scan_summary"]}
+[18:14:08] $ nproc; free -g | head -2; df -h /kaggle/temp /kaggle/working | tail -2
+[18:14:08] 4
+               total        used        free      shared  buff/cache   available
+Mem:              31           0          30           0           0          30
+overlay         8.0T  7.0T  1.1T  87% /
+/dev/loop2       20G  160K   20G   1% /kaggle/working
+[18:14:08] $ ls /kaggle/input /kaggle/input/* | head -60
+[18:14:08] /kaggle/input:
+notebooks
+
+/kaggle/input/notebooks:
+jankombajn
+[18:14:08] $ pip install -q tabulate
+[18:14:16] $ git clone -q https://github.com/FilipLangiewicz/DoesDiffusionLearn3D /kaggle/temp/repo && cd /kaggle/temp/repo && git checkout -q dc95b5b && git log -1 --format=%h
+[18:14:47] dc95b5b
+[18:14:47] $ tar xf '/kaggle/input/notebooks/jankombajn/dd3d-renders/v2pos/v2pos_00000_00300.tar' -C /kaggle/temp/img_v2pos/0
+[18:14:48] v2pos: 1 shards, 300 labels, images {'Sphere': 100, 'SmoothCylinder': 100, 'SmoothCube_v2': 100}
+[18:14:48] $ tar xf '/kaggle/input/notebooks/jankombajn/dd3d-renders/v2/v2_00000_00500.tar' -C /kaggle/temp/img_v2/0
+[18:14:50] $ tar xf '/kaggle/input/notebooks/jankombajn/dd3d-renders/v2/v2_00500_01000.tar' -C /kaggle/temp/img_v2/1
+[18:14:51] $ tar xf '/kaggle/input/notebooks/jankombajn/dd3d-renders/v2/v2_01000_01500.tar' -C /kaggle/temp/img_v2/2
+[18:14:53] $ tar xf '/kaggle/input/notebooks/jankombajn/dd3d-renders/v2/v2_01500_02000.tar' -C /kaggle/temp/img_v2/3
+[18:14:55] $ tar xf '/kaggle/input/notebooks/jankombajn/dd3d-renders/v2/v2_02000_02500.tar' -C /kaggle/temp/img_v2/4
+[18:14:57] $ tar xf '/kaggle/input/notebooks/jankombajn/dd3d-renders/v2/v2_02500_03000.tar' -C /kaggle/temp/img_v2/5
+[18:15:02] v2: 6 shards, 3000 labels, images {'Sphere': 1000, 'SmoothCylinder': 1000, 'SmoothCube_v2': 1000}
+[18:15:02] $ python scripts/data/make_v2_splits.py --labels /kaggle/temp/data/v2pos/labels.csv --pos-labels none --out /kaggle/temp/data/v2pos/splits
+[18:15:06] /kaggle/temp/data/v2pos/splits/test.csv 20
+/kaggle/temp/data/v2pos/splits/test_cubes.csv 100
+/kaggle/temp/data/v2pos/splits/train.csv 160
+/kaggle/temp/data/v2pos/splits/val.csv 20
+[18:15:06] v2pos: splits md5 f206d018c01e6de7076d1d9ae9259893 (expected None)
+[18:15:06] $ python scripts/data/make_v2_splits.py --labels /kaggle/temp/data/v2/labels.csv --pos-labels /kaggle/temp/data/v2pos/labels.csv --out /kaggle/temp/data/v2/splits
+[18:15:06] /kaggle/temp/data/v2/splits/test.csv 200
+/kaggle/temp/data/v2/splits/test_cubes.csv 1000
+/kaggle/temp/data/v2/splits/test_pos.csv 300
+/kaggle/temp/data/v2/splits/train.csv 1600
+/kaggle/temp/data/v2/splits/val.csv 200
+[18:15:06] v2: splits md5 067ad25419c8b1beb3b2a0f4f9b20167 (expected 067ad25419c8b1beb3b2a0f4f9b20167)
+[18:15:06] features v2: /kaggle/input/notebooks/jankombajn/dd3d-extract-v2-0
+[18:15:06] features v2: /kaggle/input/notebooks/jankombajn/dd3d-extract-v2-1
+[18:15:06] features v2: /kaggle/input/notebooks/jankombajn/dd3d-extract-v2-2
+[18:15:06] features v2: /kaggle/input/notebooks/jankombajn/dd3d-extract-v2-3
+[18:15:06] features v2: /kaggle/input/notebooks/jankombajn/dd3d-extract-v2-4
+[18:15:06] features v2: /kaggle/input/notebooks/jankombajn/dd3d-extract-v2-5
+[18:15:06] features v2: /kaggle/input/notebooks/jankombajn/dd3d-extract-v2pos-0
+[18:15:06] $ python scripts/experiments/feature_scan.py --features /kaggle/temp/feat/v2 --runs all --splits /kaggle/temp/data/v2/splits --images /kaggle/temp/data/v2/images --out /kaggle/working/out/v2/scan
+[18:59:10]  'sd15', 'block': 6, 't': 400, 'grid': 4} cubes az   7.56 el  2.07 (5 s)
+{'run': 'sd15', 'block': 6, 't': 400, 'grid': 8} cubes az   7.51 el  2.35 (13 s)
+{'run': 'sd15', 'block': 6, 't': 600, 'grid': 1} cubes az  12.99 el  1.76 (2 s)
+{'run': 'sd15', 'block': 6, 't': 600, 'grid': 2} cubes az  11.14 el  1.81 (3 s)
+{'run': 'sd15', 'block': 6, 't': 600, 'grid': 4} cubes az  10.61 el  1.82 (5 s)
+{'run': 'sd15', 'block': 6, 't': 600, 'grid': 8} cubes az  10.82 el  1.93 (13 s)
+{'run': 'sd15', 'block': 6, 't': 800, 'grid': 1} cubes az  31.37 el  2.75 (2 s)
+{'run': 'sd15', 'block': 6, 't': 800, 'grid': 2} cubes az  25.64 el  2.80 (3 s)
+{'run': 'sd15', 'block': 6, 't': 800, 'grid': 4} cubes az  24.06 el  2.85 (5 s)
+{'run': 'sd15', 'block': 6, 't': 800, 'grid': 8} cubes az  22.80 el  2.93 (13 s)
+{'run': 'sd15', 'block': 7, 't': 100, 'grid': 1} cubes az  15.29 el  0.62 (1 s)
+{'run': 'sd15', 'block': 7, 't': 100, 'grid': 2} cubes az   8.55 el  0.73 (2 s)
+{'run': 'sd15', 'block': 7, 't': 100, 'grid': 4} cubes az   8.13 el  0.95 (3 s)
+{'run': 'sd15', 'block': 7, 't': 200, 'grid': 1} cubes az  16.57 el  0.78 (2 s)
+{'run': 'sd15', 'block': 7, 't': 200, 'grid': 2} cubes az  10.29 el  0.84 (2 s)
+{'run': 'sd15', 'block': 7, 't': 200, 'grid': 4} cubes az   7.86 el  0.99 (4 s)
+{'run': 'sd15', 'block': 7, 't': 400, 'grid': 1} cubes az  11.62 el  0.97 (2 s)
+{'run': 'sd15', 'block': 7, 't': 400, 'grid': 2} cubes az   8.72 el  1.04 (2 s)
+{'run': 'sd15', 'block': 7, 't': 400, 'grid': 4} cubes az   8.57 el  1.12 (4 s)
+{'run': 'sd15', 'block': 7, 't': 600, 'grid': 1} cubes az  13.99 el  1.46 (1 s)
+{'run': 'sd15', 'block': 7, 't': 600, 'grid': 2} cubes az  12.13 el  1.50 (2 s)
+{'run': 'sd15', 'block': 7, 't': 600, 'grid': 4} cubes az  10.96 el  1.50 (4 s)
+{'run': 'sd15', 'block': 7, 't': 800, 'grid': 1} cubes az  34.97 el  2.63 (1 s)
+{'run': 'sd15', 'block': 7, 't': 800, 'grid': 2} cubes az  28.22 el  2.68 (2 s)
+{'run': 'sd15', 'block': 7, 't': 800, 'grid': 4} cubes az  26.13 el  2.72 (4 s)
+{'run': 'sd15', 'block': 8, 't': 100, 'grid': 1} cubes az  16.83 el  0.41 (2 s)
+{'run': 'sd15', 'block': 8, 't': 100, 'grid': 2} cubes az   9.69 el  0.44 (2 s)
+{'run': 'sd15', 'block': 8, 't': 100, 'grid': 4} cubes az   8.85 el  0.54 (3 s)
+{'run': 'sd15', 'block': 8, 't': 200, 'grid': 1} cubes az  16.85 el  0.51 (1 s)
+{'run': 'sd15', 'block': 8, 't': 200, 'grid': 2} cubes az   9.41 el  0.54 (2 s)
+{'run': 'sd15', 'block': 8, 't': 200, 'grid': 4} cubes az   9.11 el  0.58 (3 s)
+{'run': 'sd15', 'block': 8, 't': 400, 'grid': 1} cubes az  17.73 el  0.79 (1 s)
+{'run': 'sd15', 'block': 8, 't': 400, 'grid': 2} cubes az  10.02 el  0.77 (2 s)
+{'run': 'sd15', 'block': 8, 't': 400, 'grid': 4} cubes az  10.12 el  0.83 (3 s)
+{'run': 'sd15', 'block': 8, 't': 600, 'grid': 1} cubes az  17.27 el  1.35 (2 s)
+{'run': 'sd15', 'block': 8, 't': 600, 'grid': 2} cubes az  13.11 el  1.36 (2 s)
+{'run': 'sd15', 'block': 8, 't': 600, 'grid': 4} cubes az  14.69 el  1.40 (3 s)
+{'run': 'sd15', 'block': 8, 't': 800, 'grid': 1} cubes az  37.49 el  2.63 (2 s)
+{'run': 'sd15', 'block': 8, 't': 800, 'grid': 2} cubes az  28.82 el  2.70 (1 s)
+{'run': 'sd15', 'block': 8, 't': 800, 'grid': 4} cubes az  26.26 el  2.70 (3 s)
+  skip sdxl/block_00/t_100: the train or val split has images without features
+  skip sdxl/block_00/t_200: the train or val split has images without features
+  skip sdxl/block_00/t_400: the train or val split has images without features
+  skip sdxl/block_00/t_600: the train or val split has images without features
+  skip sdxl/block_00/t_800: the train or val split has images without features
+  skip sdxl/block_01/t_100: the train or val split has images without features
+  skip sdxl/block_01/t_200: the train or val split has images without features
+  skip sdxl/block_01/t_400: the train or val split has images without features
+  skip sdxl/block_01/t_600: the train or val split has images without features
+  skip sdxl/block_01/t_800: the train or val split has images without features
+  skip sdxl/block_02/t_100: the train or val split has images without features
+  skip sdxl/block_02/t_200: the train or val split has images without features
+  skip sdxl/block_02/t_400: the train or val split has images without features
+  skip sdxl/block_02/t_600: the train or val split has images without features
+  skip sdxl/block_02/t_800: the train or val split has images without features
+  skip sdxl/block_03/t_100: the train or val split has images without features
+  skip sdxl/block_03/t_200: the train or val split has images without features
+  skip sdxl/block_03/t_400: the train or val split has images without features
+  skip sdxl/block_03/t_600: the train or val split has images without features
+  skip sdxl/block_03/t_800: the train or val split has images without features
+  skip sdxl/block_04/t_100: the train or val split has images without features
+  skip sdxl/block_04/t_200: the train or val split has images without features
+  skip sdxl/block_04/t_400: the train or val split has images without features
+  skip sdxl/block_04/t_600: the train or val split has images without features
+  skip sdxl/block_04/t_800: the train or val split has images without features
+  skip sdxl/block_05/t_100: the train or val split has images without features
+  skip sdxl/block_05/t_200: the train or val split has images without features
+  skip sdxl/block_05/t_400: the train or val split has images without features
+  skip sdxl/block_05/t_600: the train or val split has images without features
+  skip sdxl/block_05/t_800: the train or val split has images without features
+  skip sdxl/block_06/t_100: the train or val split has images without features
+  skip sdxl/block_06/t_200: the train or val split has images without features
+  skip sdxl/block_06/t_400: the train or val split has images without features
+  skip sdxl/block_06/t_600: the train or val split has images without features
+  skip sdxl/block_06/t_800: the train or val split has images without features
+-> /kaggle/working/out/v2/scan/scan.csv
+[18:59:10] command 0 ended with code 0 after 2643 s
+[18:59:10] $ python scripts/experiments/plot_scan.py --scan /kaggle/working/out/v2/scan/scan.csv --title v2 --out /kaggle/working/out/v2/scan_summary
+[18:59:14] run  grid  block    t    val_az         test_az  test_el      test_cubes_az  test_cubes_el        test_pos_az  test_pos_el
+0      pixels    64     -1   -1  2.272004  2.5 [2.2, 2.9]      0.9  13.7 [13.0, 14.4]            3.4  69.0 [63.7, 74.4]         11.5
+1        sana     1      5  100  3.971779  4.1 [3.7, 4.6]      0.2  13.6 [13.0, 14.3]            0.3  12.3 [10.8, 14.2]          0.3
+2        sana     2      2  100  2.880655  3.3 [2.8, 3.7]      0.1     6.1 [5.9, 6.4]            0.2  22.1 [20.0, 24.5]          0.6
+3        sana     4      4  100  2.536534  2.7 [2.4, 3.0]      0.3     4.8 [4.5, 5.0]            0.3  19.4 [17.1, 21.8]          0.6
+4        sana     8      4  100  2.338017  2.2 [2.0, 2.5]      0.3     7.3 [7.0, 7.7]            0.4  35.6 [31.6, 39.6]          0.8
+5        sd15     1      4  100  5.253734  5.5 [5.0, 6.1]      0.9  20.4 [19.4, 21.3]            2.1  14.9 [13.5, 16.4]          2.2
+6        sd15     2      3  100  4.566553  4.7 [4.2, 5.4]      0.8     8.1 [7.8, 8.5]            1.2  12.1 [11.0, 13.2]          1.5
+7        sd15     4      2  100  3.820091  4.0 [3.5, 4.6]      0.8     6.8 [6.5, 7.2]            1.3  21.5 [19.0, 24.1]          2.0
+8        sd15     8      4  100  3.275531  3.3 [2.9, 3.7]      0.9     8.9 [8.5, 9.3]            2.4  30.0 [26.9, 33.3]          4.2
+9  vae_latent    32     -1   -1  2.047997  2.2 [1.9, 2.6]      0.6     9.2 [8.8, 9.7]            1.1  62.3 [57.3, 67.5]          2.3
+[18:59:14] command 1 ended with code 0 after 4 s
+[18:59:14] all commands ended with code 0
+[18:59:14] $ cd /kaggle/working/out && find . -type f | sort | head -300 && du -sh .
+[18:59:14] ./v2/scan/scan.csv
+./v2/scan_summary.csv
+./v2/scan_summary.md
+./v2/scan_summary.png
+472K	.

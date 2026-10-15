@@ -1,0 +1,46 @@
+{
+ "name": "transfer-cue-pooled",
+ "sets": [
+  "v2r",
+  "v2rns",
+  "v2rso"
+ ],
+ "features": {
+  "v2r": [
+   "dd3d-features-v2r-"
+  ],
+  "v2rns": [
+   "dd3d-extract-v2rns-"
+  ],
+  "v2rso": [
+   "dd3d-extract-v2rso-"
+  ]
+ },
+ "kernels": [
+  "jankombajn/dd3d-extract-v2rns-0",
+  "jankombajn/dd3d-extract-v2rns-1",
+  "jankombajn/dd3d-extract-v2rns-2",
+  "jankombajn/dd3d-extract-v2rns-3",
+  "jankombajn/dd3d-extract-v2rns-4",
+  "jankombajn/dd3d-extract-v2rns-5",
+  "jankombajn/dd3d-extract-v2rso-0",
+  "jankombajn/dd3d-extract-v2rso-1",
+  "jankombajn/dd3d-extract-v2rso-2",
+  "jankombajn/dd3d-extract-v2rso-3",
+  "jankombajn/dd3d-extract-v2rso-4",
+  "jankombajn/dd3d-extract-v2rso-5",
+  "jankombajn/dd3d-renders",
+  "jankombajn/dd3d-analyze-scan-v2r"
+ ],
+ "datasets": [
+  "jankombajn/dd3d-features-v2r-0",
+  "jankombajn/dd3d-features-v2r-1",
+  "jankombajn/dd3d-features-v2r-2",
+  "jankombajn/dd3d-features-v2r-3",
+  "jankombajn/dd3d-features-v2r-4",
+  "jankombajn/dd3d-features-v2r-5"
+ ],
+ "commands": [
+  "python scripts/experiments/transfer.py --fit v2r --tests v2rns,v2rso --data-root {DATA} --feature-root {FEAT} --scan {PREV}/dd3d-analyze-scan-v2r/out/v2r/scan/scan.csv --runs sana --pooled-grids 1,2 --out {OUT}/transfer/cue_pooled"
+ ]
+}

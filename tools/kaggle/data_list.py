@@ -93,7 +93,50 @@ GROUPS = [
         0,
         "test przyczynowy na v2: 60 obrazów, bloki 4, 10, 18; obrazy wyjściowe w tarach",
     ),
-    ("intervene", "patch", 0, "łatanie aktywacji między parami v2 / v2rot: 48 par, 6 bloków, 5 obszarów"),
+    (
+        "intervene",
+        "patch",
+        0,
+        "łatanie aktywacji między parami v2 / v2rot: 48 par, 10 bloków, 3 obszary, połówki kroków; obrazy w tarach",
+    ),
+    ("intervene", "patchtest", 0, "łatanie aktywacji, próba techniczna: 2 pary, blok 10"),
+    (
+        "intervene",
+        "sweep",
+        0,
+        "przemiatanie kierunku wzorca (bloki 4 i 10, 11 kątów, 3 siły, 6 scen) do podglądu; obrazy w tarach",
+    ),
+    ("analyze", "smoke2", 0, "analiza, druga próba techniczna (rendery z tarów, siatki 1x1 i 2x2)"),
+    (
+        "analyze",
+        "causal-v2",
+        0,
+        "analiza testu przyczynowego: obrót światła (sonda pikselowa i obszar cienia); kopia w reports/experiments/causal",
+    ),
+    (
+        "analyze",
+        "patch-v2",
+        0,
+        "analiza łatania: część obrotu światła dla bloku i obszaru; kopia w reports/experiments/patch",
+    ),
+    (
+        "analyze",
+        "transfer-cue-pooled",
+        0,
+        "transfer v2r -> v2rns, v2rso także dla średniej tokenów (1x1, 2x2); kopia w reports/experiments/transfer/cue_pooled",
+    ),
+    (
+        "analyze",
+        "sweep-plans",
+        0,
+        "plany przemiatania kierunku wzorca (pliki npz zostają na Kaggle, lokalnie tylko JSON)",
+    ),
+    (
+        "analyze",
+        "viewer-data",
+        0,
+        "dane podglądu: obrazy JPEG i odczyty kierunku z przemiatania i łatania (małe pliki JSON)",
+    ),
 ]
 
 

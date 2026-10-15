@@ -64,6 +64,7 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
 .seg { display: flex; flex-wrap: wrap; gap: 6px; }
 .seg button { font: 500 13px var(--font-body); border: 1px solid var(--line); background: var(--bg); color: var(--ink); border-radius: 6px; padding: 5px 10px; cursor: pointer; }
 .seg button[aria-pressed="true"] { background: var(--chip); border-color: var(--accent); color: var(--ink); }
+#src-fig figcaption { font-size: 12px; }
 .compass { display: grid; justify-items: center; gap: 6px; }
 .compass svg { width: 100%; max-width: 230px; height: auto; }
 .legend { display: grid; gap: 4px; font-size: 13px; width: 100%; }
@@ -91,8 +92,8 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
 
   <div class="bench">
     <figure>
-      <img id="img-left" alt="Render wejściowy">
-      <figcaption><b id="cap-left">Render</b><span id="cap-left-2"></span></figcaption>
+      <img id="img-left" alt="Wyjście bez zmiany">
+      <figcaption><b id="cap-left">Bez zmiany</b><span id="cap-left-2"></span></figcaption>
     </figure>
     <figure>
       <img id="img-right" alt="Obraz wyjściowy">
@@ -121,6 +122,10 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
           <div class="seg" id="region"></div>
         </div>
       </div>
+      <figure id="src-fig" hidden>
+        <img id="img-src" alt="Render źródła">
+        <figcaption><b>Źródło: ta sama scena, światło +90°</b></figcaption>
+      </figure>
       <div class="compass">
         <span class="eyebrow">Kierunek światła (widok z góry)</span>
         <svg viewBox="-120 -120 240 240" role="img" aria-label="Kompas kierunku światła" id="dial"></svg>
@@ -138,7 +143,7 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
   const DATA = JSON.parse(document.getElementById("data").textContent);
   const $ = (id) => document.getElementById(id);
   const state = { tab: DATA.sweep ? "sweep" : "patch", scene: 0, rot: 3, k: null, block: 5, region: "object" };
-  const REGION_NAMES = { object: "obiekt", shadow_src: "cień źródła", floor: "podłoga", all: "wszystko", object_early: "obiekt, 1. połowa kroków", object_late: "obiekt, 2. połowa kroków" };
+  const REGION_NAMES = { object: "obiekt", shadow_src: "cień źródła", shadow_tgt: "cień celu", floor: "podłoga", all: "wszystko", object_early: "obiekt, 1. połowa kroków", object_late: "obiekt, 2. połowa kroków" };
   const fmt = (a) => `${Math.round(((a % 360) + 360) % 360)}°`;
   const diff = (a, b) => ((a - b + 540) % 360) - 180;
 
@@ -184,9 +189,9 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
     $("strength").innerHTML = ks.map((k) => `<button aria-pressed="${k === state.k}" data-k="${k}">×${k}</button>`).join("");
     $("strength").querySelectorAll("button").forEach((b) => b.addEventListener("click", () => { state.k = +b.dataset.k; render(); }));
     const o = r === 0 ? base : outs.find((x) => x.rotation === r && x.strength === state.k);
-    $("img-left").src = `data:image/jpeg;base64,${s.render}`;
-    $("cap-left").textContent = "Render";
-    $("cap-left-2").textContent = `światło ${fmt(s.label_az)}`;
+    $("img-left").src = `data:image/jpeg;base64,${base.image}`;
+    $("cap-left").textContent = "Wyjście bez przesunięcia";
+    $("cap-left-2").textContent = `światło sceny ${fmt(s.label_az)}, sonda ${fmt(base.read_az)}`;
     $("img-right").src = `data:image/jpeg;base64,${o.image}`;
     $("cap-right").textContent = r === 0 ? "Wyjście bez zmiany" : `Wyjście, cel +${r}°, siła ×${state.k}`;
     $("cap-right-2").textContent = `sonda: ${fmt(o.read_az)}`;
@@ -218,9 +223,10 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
     $("region").querySelectorAll("button").forEach((x) => x.addEventListener("click", () => { state.region = x.dataset.g; render(); }));
     const base = s.outputs.find((x) => x.condition === "base");
     const src = s.outputs.find((x) => x.condition === "source");
-    $("img-left").src = `data:image/jpeg;base64,${s.source_render}`;
-    $("cap-left").textContent = "Źródło: ta sama scena, światło +90°";
-    $("cap-left-2").textContent = `światło ${fmt(s.label_az + 90)}`;
+    $("img-left").src = `data:image/jpeg;base64,${base.image}`;
+    $("cap-left").textContent = "Cel bez przeszczepu";
+    $("cap-left-2").textContent = `światło ${fmt(s.label_az)}, sonda ${fmt(base.read_az)}`;
+    $("img-src").src = `data:image/jpeg;base64,${s.source_render}`;
     $("img-right").src = `data:image/jpeg;base64,${(o || base).image}`;
     $("cap-right").textContent = o ? `Cel z przeszczepem: ${REGION_NAMES[state.region] || state.region}, blok ${b}` : "Cel bez zmiany";
     $("cap-right-2").textContent = `sonda: ${fmt((o || base).read_az)}`;
@@ -238,6 +244,7 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
     $("tab-patch").setAttribute("aria-selected", state.tab === "patch");
     $("ctl-sweep").hidden = state.tab !== "sweep";
     $("ctl-patch").hidden = state.tab !== "patch";
+    $("src-fig").hidden = state.tab !== "patch";
     $("ctl-sweep").style.display = state.tab === "sweep" ? "grid" : "none";
     $("ctl-patch").style.display = state.tab === "patch" ? "grid" : "none";
     state.scene = Math.min(state.scene, set().scenes.length - 1);

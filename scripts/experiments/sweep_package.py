@@ -1,4 +1,4 @@
-"""Pack the outputs of a sweep job into one small JSON file for the interactive viewer.
+"""Pack the outputs of a sweep job or a patch job into one small JSON file for the viewer.
 
 For each image and condition, the file has a JPEG of the output (base64) and the
 azimuth that a pixel probe reads from it. The pixel probe is fitted on the
@@ -40,6 +40,8 @@ def main() -> None:
     parser.add_argument("--size", type=int, default=256)
     parser.add_argument("--quality", type=int, default=80)
     parser.add_argument("--note", default="", help="Text for the viewer (block, timestep, family).")
+    parser.add_argument("--source-images", type=Path, default=None, help="Renders of the patch sources.")
+    parser.add_argument("--max-images", type=int, default=0, help="Keep only the first N images (0: all).")
     parser.add_argument("--out", type=Path, required=True)
     args = parser.parse_args()
 
@@ -52,8 +54,11 @@ def main() -> None:
     ).model
 
     plan = np.load(args.plan, allow_pickle=False)
-    ids = [str(s) for s in plan["image_ids"]]
-    shapes = [str(s) for s in plan["shapes"]]
+    patch = "target_ids" in plan.files
+    n = args.max_images or len(plan["shapes"])
+    ids = [str(s) for s in plan["target_ids" if patch else "image_ids"]][:n]
+    shapes = [str(s) for s in plan["shapes"]][:n]
+    sources = [str(s) for s in plan["source_ids"]][:n] if patch else []
     frame = pd.DataFrame({"image_id": ids, "shape": shapes})
     scenes = []
     for k, (image_id, shape) in enumerate(zip(ids, shapes, strict=True)):
@@ -66,18 +71,26 @@ def main() -> None:
                 "outputs": [],
             }
         )
-    for cond in (str(c) for c in plan["conditions"]):
+        if patch:
+            src = args.source_images / shape / f"{sources[k]}.png"
+            scenes[-1]["source_id"] = sources[k]
+            scenes[-1]["source_render"] = jpeg(src, args.size, args.quality)
+    conditions = [str(c) for c in plan["conditions"]] + (["source"] if patch else [])
+    for cond in conditions:
         folder = args.outputs / cond.replace(":", "_")
         p = probe.predict(pixel_features(frame, folder, 64))
         read = decode_azimuth(p[:, 0], p[:, 1])
         m = re.search(r"_k([\d.]+)_r(-?[\d.]+)$", cond)
         k_val, r_val = (float(m.group(1)), float(m.group(2))) if m else (0.0, 0.0)
+        mp = re.search(r"b(\d+)_(\w+)$", cond)
         for i, scene in enumerate(scenes):
             scene["outputs"].append(
                 {
                     "condition": cond,
                     "strength": k_val,
                     "rotation": r_val,
+                    "block": int(mp.group(1)) if mp else -1,
+                    "region": mp.group(2) if mp else "",
                     "read_az": float(read[i]),
                     "image": jpeg(folder / shapes[i] / f"{ids[i]}.png", args.size, args.quality),
                 }

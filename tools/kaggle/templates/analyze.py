@@ -83,7 +83,11 @@ sh(f"git clone -q {GIT} {repo} && cd {repo} && git checkout -q {PARAMS['ref']} &
 data, feat, out = Path(f"{TMP}/data"), Path(f"{TMP}/feat"), Path(f"{WORK}/out")
 out.mkdir(parents=True, exist_ok=True)
 
-# Render sets: v1 comes from its own data set; the new sets come from dd3d-renders-tar.
+# Render sets: v1 comes from its own data set. The new sets come from the tar files
+# of the job dd3d-renders (one folder for each set) or of the render jobs. The job
+# unpacks them to the local disk, because many small reads from a mounted data set
+# are slow. The unpacked data set dd3d-renders-tar is the last choice.
+packs = [p for p in inputs("dd3d-renders") if os.path.basename(p) == "dd3d-renders"]
 renders = (inputs("dd3d-renders-tar") or [None])[0]
 for name in PARAMS.get("sets", []):
     d = data / name
@@ -97,9 +101,19 @@ for name in PARAMS.get("sets", []):
         os.symlink(f"{repo}/data/splits", d / "splits")
         log(f"v1: images {src[0]}")
         continue
-    if renders is None:
-        raise SystemExit("no input dd3d-renders-tar")
-    shards = sorted(glob.glob(f"{renders}/{name}/{name}_*/images"))
+    tars = sorted(glob.glob(f"{packs[0]}/{name}/{name}_*.tar")) if packs else []
+    for job in inputs(f"dd3d-render-{name}-"):
+        tars += sorted(glob.glob(f"{job}/{name}_*.tar"))
+    shards = []
+    for i, t in enumerate(tars):
+        to = Path(f"{TMP}/img_{name}/{i}")
+        to.mkdir(parents=True, exist_ok=True)
+        sh(f"tar xf '{t}' -C {to}", quiet=True)
+        shards.append(str(to / "images"))
+    if not shards:
+        if renders is None:
+            raise SystemExit(f"no renders of {name} in the inputs")
+        shards = sorted(glob.glob(f"{renders}/{name}/{name}_*/images"))
     labels = []
     for shape in SHAPES:
         (d / "images" / shape).mkdir(parents=True, exist_ok=True)

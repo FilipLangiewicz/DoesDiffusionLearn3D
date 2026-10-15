@@ -17,11 +17,10 @@
   "jankombajn/dd3d-extract-v2-3",
   "jankombajn/dd3d-extract-v2-4",
   "jankombajn/dd3d-extract-v2-5",
-  "jankombajn/dd3d-extract-v2pos-0"
+  "jankombajn/dd3d-extract-v2pos-0",
+  "jankombajn/dd3d-renders"
  ],
- "datasets": [
-  "jankombajn/dd3d-renders-tar"
- ],
+ "datasets": [],
  "commands": [
   "python scripts/experiments/feature_scan.py --features {FEAT}/v2 --runs all --splits {DATA}/v2/splits --images {DATA}/v2/images --out {OUT}/v2/scan",
   "python scripts/experiments/plot_scan.py --scan {OUT}/v2/scan/scan.csv --title v2 --out {OUT}/v2/scan_summary"

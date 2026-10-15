@@ -17,11 +17,10 @@
   "jankombajn/dd3d-extract-v2-3",
   "jankombajn/dd3d-extract-v2-4",
   "jankombajn/dd3d-extract-v2-5",
-  "jankombajn/dd3d-extract-v2pos-0"
+  "jankombajn/dd3d-extract-v2pos-0",
+  "jankombajn/dd3d-renders"
  ],
- "datasets": [
-  "jankombajn/dd3d-renders-tar"
- ],
+ "datasets": [],
  "commands": [
   "python scripts/experiments/make_intervention_plan.py --features {FEAT}/v2 --key sana/block_10/t_400 --splits {DATA}/v2/splits --n-images 60 --out {OUT}/plans/b10t400",
   "python scripts/experiments/make_intervention_plan.py --features {FEAT}/v2 --key sana/block_04/t_400 --splits {DATA}/v2/splits --n-images 60 --out {OUT}/plans/b04t400",

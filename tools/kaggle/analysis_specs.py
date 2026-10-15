@@ -14,7 +14,9 @@ import json
 from pathlib import Path
 
 O = "jankombajn"
-RENDERS = f"{O}/dd3d-renders-tar"
+# The job output with the render tar files of all new sets (faster to read than
+# the unpacked data set dd3d-renders-tar).
+RENDERS = f"{O}/dd3d-renders"
 OUT = Path("configs/kaggle")
 
 # The feature sources of each set: data sets for v1 and v2r, job outputs for the others.
@@ -39,7 +41,7 @@ def sources(*sets: str) -> dict:
         kernels += KERNELS.get(s, [])
         datasets += DATASETS.get(s, [])
     if any(s != "v1" for s in sets):
-        datasets.append(RENDERS)
+        kernels.append(RENDERS)
     render = []
     for s in sets:
         render += [r for r in RENDER_SETS.get(s, [s]) if r not in render]

@@ -29,6 +29,7 @@
   "jankombajn/dd3d-extract-v2rso-3",
   "jankombajn/dd3d-extract-v2rso-4",
   "jankombajn/dd3d-extract-v2rso-5",
+  "jankombajn/dd3d-renders",
   "jankombajn/dd3d-analyze-scan-v2r"
  ],
  "datasets": [
@@ -37,8 +38,7 @@
   "jankombajn/dd3d-features-v2r-2",
   "jankombajn/dd3d-features-v2r-3",
   "jankombajn/dd3d-features-v2r-4",
-  "jankombajn/dd3d-features-v2r-5",
-  "jankombajn/dd3d-renders-tar"
+  "jankombajn/dd3d-features-v2r-5"
  ],
  "commands": [
   "python scripts/experiments/transfer.py --fit v2r --tests v2rns,v2rso --data-root {DATA} --feature-root {FEAT} --scan {PREV}/dd3d-analyze-scan-v2r/out/v2r/scan/scan.csv --runs sana --out {OUT}/transfer/cue"

@@ -9,9 +9,7 @@
   "jankombajn/dd3d-intervene-causal",
   "jankombajn/dd3d-analyze-plans-v2"
  ],
- "datasets": [
-  "jankombajn/dd3d-renders-tar"
- ],
+ "datasets": [],
  "commands": [
   "mkdir -p /kaggle/temp/causal && for f in {PREV}/dd3d-intervene-causal/*.tar; do tar xf $f -C /kaggle/temp/causal; done",
   "python scripts/experiments/analyze_interventions.py --outputs /kaggle/temp/causal/causal_b10 --plan {PREV}/dd3d-analyze-plans-v2/out/plans/b10t400/plan.npz --splits {DATA}/v2/splits --images {DATA}/v2/images --out {OUT}/causal/b10",

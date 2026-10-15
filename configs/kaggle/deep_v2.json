@@ -1,0 +1,30 @@
+{
+ "name": "deep-v2",
+ "sets": [
+  "v2pos",
+  "v2"
+ ],
+ "features": {
+  "v2": [
+   "dd3d-extract-v2-",
+   "dd3d-extract-v2pos-"
+  ]
+ },
+ "kernels": [
+  "jankombajn/dd3d-extract-v2-0",
+  "jankombajn/dd3d-extract-v2-1",
+  "jankombajn/dd3d-extract-v2-2",
+  "jankombajn/dd3d-extract-v2-3",
+  "jankombajn/dd3d-extract-v2-4",
+  "jankombajn/dd3d-extract-v2-5",
+  "jankombajn/dd3d-extract-v2pos-0",
+  "jankombajn/dd3d-analyze-scan-v2"
+ ],
+ "datasets": [
+  "jankombajn/dd3d-renders-tar"
+ ],
+ "commands": [
+  "python scripts/experiments/best_probes.py --scan {PREV}/dd3d-analyze-scan-v2/out/v2/scan/scan.csv --features {FEAT}/v2 --splits {DATA}/v2/splits --images {DATA}/v2/images --out {OUT}/v2/best",
+  "python scripts/experiments/probe_maps.py --features {FEAT}/v2 --scan {PREV}/dd3d-analyze-scan-v2/out/v2/scan/scan.csv --runs sana,sana_random_init,sd15,sdxl --splits {DATA}/v2/splits --images {DATA}/v2/images --labels {DATA}/v2/labels.csv --title v2 --out {OUT}/v2/maps"
+ ]
+}

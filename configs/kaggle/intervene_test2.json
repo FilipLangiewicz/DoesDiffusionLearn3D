@@ -1,0 +1,15 @@
+{
+ "plans": [
+  {"name": "test2_b10", "plan": "plan_test2_b10.dat", "config": {"block": 10, "sigma0": 0.7, "steps": 20}},
+  {"name": "test2_b4", "plan": "plan_test2_b4.dat", "config": {"block": 4, "sigma0": 0.7, "steps": 20}}
+ ],
+ "kernels": [
+  "jankombajn/dd3d-render-v2-0",
+  "jankombajn/dd3d-render-v2-1",
+  "jankombajn/dd3d-render-v2-2",
+  "jankombajn/dd3d-render-v2-3",
+  "jankombajn/dd3d-render-v2-4",
+  "jankombajn/dd3d-render-v2-5"
+ ],
+ "datasets": ["jankombajn/dd3d-plans"]
+}

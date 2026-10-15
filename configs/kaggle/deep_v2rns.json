@@ -1,0 +1,27 @@
+{
+ "name": "deep-v2rns",
+ "sets": [
+  "v2rns"
+ ],
+ "features": {
+  "v2rns": [
+   "dd3d-extract-v2rns-"
+  ]
+ },
+ "kernels": [
+  "jankombajn/dd3d-extract-v2rns-0",
+  "jankombajn/dd3d-extract-v2rns-1",
+  "jankombajn/dd3d-extract-v2rns-2",
+  "jankombajn/dd3d-extract-v2rns-3",
+  "jankombajn/dd3d-extract-v2rns-4",
+  "jankombajn/dd3d-extract-v2rns-5",
+  "jankombajn/dd3d-analyze-scan-v2rns"
+ ],
+ "datasets": [
+  "jankombajn/dd3d-renders-tar"
+ ],
+ "commands": [
+  "python scripts/experiments/best_probes.py --scan {PREV}/dd3d-analyze-scan-v2rns/out/v2rns/scan/scan.csv --features {FEAT}/v2rns --splits {DATA}/v2rns/splits --images {DATA}/v2rns/images --out {OUT}/v2rns/best",
+  "python scripts/experiments/probe_maps.py --features {FEAT}/v2rns --scan {PREV}/dd3d-analyze-scan-v2rns/out/v2rns/scan/scan.csv --runs sana,sana_random_init,sd15,sdxl --splits {DATA}/v2rns/splits --images {DATA}/v2rns/images --labels {DATA}/v2rns/labels.csv --title v2rns --out {OUT}/v2rns/maps"
+ ]
+}

@@ -20,6 +20,6 @@
  ],
  "commands": [
   "python scripts/experiments/feature_scan.py --features {FEAT}/v2r --runs all --splits {DATA}/v2r/splits --images {DATA}/v2r/images --out {OUT}/v2r/scan",
-  "python scripts/experiments/plot_scan.py --scan {OUT}/v2r/scan/scan.csv --split test_cubes --title v2r --out {OUT}/v2r/scan_summary"
+  "python scripts/experiments/plot_scan.py --scan {OUT}/v2r/scan/scan.csv --title v2r --out {OUT}/v2r/scan_summary"
  ]
 }

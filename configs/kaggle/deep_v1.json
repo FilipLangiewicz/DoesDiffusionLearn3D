@@ -1,0 +1,26 @@
+{
+ "name": "deep-v1",
+ "sets": [
+  "v1"
+ ],
+ "features": {
+  "v1": [
+   "dd3d-features-v1-"
+  ]
+ },
+ "kernels": [
+  "jankombajn/dd3d-analyze-scan-v1"
+ ],
+ "datasets": [
+  "jankombajn/dd3d-features-v1-0",
+  "jankombajn/dd3d-features-v1-1",
+  "jankombajn/dd3d-features-v1-2",
+  "jankombajn/dd3d-features-v1-3",
+  "jankombajn/dd3d-features-v1-4",
+  "jankombajn/dd3d-features-v1-5",
+  "jankombajn/dd3d-v1-images"
+ ],
+ "commands": [
+  "python scripts/experiments/best_probes.py --scan {PREV}/dd3d-analyze-scan-v1/out/v1/scan/scan.csv --features {FEAT}/v1 --splits {DATA}/v1/splits --images {DATA}/v1/images --out {OUT}/v1/best"
+ ]
+}

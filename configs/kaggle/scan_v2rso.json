@@ -21,6 +21,6 @@
  ],
  "commands": [
   "python scripts/experiments/feature_scan.py --features {FEAT}/v2rso --runs all --splits {DATA}/v2rso/splits --images {DATA}/v2rso/images --out {OUT}/v2rso/scan",
-  "python scripts/experiments/plot_scan.py --scan {OUT}/v2rso/scan/scan.csv --split test_cubes --title v2rso --out {OUT}/v2rso/scan_summary"
+  "python scripts/experiments/plot_scan.py --scan {OUT}/v2rso/scan/scan.csv --title v2rso --out {OUT}/v2rso/scan_summary"
  ]
 }

@@ -28,13 +28,17 @@ from dd3d.probe import ProbeConfig, run
 from dd3d.select import feature_key, selected
 from dd3d.store import FeatureStore
 
-REFERENCES = ("pixels", "vae_latent", "sana_random_init")
+REFERENCES = ("pixels_best", "pixels", "vae_latent", "sana_random_init")
+# A coarse pixel grid can be a stronger linear baseline than 64 x 64 pixels, so
+# the script also fits these grids. The val split selects the best one (pixels_best).
+PIXEL_GRIDS = (8, 16, 32)
 
 
 def load_source(row, store: FeatureStore, splits: dict, images: Path) -> dict | None:
     """Return the features of one selected source for every split that has them."""
-    if row["run"] == "pixels":
-        return {k: pixel_features(v, images, 64) for k, v in splits.items()}
+    if row["run"].startswith("pixels"):
+        res = int(row["run"][len("pixels") :] or 64)
+        return {k: pixel_features(v, images, res) for k, v in splits.items()}
     if row["run"] == "vae_latent":
         keys = [k for k in store.keys() if k.endswith("/vae_latent")]
         key, grid = (keys[0] if keys else None), None
@@ -69,18 +73,22 @@ def main() -> None:
         k: (v["light_azimuth_deg"].to_numpy(), v["light_elevation_deg"].to_numpy()) for k, v in splits.items()
     }
     sel = selected(pd.read_csv(args.scan))
+    extra = pd.DataFrame([{"run": f"pixels{g}", "block": -1, "t": -1, "grid": g} for g in PIXEL_GRIDS])
+    sel = pd.concat([sel, extra], ignore_index=True)
     sel.to_csv(args.out / "selected.csv", index=False)
     store = FeatureStore(args.features)
     rng = np.random.default_rng(0)
 
-    preds, errors, controls = [], {}, []
+    preds, errors, controls, val_score = [], {}, [], {}
     for _, row in sel.iterrows():
         feats = load_source(row, store, splits, args.images)
         if feats is None or "train" not in feats or "val" not in feats:
             print(f"skip {row['run']}: no features")
             continue
         lab = {k: labels[k] for k in feats}
-        res = run(feats, lab, ProbeConfig())
+        n_comp = min(256, 3 * int(row["grid"]) ** 2) if row["run"].startswith("pixels") else 256
+        res = run(feats, lab, ProbeConfig(n_components=n_comp))
+        val_score[row["run"]] = res.splits["val"]["az_mae"] + res.splits["val"]["el_mae"]
         name = row["run"]
         for split, x in feats.items():
             p = res.model.predict(x)
@@ -130,6 +138,13 @@ def main() -> None:
     pd.DataFrame(controls).to_csv(args.out / "control.csv", index=False, float_format="%.3f")
 
     rows = []
+    # The pixel grid with the best val score is the pixel reference.
+    pix = {k: v for k, v in val_score.items() if k.startswith("pixels")}
+    best_pix = min(pix, key=pix.get)
+    for split in splits:
+        if (best_pix, split) in errors:
+            errors[("pixels_best", split)] = errors[(best_pix, split)]
+    (args.out / "pixels_best.txt").write_text(best_pix + "\n")
     sources = sorted({s for s, _ in errors})
     for name in sources:
         for ref in REFERENCES:

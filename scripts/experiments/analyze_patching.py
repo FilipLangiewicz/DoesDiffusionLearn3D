@@ -4,7 +4,10 @@ A pixel probe, fitted on the v2 renders, predicts the azimuth of each output.
 For each condition (block and region) the script reports the signed rotation
 against the base output. It also gives this rotation as a fraction of the light
 offset between source and target: 1 means that the output follows the source.
-It also reports the rotation of the source output, as the upper bound. The
+It also reports the rotation of the source output, as the upper bound. A second
+measure reads the direction of the dark shadow region (dd3d.cues.shadow_azimuth).
+It uses no fitted model and does not look at the object, so a patch of the object
+tokens cannot move it by a copy of the object shading. The
 figure is a map of the mean fraction over the blocks and the regions.
 """
 
@@ -22,6 +25,7 @@ import numpy as np  # noqa: E402
 import pandas as pd  # noqa: E402
 from PIL import Image  # noqa: E402
 
+from dd3d.cues import shadow_azimuth  # noqa: E402
 from dd3d.data import pixel_features  # noqa: E402
 from dd3d.metrics import bootstrap_ci, decode_azimuth  # noqa: E402
 from dd3d.probe import ProbeConfig, run  # noqa: E402
@@ -72,9 +76,13 @@ def main() -> None:
                     for i, s in zip(frame["image_id"], frame["shape"], strict=True)
                 ]
             )
+            # The second measure: the direction of the dark shadow region (no fitted model).
+            shadow = np.array([shadow_azimuth(img.astype(np.uint8)) for img in pix])
             if cond == "base":
                 imgs["base"] = pix
+                base_shadow = shadow
             rot = signed_diff(pred, base)
+            srot = signed_diff(shadow, base_shadow)
             for k, image_id in enumerate(frame["image_id"]):
                 rows.append(
                     {
@@ -83,6 +91,7 @@ def main() -> None:
                         "label_az": float(plan["azimuth"][k]),
                         "pred_az": float(pred[k]),
                         "rotation": float(rot[k]),
+                        "shadow_rotation": float(srot[k]),
                         "pixel_change": float(np.abs(pix[k] - imgs["base"][k]).mean())
                         if "base" in imgs
                         else 0.0,
@@ -92,6 +101,7 @@ def main() -> None:
     summary = []
     for cond, g in per_image.groupby("condition", sort=False):
         frac = g["rotation"].to_numpy() / args.offset
+        sfrac = g["shadow_rotation"].dropna().to_numpy() / args.offset
         summary.append(
             {
                 "condition": cond,
@@ -100,6 +110,10 @@ def main() -> None:
                 "fraction_ci": bootstrap_ci(frac),
                 "toward_source_share": float((np.abs(signed_diff(g["rotation"], args.offset)) < 45).mean()),
                 "pixel_change": float(g["pixel_change"].mean()),
+                "shadow_fraction_median": float(np.median(sfrac)) if len(sfrac) else float("nan"),
+                "shadow_fraction_mean": float(sfrac.mean()) if len(sfrac) else float("nan"),
+                "shadow_fraction_ci": bootstrap_ci(sfrac) if len(sfrac) else (float("nan"), float("nan")),
+                "shadow_n": int(len(sfrac)),
                 "n": len(g),
             }
         )
@@ -127,6 +141,9 @@ def main() -> None:
         fig.tight_layout()
         fig.savefig(args.out / "patch_map.png", dpi=150)
         table.to_csv(args.out / "patch_map.csv")
+        patch.pivot(index="block", columns="region", values="shadow_fraction_median").to_csv(
+            args.out / "patch_map_shadow.csv"
+        )
 
 
 if __name__ == "__main__":

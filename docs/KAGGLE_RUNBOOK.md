@@ -5,7 +5,7 @@ This file tells how the project runs work on Kaggle. Read it before you start or
 ## Rules
 
 - Do not download feature files (about 10 GB for each job) to the laptop. Drive C: is small, and the WSL disk file does not shrink by itself. Only logs and small result files come to the laptop.
-- Do not run `scripts/experiments/auto_process.sh`. It fits the probes on the laptop and needs the feature files on the local disk. Run the analysis as a Kaggle job instead.
+- Do not unpack renders or features on the laptop. The analysis runs as a Kaggle job (see Analysis jobs). The laptop keeps only labels, splits, small results and the examples in `data/examples/`.
 - Do not push a job again if it has a `.done` marker. A new version replaces the old output on Kaggle.
 - Push the code to GitHub before you write a job. Each job clones the repository at a given commit. `make_jobs.py` refuses a commit that is not on `origin`.
 - Do not stop the queue with `pkill -f kqueue.py` in a shell: the pattern also matches the shell itself. Use `tools/kaggle/restart_queue.sh`.
@@ -24,7 +24,7 @@ This file tells how the project runs work on Kaggle. Read it before you start or
 | `make_jobs.py render/extract/intervene/analyze` | Writes job folders (run.py + kernel-metadata.json) from `templates/`. `extract --gpus 2` uses both GPUs of a T4x2 session. `intervene --spec` and `analyze --spec` read a JSON file in `configs/kaggle/`. |
 | `analysis_specs.py` | Writes the specs of all analysis jobs to `configs/kaggle/` (scan, deep, transfer, plans, causal, patch). |
 | `sync_reports.py` | Copies the small results of finished analysis jobs from `runs/kaggle/analyze/` to `reports/experiments/` (in git). |
-| `kqueue.py` | The queue. Pushes the jobs of `runs/kaggle/queue.txt` when Kaggle has a free session, checks their state and downloads the output with `kfetch.py`. For extraction jobs and render packs, it downloads only `results.txt` and the log. After each round it writes `docs/KAGGLE_DATA.md`. |
+| `kqueue.py` | The queue. Pushes the jobs of `runs/kaggle/queue.txt` when Kaggle has a free session, checks their state and downloads the output with `kfetch.py`. For extraction jobs, render jobs and render packs, it downloads only `results.txt` and the log. After each round it writes `docs/KAGGLE_DATA.md`. |
 | `restart_queue.sh` | Stops and starts the queue, detached from the terminal. |
 | `kfetch.py` | Downloads job output files to disk with resume (`--pattern` selects files). The Kaggle CLI reads each file into RAM, so do not use `kaggle kernels output` for large files. |
 | `data_list.py` | Writes `docs/KAGGLE_DATA.md` (data sets and job outputs with their state). Add new data sets to its list. |

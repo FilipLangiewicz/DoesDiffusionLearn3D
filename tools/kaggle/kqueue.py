@@ -111,7 +111,10 @@ def start_fetch(job: dict) -> None:
     # the laptop disk is too small for them. Only the logs come here.
     # A job folder with a .small marker (for example a causal test with many
     # images) also keeps its large output on Kaggle; an analysis job reads it there.
-    large = "/extract/" in str(job["dir"]) or job["slug"].startswith("dd3d-renders")
+    # Feature tars and render tars stay on Kaggle; the analysis jobs read them there.
+    large = any(k in str(job["dir"]) for k in ("/extract/", "/render/")) or job["slug"].startswith(
+        "dd3d-renders"
+    )
     small = " --pattern 'results|[.]log$'" if large or (job["dir"] / ".small").exists() else ""
     # A .pattern file gives the regular expression of the files to download.
     if (job["dir"] / ".pattern").exists():

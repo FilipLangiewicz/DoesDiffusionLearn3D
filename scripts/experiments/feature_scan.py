@@ -18,10 +18,9 @@ import gc
 import time
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
 
-from dd3d.data import add_scene_columns, pixel_features, target_columns
+from dd3d.data import add_scene_columns, pixel_features, pool_grid, target_columns
 from dd3d.probe import ProbeConfig, run
 from dd3d.store import FeatureStore
 
@@ -32,14 +31,6 @@ def load_splits(splits_dir: Path, scenes_dir: Path | None) -> dict[str, pd.DataF
     if scenes_dir is not None:
         splits = {k: add_scene_columns(v, scenes_dir) for k, v in splits.items()}
     return splits
-
-
-def pool_grid(x: np.ndarray, grid: int, to: int) -> np.ndarray:
-    """Average a (n, grid * grid * C) feature matrix to a smaller grid."""
-    n = len(x)
-    k = grid // to
-    c = x.shape[1] // (grid * grid)
-    return x.reshape(n, to, k, to, k, c).mean(axis=(2, 4)).reshape(n, -1)
 
 
 def probe_rows(feats: dict, splits: dict, targets: list[str], info: dict, n_components: int) -> list[dict]:

@@ -16,6 +16,8 @@ from pathlib import Path
 
 import pandas as pd
 
+from dd3d.select import best_rows
+
 LABELS = {
     "pixels": "Pixels ($64\\times64$)",
     "vae_latent": "DC-AE latent",
@@ -25,17 +27,6 @@ LABELS = {
     "sd15": "Stable Diffusion 1.5",
     "sdxl": "SDXL",
 }
-
-
-def best_rows(scan: pd.DataFrame) -> pd.DataFrame:
-    """Return, for each run, the rows of the block, timestep and grid chosen on val."""
-    out = []
-    for _run, g in scan.groupby("run"):
-        val = g[g["split"] == "val"]
-        key = val.loc[(val["az_mae"] + val["el_mae"]).idxmin(), ["block", "t", "grid"]]
-        sel = g[(g["block"] == key["block"]) & (g["t"] == key["t"]) & (g["grid"] == key["grid"])]
-        out.append(sel)
-    return pd.concat(out)
 
 
 def cell(rows: pd.DataFrame, split: str, latex: bool) -> str:

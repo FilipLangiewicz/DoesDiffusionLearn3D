@@ -161,15 +161,15 @@ gantt
     title Obliczenia na Kaggle, 13-14.10 (od 5:30 szacunek)
     dateFormat YYYY-MM-DD HH:mm
     axisFormat %H:%M
-    section CPU: rendery
+    section CPU – rendery
     v2, v2pos              :done, 2026-10-13 21:07, 2026-10-13 22:54
     v2ns, v2r              :done, 2026-10-13 22:25, 2026-10-14 05:20
     v2rns, v2rso           :active, 2026-10-14 00:32, 2026-10-14 07:30
-    section GPU: cechy i testy
+    section GPU – cechy i testy
     próby techniczne       :done, 2026-10-13 21:09, 2026-10-13 22:32
     v1 części 0-1 (1 karta) :done, 2026-10-13 22:36, 2026-10-14 00:20
     zator pobierania       :crit, done, 2026-10-14 00:20, 2026-10-14 05:05
-    testy: 2 karty, test przyczynowy :done, 2026-10-14 05:05, 2026-10-14 05:21
+    testy na 2 kartach, test przyczynowy :done, 2026-10-14 05:05, 2026-10-14 05:21
     v2r (2 x 2 karty)      :active, 2026-10-14 05:21, 2026-10-14 07:45
     v2pos, v1 części 2-5   :2026-10-14 07:45, 2026-10-14 10:00
     v2, test przyczynowy   :2026-10-14 10:00, 2026-10-14 11:30

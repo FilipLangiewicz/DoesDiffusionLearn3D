@@ -137,7 +137,8 @@ def main() -> None:
     e.add_argument("--out-root", type=Path, default=Path("runs/kaggle"))
     c = sub.add_parser("intervene")
     c.add_argument("--name", required=True)
-    c.add_argument("--plan", required=True, help="File name of the plan in the plan data set.")
+    c.add_argument("--plan", default=None, help="File name of the plan in the plan data set.")
+    c.add_argument("--spec", type=Path, default=None, help="JSON file with plans, kernels and data sets.")
     c.add_argument("--plan-dataset", default=f"{OWNER}/dd3d-plans")
     c.add_argument("--kernel", action="append", default=[], help="Kaggle job with image tar files.")
     c.add_argument("--config", default="{}", help="JSON with InterveneConfig values (block, sigma0, steps).")
@@ -175,15 +176,27 @@ def main() -> None:
         return
 
     if args.cmd == "intervene":
-        params = {"name": args.name, "ref": args.ref, "plan": args.plan, "config": json.loads(args.config)}
+        if args.spec is not None:
+            # Several plans in one job; the plan files can come from an analysis job.
+            spec = json.loads(args.spec.read_text())
+            params = {"name": args.name, "ref": args.ref, "plans": spec["plans"]}
+            kernels, datasets = args.kernel + spec.get("kernels", []), spec.get("datasets", [])
+        else:
+            params = {
+                "name": args.name,
+                "ref": args.ref,
+                "plan": args.plan,
+                "config": json.loads(args.config),
+            }
+            kernels, datasets = args.kernel, [args.plan_dataset]
         job = write_job(
             args.out_root,
             f"dd3d-intervene-{args.name}",
             "intervene.py",
             params,
             gpu=True,
-            kernel_sources=args.kernel,
-            dataset_sources=[args.plan_dataset],
+            kernel_sources=kernels,
+            dataset_sources=datasets,
         )
         print(job)
         return

@@ -59,6 +59,15 @@ def load_feature_dir(feature_dir: Path, image_ids) -> np.ndarray:
     return np.asarray(arr[[index[k] for k in image_ids]], dtype=np.float32)
 
 
+def pool_grid(x: np.ndarray, grid: int, to: int) -> np.ndarray:
+    """Average a (n, grid * grid * C) feature matrix to a smaller grid."""
+    if to == grid:
+        return x
+    n, k = len(x), grid // to
+    c = x.shape[1] // (grid * grid)
+    return x.reshape(n, to, k, to, k, c).mean(axis=(2, 4)).reshape(n, -1)
+
+
 def pixel_features(df: pd.DataFrame, images_dir: Path, resolution: int = 64) -> np.ndarray:
     """Return downscaled RGB pixels in [0, 1] as one row for each image."""
     rows = []

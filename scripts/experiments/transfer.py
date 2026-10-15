@@ -8,8 +8,9 @@ Two questions use this test:
   The paired scenes differ in one cue, so the error shows which cue the probe uses.
 
 The fit uses the train split of the fit set and selects alpha on its val split.
-The test uses the test and test_cubes splits of each test set.
-The same rows run for the pixels, so each model has its pixel control.
+The test uses the test and test_cubes splits of each test set. The pixels run
+first, so each model has its pixel control. With --scan, the val split of the
+fit set selects the block, the timestep and the grid of each run in --runs.
 """
 
 from __future__ import annotations
@@ -20,8 +21,10 @@ from pathlib import Path
 
 import pandas as pd
 
-from dd3d.data import load_feature_dir, pixel_features
+from dd3d.data import pixel_features, pool_grid
 from dd3d.probe import ProbeConfig, run
+from dd3d.select import feature_key, selected
+from dd3d.store import FeatureStore
 
 
 def splits_of(data_dir: Path) -> dict[str, pd.DataFrame]:
@@ -32,59 +35,75 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--fit", required=True, help="Data set name of the fit, for example v2.")
     parser.add_argument("--tests", required=True, help="Comma list of test data sets, for example v2r.")
-    parser.add_argument(
-        "--features", default="", help="Comma list of run/block_<bb>/t_<ttt> (empty: only pixels)."
-    )
+    parser.add_argument("--data-root", type=Path, default=Path("data"))
+    parser.add_argument("--feature-root", type=Path, default=Path("data/features"))
+    parser.add_argument("--features", default="", help="Comma list of run/block_<bb>/t_<ttt> keys.")
+    parser.add_argument("--scan", type=Path, default=None, help="scan.csv of the fit set (selection).")
+    parser.add_argument("--runs", default="", help="Comma list of runs to select from --scan.")
     parser.add_argument("--out", type=Path, required=True)
     args = parser.parse_args()
 
-    fit_dir = Path("data") / args.fit
-    fit_splits = splits_of(fit_dir)
-    tests = {name: splits_of(Path("data") / name) for name in args.tests.split(",")}
-
-    def frames():
-        out = {"train": fit_splits["train"], "val": fit_splits["val"]}
-        out[f"{args.fit}:test"] = fit_splits["test"]
-        out[f"{args.fit}:test_cubes"] = fit_splits["test_cubes"]
-        for name, sp in tests.items():
-            out[f"{name}:test"] = sp["test"]
-            out[f"{name}:test_cubes"] = sp["test_cubes"]
-        return out
-
+    fit_splits = splits_of(args.data_root / args.fit)
+    tests = {name: splits_of(args.data_root / name) for name in args.tests.split(",")}
+    frames = {"train": fit_splits["train"], "val": fit_splits["val"]}
+    frames[f"{args.fit}:test"] = fit_splits["test"]
+    frames[f"{args.fit}:test_cubes"] = fit_splits["test_cubes"]
+    for name, sp in tests.items():
+        frames[f"{name}:test"] = sp["test"]
+        frames[f"{name}:test_cubes"] = sp["test_cubes"]
     labels = {
-        k: (v["light_azimuth_deg"].to_numpy(), v["light_elevation_deg"].to_numpy())
-        for k, v in frames().items()
+        k: (v["light_azimuth_deg"].to_numpy(), v["light_elevation_deg"].to_numpy()) for k, v in frames.items()
     }
 
     def set_of(key: str) -> str:
         return args.fit if key in ("train", "val") else key.split(":")[0]
 
+    stores: dict[str, FeatureStore] = {}
+
+    def store(name: str) -> FeatureStore:
+        if name not in stores:
+            stores[name] = FeatureStore(args.feature_root / name)
+        return stores[name]
+
+    # Each source is (label, key, grid); key None means the pixels.
+    sources: list[tuple[str, str | None, int | None]] = [("pixels", None, None)]
+    for key in (f for f in args.features.split(",") if f):
+        sources.append((key, key, None))
+    if args.scan is not None and args.runs:
+        sel = selected(pd.read_csv(args.scan))
+        for _, row in sel[sel["run"].isin(args.runs.split(","))].iterrows():
+            key = feature_key(row["run"], row["block"], row["t"])
+            sources.append((f"{key}/grid_{int(row['grid'])}", key, int(row["grid"])))
+
     rows = []
-    sources = ["pixels"] + [f for f in args.features.split(",") if f]
-    for src in sources:
+    for label, key, grid in sources:
         feats = {}
-        for key, df in frames().items():
-            name = set_of(key)
-            if src == "pixels":
-                feats[key] = pixel_features(df, Path("data") / name / "images", 64)
-            else:
-                feats[key] = load_feature_dir(Path("data/features") / name / src, df["image_id"].tolist())
+        for split, df in frames.items():
+            name = set_of(split)
+            if key is None:
+                feats[split] = pixel_features(df, args.data_root / name / "images", 64)
+                continue
+            s = store(name)
+            x = s.load(key, df["image_id"].tolist())
+            native = s.meta(key.split("/")[0])["grid_of_block"][str(int(key.split("/")[1].split("_")[1]))]
+            feats[split] = pool_grid(x, native, grid or native)
         res = run(feats, labels, ProbeConfig())
-        for key, s in res.splits.items():
-            if key in ("train", "val"):
+        for split, s in res.splits.items():
+            if split in ("train", "val"):
                 continue
             rows.append(
                 {
-                    "features": src,
+                    "features": label,
                     "fit": args.fit,
-                    "test": key,
+                    "test": split,
                     "az_mae": s["az_mae"],
                     "az_ci_low": s["az_mae_ci"][0],
                     "az_ci_high": s["az_mae_ci"][1],
                     "el_mae": s["el_mae"],
                 }
             )
-        print(src, {r["test"]: round(r["az_mae"], 1) for r in rows if r["features"] == src}, flush=True)
+        print(label, {r["test"]: round(r["az_mae"], 1) for r in rows if r["features"] == label}, flush=True)
+        del feats
     args.out.mkdir(parents=True, exist_ok=True)
     df = pd.DataFrame(rows)
     df.to_csv(args.out / "transfer.csv", index=False)

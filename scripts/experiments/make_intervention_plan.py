@@ -3,16 +3,27 @@
 The plan has these conditions for each selected test image:
 
 - base: no change (the SDEdit reconstruction);
-- shift:probe_r<r>: the shortest feature change that moves the probe output to
-  the azimuth label + 90 deg, scaled so that the mean norm of a cell vector is
-  r times the mean token norm of the block (from the stats of the extraction);
-- shift:random_r<r>: a random change with the same norm in each cell as the
-  largest probe shift;
+- shift:probe_exact: the shortest feature change that turns the probe output
+  (sin, cos) by the rotation angle. The probe then reads the azimuth of its
+  own prediction + 90 deg.
+- shift:probe_r<r>: a larger change with the same probe angle. The mean norm of
+  a cell vector is about r times the mean token norm of the block.
+- shift:pattern_x<k>: k times the mean feature change between images whose
+  light differs by this rotation. A regression of the features on
+  (sin az, cos az) over the train split gives this change (the activation
+  pattern of Haufe et al., 2014). With k = 1, the size of the change is the
+  natural size in the data.
+- shift:random_<family>: a random change with the same norm in each cell as
+  the largest shift of the family (probe or pattern);
 - erase: the LEACE eraser of the azimuth (sin and cos) in this block.
 
-The probe and the eraser come from the grid features of one block and one
-timestep (train split). In the test mode (--test-job), a random probe and random
-features replace them, so the job can be tested before the features exist.
+A probe weight vector shows where the probe reads. It can also contain
+directions that only cancel noise. The pattern shows how the features change
+with the light, so it is the better candidate for a change that the model uses.
+
+The probe, the pattern and the eraser come from the grid features of one
+block and one timestep (train split). In the test mode (--test-job), random
+values replace them, so the job can be tested before the features exist.
 """
 
 from __future__ import annotations
@@ -24,35 +35,42 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from dd3d.data import load_feature_dir
 from dd3d.intervene import leace_fit, make_shift
-from dd3d.metrics import encode_targets
+from dd3d.metrics import decode_azimuth, encode_targets
 from dd3d.probe import ProbeConfig, probe_direction, run
+from dd3d.store import FeatureStore
 
 
-def mean_token_norm(features: Path | None) -> float:
-    """Return the mean token norm of the block and timestep of a feature folder."""
-    if features is None:
-        return 1.0
-    block = int(features.parent.name.split("_")[1])
-    t = int(features.name.split("_")[1])
-    stats = pd.concat(pd.read_csv(f) for f in sorted((features.parents[1] / "stats").glob("*.csv")))
-    sel = stats[(stats["block"] == block) & (stats["t"] == t)]
+def mean_token_norm(store: FeatureStore, key: str) -> float:
+    """Return the mean token norm of the run, block and timestep of a key."""
+    run_name, block, t = key.split("/")
+    stats = store.stats(run_name)
+    sel = stats[(stats["block"] == int(block.split("_")[1])) & (stats["t"] == int(t.split("_")[1]))]
     return float(sel["mean_token_norm"].mean())
+
+
+def pattern_of(x: np.ndarray, y: np.ndarray) -> np.ndarray:
+    """Return B (k, D) of the least squares fit x - mean(x) = (y - mean(y)) B."""
+    yc = y - y.mean(0)
+    xc = x - x.mean(0)
+    return np.linalg.solve(yc.T @ yc, yc.T @ xc)
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--features", type=Path, help="Folder block_<bb>/t_<ttt> with grid features.")
+    parser.add_argument("--features", type=Path, help="Feature root (see dd3d.store).")
+    parser.add_argument("--key", default="sana/block_10/t_400", help="Run, block and timestep.")
     parser.add_argument("--splits", type=Path, default=Path("data/v2/splits"))
     parser.add_argument("--split", default="test", help="Split of the images to change.")
     parser.add_argument("--n-images", type=int, default=60)
-    parser.add_argument("--relative", default="0.1,0.3,1.0", help="Shift norm / mean token norm.")
+    parser.add_argument("--relative", default="1.0", help="Probe shift norm / mean token norm.")
+    parser.add_argument("--pattern-scales", default="1,3", help="Multiples of the natural pattern shift.")
     parser.add_argument("--token-norm", type=float, default=None, help="Default: from the stats files.")
     parser.add_argument("--rotate", type=float, default=90.0, help="Target azimuth = label + rotate.")
     parser.add_argument("--leace-rows", type=int, default=30000, help="Cell rows for the LEACE fit.")
     parser.add_argument("--channels", type=int, default=2240)
     parser.add_argument("--grid", type=int, default=8)
+    parser.add_argument("--no-erase", action="store_true")
     parser.add_argument("--test-job", action="store_true", help="Random probe and eraser (test of the job).")
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--out", type=Path, required=True)
@@ -62,59 +80,106 @@ def main() -> None:
     splits = {n: pd.read_csv(args.splits / f"{n}.csv") for n in ("train", "val", args.split)}
     pick = splits[args.split].sample(min(args.n_images, len(splits[args.split])), random_state=args.seed)
     d = args.grid * args.grid * args.channels
-    report = {"split": args.split, "n_images": len(pick), "rotate": args.rotate}
+    report = {"key": args.key, "split": args.split, "n_images": len(pick), "rotate": args.rotate}
 
     if args.test_job:
         w = rng.normal(size=(2, d)) / np.sqrt(d)
+        b = rng.normal(size=(2, d))
         cells = rng.normal(size=(5000, args.channels))
         z = cells[:, :2] + 0.1 * rng.normal(size=(5000, 2))
-        report["mode"] = "test of the job (random probe and eraser)"
+        token_norm = args.token_norm or 1.0
+        before = encode_targets(rng.uniform(0, 360, len(pick)), np.zeros(len(pick)))[:, :2]
+        report["mode"] = "test of the job (random probe, pattern and eraser)"
     else:
+        store = FeatureStore(args.features)
         labels = {
             k: (v["light_azimuth_deg"].to_numpy(), v["light_elevation_deg"].to_numpy())
             for k, v in splits.items()
         }
-        feats = {k: load_feature_dir(args.features, v["image_id"].tolist()) for k, v in splits.items()}
+        feats = {k: store.load(args.key, v["image_id"].tolist()) for k, v in splits.items()}
         res = run(feats, labels, ProbeConfig())
         w = probe_direction(res.model)[:2]
         report["probe"] = {k: {"az_mae": v["az_mae"], "el_mae": v["el_mae"]} for k, v in res.splits.items()}
+        z_img = encode_targets(*labels["train"])[:, :2]
+        b = pattern_of(feats["train"], z_img)
         # Each grid cell of each train image is one LEACE sample with the label of its image.
         x = feats["train"].reshape(len(feats["train"]), args.grid * args.grid, args.channels)
-        z_img = encode_targets(*labels["train"])[:, :2]
         rows = rng.choice(
             x.shape[0] * x.shape[1], size=min(args.leace_rows, x.shape[0] * x.shape[1]), replace=False
         )
         cells = x.reshape(-1, args.channels)[rows]
         z = np.repeat(z_img, x.shape[1], axis=0)[rows]
+        token_norm = args.token_norm or mean_token_norm(store, args.key)
+        rows_pick = splits[args.split].index.get_indexer(pick.index)
+        before = res.model.predict(feats[args.split][rows_pick])[:, :2]
         del feats, x
-    eraser_mean, eraser_matrix = leace_fit(cells, z)
+    eraser_mean, eraser_matrix = (None, None) if args.no_erase else leace_fit(cells, z)
 
     az = pick["light_azimuth_deg"].to_numpy()
-    now = encode_targets(az, pick["light_elevation_deg"].to_numpy())[:, :2]
-    target = encode_targets(az + args.rotate, pick["light_elevation_deg"].to_numpy())[:, :2]
-    unit = make_shift(w, target - now)
-    token_norm = args.token_norm or mean_token_norm(args.features)
-    cells_of = lambda v: v.reshape(len(v), args.grid * args.grid, args.channels)  # noqa: E731
-    # One factor for each image, so that every image gets the same relative shift.
-    unit = unit / np.linalg.norm(cells_of(unit), axis=2).mean(axis=1)[:, None] * token_norm
-    conditions, shifts = ["base"], [np.zeros_like(unit)]
-    rel = [float(v) for v in args.relative.split(",")]
+    el = pick["light_elevation_deg"].to_numpy()
+    delta_y = encode_targets(az + args.rotate, el)[:, :2] - encode_targets(az, el)[:, :2]
+
+    def cells_of(v):
+        return v.reshape(len(v), args.grid * args.grid, args.channels)
+
+    def cell_norm(v):
+        return float(np.linalg.norm(cells_of(v), axis=2).mean())
+
+    def random_like(v):
+        r = cells_of(rng.normal(size=v.shape))
+        r *= (np.linalg.norm(cells_of(v), axis=2) / np.linalg.norm(r, axis=2))[:, :, None]
+        return r.reshape(len(r), -1)
+
+    # Turn the predicted (sin, cos) vector of each image by the rotation angle.
+    a = np.radians(args.rotate)
+    turned = np.stack(
+        [
+            before[:, 0] * np.cos(a) + before[:, 1] * np.sin(a),
+            before[:, 1] * np.cos(a) - before[:, 0] * np.sin(a),
+        ],
+        axis=1,
+    )
+    to_turned, from_before = make_shift(w, turned), make_shift(w, before)
+    exact = to_turned - from_before
+    # A larger shift multiplies the turned output by a factor s for each image. The
+    # angle stays the same, and the mean cell norm is about r times the token norm.
+    s_unit = token_norm / np.linalg.norm(cells_of(to_turned), axis=2).mean(axis=1)[:, None]
+    natural = delta_y @ b
+    conditions, shifts = ["base", "shift:probe_exact"], [np.zeros((len(pick), d)), exact]
+    rel = [float(v) for v in args.relative.split(",") if v]
     for r in rel:
         conditions.append(f"shift:probe_r{r:g}")
-        shifts.append(r * unit)
-    big = cells_of(max(rel) * unit)
-    rand = cells_of(rng.normal(size=unit.shape))
-    rand *= (np.linalg.norm(big, axis=2) / np.linalg.norm(rand, axis=2))[:, :, None]
-    conditions.append(f"shift:random_r{max(rel):g}")
-    shifts.append(rand.reshape(len(rand), -1))
-    conditions.append("erase")
-    shifts.append(np.zeros_like(unit))
+        shifts.append(r * s_unit * to_turned - from_before)
+    if rel:
+        conditions.append("shift:random_probe")
+        shifts.append(random_like(max(rel) * s_unit * to_turned - from_before))
+    scales = [float(v) for v in args.pattern_scales.split(",") if v]
+    for k in scales:
+        conditions.append(f"shift:pattern_x{k:g}")
+        shifts.append(k * natural)
+    if scales:
+        conditions.append("shift:random_pattern")
+        shifts.append(random_like(max(scales) * natural))
+    if not args.no_erase:
+        conditions.append("erase")
+        shifts.append(np.zeros((len(pick), d)))
     shifts = np.stack(shifts, axis=1).astype(np.float16)  # (n_img, n_cond, D)
+    # The probe is linear, so its output after a shift is known before the test.
+    # This rotation of the probe output shows how far each shift moves the readout.
+    az_before = decode_azimuth(before[:, 0], before[:, 1])
+    report["probe_rotation_deg"] = {}
+    for i, c in enumerate(conditions):
+        after = before + shifts[:, i].astype(np.float64) @ w.T
+        rot = (decode_azimuth(after[:, 0], after[:, 1]) - az_before + 180.0) % 360.0 - 180.0
+        report["probe_rotation_deg"][c] = float(rot.mean())
     report["mean_token_norm"] = token_norm
+    report["cell_norm"] = {c: cell_norm(shifts[:, i].astype(np.float32)) for i, c in enumerate(conditions)}
     report["relative_shifts"] = rel
+    report["pattern_scales"] = scales
     report["conditions"] = conditions
 
     args.out.mkdir(parents=True, exist_ok=True)
+    extra = {} if eraser_mean is None else {"eraser_mean": eraser_mean, "eraser_matrix": eraser_matrix}
     np.savez(
         args.out / "plan.npz",
         image_ids=pick["image_id"].to_numpy().astype(str),
@@ -122,8 +187,7 @@ def main() -> None:
         azimuth=az,
         conditions=np.array(conditions),
         shifts=shifts,
-        eraser_mean=eraser_mean,
-        eraser_matrix=eraser_matrix,
+        **extra,
     )
     (args.out / "plan.json").write_text(json.dumps(report, indent=1))
     print(json.dumps(report, indent=1))

@@ -1,8 +1,10 @@
 """Kaggle job: causal tests on SANA (shift and LEACE erase, see dd3d.intervene).
 
 tools/kaggle/make_jobs.py writes PARAMS. The inputs are the image tar files of
-the render jobs and a data set with the plan file (plan.npz). The job writes
-the output images as one tar file.
+the render jobs and the plan files (in a data set or in the output of an
+analysis job). PARAMS["plans"] lists the plans; each plan runs in its own
+worker process, and the workers share the GPUs of the session. The job writes
+the output images of each plan as one tar file.
 """
 
 import glob
@@ -58,17 +60,50 @@ candidates = sorted({Path(p).parent for p in found if glob.glob(f"{p}/*.png")})
 if not candidates:
     raise SystemExit("no image folder with a Sphere subfolder")
 images_dir = candidates[0]
-plans = sorted(glob.glob(f"/kaggle/input/**/{PARAMS['plan']}", recursive=True))
-if not plans:
-    raise SystemExit(f"no plan file {PARAMS['plan']} in the inputs")
-log(f"images: {images_dir}, plan: {plans[0]}")
+plans = PARAMS.get("plans") or [{"name": PARAMS["name"], "plan": PARAMS["plan"], "config": PARAMS["config"]}]
+for p in plans:
+    found = sorted(glob.glob(f"/kaggle/input/**/{p['plan']}", recursive=True))
+    if not found:
+        raise SystemExit(f"no plan file {p['plan']} in the inputs")
+    p["path"] = found[0]
+log(f"images: {images_dir}, plans: {[p['path'] for p in plans]}")
 
-sys.path.insert(0, f"{repo}/src")
-from dd3d.intervene import InterveneConfig, run  # noqa: E402
-
-out_dir = Path(f"{TMP}/out/{PARAMS['name']}")
-cfg = InterveneConfig(images_dir=images_dir, out_dir=out_dir, plan=Path(plans[0]), **PARAMS["config"])
+WORKER = r"""
+import json, sys, time
+from pathlib import Path
+cfg = json.load(open(sys.argv[1]))
+sys.path.insert(0, cfg["repo"] + "/src")
+from dd3d.intervene import InterveneConfig, run
+for p in cfg["plans"]:
+    t0 = time.time()
+    c = InterveneConfig(images_dir=Path(cfg["images_dir"]), out_dir=Path(cfg["out"]) / p["name"],
+                        plan=Path(p["path"]), **p["config"])
+    run(c)
+    print(f"plan {p['name']}: done in {time.time() - t0:.0f} s", flush=True)
+"""
+gpus = max(1, min(len(sh("nvidia-smi -L", quiet=True).splitlines()), len(plans)))
+Path(f"{TMP}/worker.py").write_text(WORKER)
+procs = []
 t0 = time.time()
-run(cfg)
-log(f"done in {time.time() - t0:.0f} s")
-sh(f"cd {TMP}/out && tar cf {WORK}/{PARAMS['name']}.tar . && ls -la {WORK}")
+for k in range(gpus):
+    cfg = {"repo": repo, "images_dir": str(images_dir), "out": f"{TMP}/out", "plans": plans[k::gpus]}
+    Path(f"{TMP}/worker_{k}.json").write_text(json.dumps(cfg))
+    env = dict(os.environ, CUDA_VISIBLE_DEVICES=str(k))
+    logf = open(f"{TMP}/worker_{k}.log", "w")
+    procs.append(
+        subprocess.Popen(
+            [sys.executable, f"{TMP}/worker.py", f"{TMP}/worker_{k}.json"],
+            env=env,
+            stdout=logf,
+            stderr=subprocess.STDOUT,
+        )
+    )
+codes = [p.wait() for p in procs]
+log(f"workers ended with codes {codes} after {time.time() - t0:.0f} s")
+for k in range(gpus):
+    tail = Path(f"{TMP}/worker_{k}.log").read_text().splitlines()[-12:]
+    log(f"worker {k} log tail:\n" + "\n".join(tail))
+for p in plans:
+    if Path(f"{TMP}/out/{p['name']}").exists():
+        sh(f"cd {TMP}/out && tar cf {WORK}/{p['name']}.tar {p['name']}")
+sh(f"ls -la {WORK}")

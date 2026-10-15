@@ -10,8 +10,11 @@ tools/kaggle/make_jobs.py writes PARAMS. The job does these steps:
 5. It runs the commands of PARAMS["commands"]. The output folder gets only
    small result files.
 
-The commands can use these names: {REPO}, {DATA} (render sets), {FEAT}
-(feature folders), {OUT} (result folder) and {INPUT} (the Kaggle inputs).
+The commands can use these names:
+
+- {REPO}: the repository; {OUT}: the result folder;
+- {DATA}: the render sets; {FEAT}: the feature folders;
+- {PREV}: the outputs of earlier analysis jobs, one folder for each job.
 """
 
 import glob
@@ -135,8 +138,15 @@ for name, prefixes in PARAMS.get("features", {}).items():
             os.symlink(src, feat / name / os.path.basename(src))
             log(f"features {name}: {src}")
 
+# Outputs of earlier analysis jobs (for example a scan.csv), one link for each job.
+prev = Path(f"{TMP}/prev")
+prev.mkdir(parents=True, exist_ok=True)
+for src in inputs("dd3d-analyze-"):
+    os.symlink(src, prev / os.path.basename(src))
+    log(f"earlier output: {src}")
+
 env = dict(os.environ, PYTHONPATH=f"{repo}/src", MPLBACKEND="Agg")
-names = {"REPO": repo, "DATA": str(data), "FEAT": str(feat), "OUT": str(out), "INPUT": "/kaggle/input"}
+names = {"REPO": repo, "DATA": str(data), "FEAT": str(feat), "OUT": str(out), "PREV": str(prev)}
 failed = []
 for i, cmd in enumerate(PARAMS["commands"]):
     cmd = cmd.format(**names)

@@ -129,6 +129,12 @@ for name in PARAMS.get("sets", []):
     counts = {shape: len(os.listdir(d / "images" / shape)) for shape in SHAPES}
     log(f"{name}: {len(shards)} shards, {len(rows)} labels, images {counts}")
 
+# The split test_pos of v2 uses the v2pos images, so v2 also gets links to them.
+if "v2" in PARAMS.get("sets", []) and (data / "v2pos" / "images").exists():
+    for shape in SHAPES:
+        for png in (data / "v2pos" / "images" / shape).glob("*.png"):
+            os.symlink(os.readlink(png), data / "v2" / "images" / shape / png.name)
+
 for name in PARAMS.get("sets", []):
     if name == "v1":
         continue

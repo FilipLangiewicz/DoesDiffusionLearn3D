@@ -299,6 +299,46 @@ A pair of images thus differs in one cue only.
 
 \pending{RQ1 on v2 and v2r: SANA against pixels, latent and random weights; transfer from centred to random positions; cue variants; SD 1.5 and SDXL.}
 
+\section{Does the model use the direction?}
+\label{sec:causal}
+
+A probe shows that a property is readable, not that the model uses it \citep{elazar2021amnesic,belinkov2022probing}.
+We test use with three interventions during generation.
+All three start from a render of v2.
+We encode the render, add flow noise up to $\sigma_0=0.7$, and integrate the flow back to $\sigma=0$ in 20 Euler steps, $x_{\sigma'}=x_\sigma+(\sigma'-\sigma)\,v_\theta(x_\sigma,\sigma)$ \citep{meng2022sdedit}.
+Without an intervention, this gives a close copy of the render (the base output).
+A forward hook on one transformer block changes its output at every step.
+A pixel probe, fitted on the v2 renders, measures the azimuth of each output, and we report the signed rotation against the base output of the same image and noise.
+
+\paragraph{Shift along a direction.}
+The probe of block $b$ is linear in the cell features: $\hat{\mathbf y}=W h+c$.
+We add a vector $\delta$ to all tokens of each grid cell, which changes the cell mean by exactly $\delta$.
+We use two directions.
+The probe direction is the shortest change that turns the probe output $(\hat s,\hat c)$ by $90\degr$: $\delta=W^\top(WW^\top)^{-1}(R_{90}\hat{\mathbf y}-\hat{\mathbf y})$, applied as it is and scaled to the mean token norm of the block.
+A probe weight vector can contain directions that only cancel noise in the data, so it is not the best candidate for a change that the model uses \citep{haufe2014interpretation,marks2024geometry}.
+The second direction is the activation pattern: a least-squares regression of the features on $(\sin\phi,\cos\phi)$ over the train split gives a matrix $B$, and $\delta=(\mathbf y(\phi+90\degr)-\mathbf y(\phi))B$ is the mean feature change between images whose light differs by $90\degr$.
+We apply it with factors 1 and 3.
+Each direction has a control: a random vector with the same norm in each cell.
+This is a form of activation steering \citep{turner2023activation,chen2023beyond}.
+
+\paragraph{Erasure.}
+The LEACE eraser \citep{belrose2023leace} of $(\sin\phi,\cos\phi)$, fitted on the cell features of the train split, removes all linear information about the azimuth from every token of the block.
+If the model uses this information in later blocks, the output light must change or become less consistent with the input light.
+
+\paragraph{Patch test.}
+The shift and the erasure depend on a linear direction.
+The patch test does not \citep{meng2022locating,zhang2024patching,basu2024localizing}.
+For 48 test scenes of v2 we rendered a second image of the same scene with the light azimuth $+90\degr$ (set v2rot).
+Both images get the same noise.
+The source pass (v2rot) records the output of a block at every step.
+In the target pass (v2), the tokens of one region get the recorded source values at every step.
+The regions come from the scene geometry: all tokens, the object, the cast shadow of the source light, the cast shadow of the target light, and the rest of the floor.
+If the patched tokens carry the light direction that the model uses, the shadow of the output turns towards the source light.
+We report the rotation as a fraction of the $90\degr$ offset.
+In a transformer without skip connections, a patch of all tokens at all steps makes the output equal to the source output up to the difference of the two inputs, so this condition is a positive control.
+
+\pending{results of the shift, the erasure and the patch test}
+
 \section{Discussion}
 \label{sec:discussion}
 
@@ -321,20 +361,6 @@ It also does not show the opposite: the corrected extraction and the controls in
     \item Check figures against the true geometry.
 \end{enumerate}
 
-\paragraph{Causal tests.}
-A probe shows that a property is readable, not that the model uses it.
-Our causal test starts from a render of v2: we encode it, add flow noise up to $\sigma_0=0.7$, and integrate the flow back to $\sigma=0$ in 20 Euler steps (SDEdit).
-At each step, a forward hook changes the output of one block in one of these ways:
-\begin{itemize}
-    \item shift: add to the tokens of each grid cell the shortest feature change that moves the probe output to the label azimuth $+90\degr$, times a scale $s\in\{1,4,16\}$;
-    \item random shift: a random change with the same norm as the shift with $s=16$;
-    \item erase: apply the LEACE eraser \citep{belrose2023leace} of $(\sin\phi,\cos\phi)$, fitted on the cell features of the train split, to every token.
-\end{itemize}
-A shift changes the mean of the tokens of a cell by exactly the planned vector, so the probe output moves as planned.
-The question is whether the image moves too.
-A pixel probe, fitted on the v2 renders, measures the azimuth of each output image.
-A causal direction rotates the measured azimuth towards the target and more than the random shift does; a used direction makes the measured azimuth worse after erasure.
-\pending{results of the causal tests}
 
 \section{Limitations}
 One model, one property and synthetic scenes limit the scope of this study.

@@ -4,11 +4,13 @@ Each job folder gets the code file run.py and kernel-metadata.json. The kernel
 ID is jankombajn/<slug>. A push of the same slug makes a new version.
 
 Example: python tools/kaggle/make_jobs.py render --name v2 --shards 6 --ref main
+Analysis: python tools/kaggle/make_jobs.py analyze --spec configs/kaggle/scan_v2r.json --ref <commit>
 """
 
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import subprocess
 from pathlib import Path
@@ -25,6 +27,17 @@ def check_ref_on_github(ref: str) -> None:
     ).stdout
     if not out.strip():
         raise SystemExit(f"commit {ref} is not on origin: push it before you write the jobs")
+
+
+def split_digest(folder: Path) -> str | None:
+    """Return the md5 of the split names and their image ids (same code as analyze.py)."""
+    if not folder.exists():
+        return None
+    h = hashlib.md5()
+    for p in sorted(folder.glob("*.csv")):
+        ids = [line.split(",")[0] for line in p.read_text().splitlines()[1:]]
+        h.update((p.name + ":" + ",".join(ids) + ";").encode())
+    return h.hexdigest()
 
 
 def write_job(
@@ -130,8 +143,36 @@ def main() -> None:
     c.add_argument("--config", default="{}", help="JSON with InterveneConfig values (block, sigma0, steps).")
     c.add_argument("--ref", default="main")
     c.add_argument("--out-root", type=Path, default=Path("runs/kaggle"))
+    a = sub.add_parser("analyze")
+    a.add_argument("--spec", type=Path, required=True, help="JSON file in configs/kaggle (see analyze.py).")
+    a.add_argument("--ref", default="main")
+    a.add_argument("--out-root", type=Path, default=Path("runs/kaggle/analyze"))
     args = parser.parse_args()
     check_ref_on_github(args.ref)
+
+    if args.cmd == "analyze":
+        spec = json.loads(args.spec.read_text())
+        # The job checks that its splits have the same image ids as the local splits.
+        md5 = {s: split_digest(Path("data") / s / "splits") for s in spec.get("sets", []) if s != "v1"}
+        params = {
+            "name": spec["name"],
+            "ref": args.ref,
+            "sets": spec.get("sets", []),
+            "features": spec.get("features", {}),
+            "split_md5": {k: v for k, v in md5.items() if v},
+            "commands": spec["commands"],
+        }
+        job = write_job(
+            args.out_root,
+            f"dd3d-analyze-{spec['name']}",
+            "analyze.py",
+            params,
+            gpu=False,
+            kernel_sources=spec.get("kernels", []),
+            dataset_sources=spec.get("datasets", []),
+        )
+        print(job)
+        return
 
     if args.cmd == "intervene":
         params = {"name": args.name, "ref": args.ref, "plan": args.plan, "config": json.loads(args.config)}

@@ -1,8 +1,9 @@
 """Fit the light probe on every block and timestep of extraction runs.
 
 The input is a feature root with one folder for each run (for example sana,
-sana_random_init, sana_legacy_noise). Each run folder has merged features in
-block_<bb>/t_<ttt>/features.npy and a meta.json file with the grid of each block.
+sana_random_init, sana_legacy_noise). The root can hold merged features, chunk
+files or the tar files of the extraction jobs (see dd3d.store). Each run has a
+meta.json file with the grid of each block.
 The script also fits the probe on two baselines: the pixels of the image and
 the VAE latent. Every probe uses the same splits, the same PCA size and an alpha
 from the val split only.
@@ -14,15 +15,15 @@ from __future__ import annotations
 
 import argparse
 import gc
-import json
 import time
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-from dd3d.data import add_scene_columns, load_feature_dir, pixel_features, target_columns
+from dd3d.data import add_scene_columns, pixel_features, target_columns
 from dd3d.probe import ProbeConfig, run
+from dd3d.store import FeatureStore
 
 
 def load_splits(splits_dir: Path, scenes_dir: Path | None) -> dict[str, pd.DataFrame]:
@@ -78,9 +79,14 @@ def main() -> None:
     parser.add_argument(
         "--scan-grid", type=int, default=4, help="Grid of the block scan (finer grids pool to it)."
     )
+    parser.add_argument("--blocks", default="", help="Comma list of blocks (empty: all).")
+    parser.add_argument("--timesteps", default="", help="Comma list of timesteps (empty: all).")
+    parser.add_argument("--no-pixels", action="store_true", help="Skip the pixel baseline.")
     parser.add_argument("--out", type=Path, required=True)
     args = parser.parse_args()
     args.out.mkdir(parents=True, exist_ok=True)
+    only_blocks = {int(b) for b in args.blocks.split(",") if b}
+    only_t = {int(t) for t in args.timesteps.split(",") if t}
     out_csv = args.out / "scan.csv"
     done = set()
     rows: list[dict] = []
@@ -92,18 +98,21 @@ def main() -> None:
     targets = args.targets.split(",")
     ids = {k: v["image_id"].tolist() for k, v in splits.items()}
 
-    def load_all(d: Path) -> dict:
-        # A split without features in this folder (for example test_pos before its
-        # extraction) is left out, and the train and val splits must be complete.
-        known = set((d / "ids.txt").read_text().split())
+    store = FeatureStore(args.features) if args.features.exists() else None
+
+    def load_all(key: str) -> dict | None:
+        # A split without features (for example test_pos of a run that has no
+        # extraction for it) is left out. Without train or val, the key is skipped.
+        known = set(store.ids(key))
+        if not (set(ids["train"]) <= known and set(ids["val"]) <= known):
+            print(f"  skip {key}: the train or val split has images without features")
+            return None
         out = {}
         for k, v in ids.items():
             if set(v) <= known:
-                out[k] = load_feature_dir(d, v)
-            elif k in ("train", "val"):
-                raise KeyError(f"split {k} has images without features in {d}")
+                out[k] = store.load(key, v)
             else:
-                print(f"  split {k} left out: no features in {d}")
+                print(f"  split {k} left out: no features for {key}")
         return out
 
     def save(new_rows):
@@ -118,29 +127,36 @@ def main() -> None:
         print(f"{info} {msg} ({time.time() - t0:.0f} s)", flush=True)
         save(new)
 
-    if ("pixels", -1, -1, 64) not in done:
+    if not args.no_pixels and ("pixels", -1, -1, 64) not in done:
         report(
             {"run": "pixels", "block": -1, "t": -1, "grid": 64},
             {k: pixel_features(v, args.images, 64) for k, v in splits.items()},
         )
-    for run_name in args.runs.split(","):
-        root = args.features / run_name
-        if not root.exists():
-            print(f"skip {run_name}: no folder {root}")
+    runs = [] if store is None else (store.runs() if args.runs == "all" else args.runs.split(","))
+    for run_name in runs:
+        if run_name not in store.runs():
+            print(f"skip {run_name}: no meta.json under {args.features}")
             continue
-        meta = json.loads((root / "meta.json").read_text())
-        vae_dir = root / "vae_latent"
-        if (vae_dir / "features.npy").exists() and ("vae_latent", -1, -1, 32) not in done:
-            feats = load_all(vae_dir)
-            report({"run": "vae_latent", "block": -1, "t": -1, "grid": 32}, feats)
+        meta = store.meta(run_name)
+        vae_key = f"{run_name}/vae_latent"
+        if store.has(vae_key) and ("vae_latent", -1, -1, 32) not in done:
+            feats = load_all(vae_key)
+            if feats is not None:
+                report({"run": "vae_latent", "block": -1, "t": -1, "grid": 32}, feats)
         for b in meta["blocks"]:
+            if only_blocks and b not in only_blocks:
+                continue
             grid = meta["grid_of_block"][str(b)]
             for t in meta["timesteps"]:
-                d = root / f"block_{b:02d}" / f"t_{t:03d}"
-                grids = sorted({grid, min(grid, args.scan_grid)})
-                if all((run_name, b, t, g) in done for g in grids):
+                if only_t and t not in only_t:
                     continue
-                feats = load_all(d)
+                key = f"{run_name}/block_{b:02d}/t_{t:03d}"
+                grids = sorted({grid, min(grid, args.scan_grid)})
+                if all((run_name, b, t, g) in done for g in grids) or not store.has(key):
+                    continue
+                feats = load_all(key)
+                if feats is None:
+                    continue
                 for g in grids:
                     if (run_name, b, t, g) in done:
                         continue

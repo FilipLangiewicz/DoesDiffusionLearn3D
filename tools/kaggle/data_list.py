@@ -35,9 +35,29 @@ GROUPS = [
     ("extract", "v2r", 6, f"losowa pozycja; {NEW}; aktywacje: SANA, SANA losowe wagi, SD 1.5, SDXL"),
     ("extract", "v2rns", 6, f"losowa pozycja; {NEW}; bez cienia obiektu; aktywacje: SANA"),
     ("extract", "v2rso", 6, f"losowa pozycja; {NEW}; sam cień; aktywacje: SANA"),
-    ("misc", "renders", 0, f"wszystkie nowe obrazy w tarach (v2, v2pos, v2ns, v2r, v2rns, v2rso); {NEW}; źródło datasetu dd3d-renders-tar"),
-    ("misc", "renders-png", 0, f"wszystkie nowe obrazy rozpakowane; {NEW}; niepełne: limit 500 plików na wyjście"),
+    (
+        "misc",
+        "renders",
+        0,
+        f"wszystkie nowe obrazy w tarach (v2, v2pos, v2ns, v2r, v2rns, v2rso); {NEW}; źródło datasetu dd3d-renders-tar",
+    ),
+    (
+        "misc",
+        "renders-png",
+        0,
+        f"wszystkie nowe obrazy rozpakowane; {NEW}; niepełne: limit 500 plików na wyjście",
+    ),
     ("intervene", "test", 0, "test przyczynowy, próba techniczna; obiekt na środku; 4 obrazy"),
+    ("analyze", "smoke", 0, "analiza, próba techniczna: sondy na bloku 10 i 3 (t = 400) dla v2, v2r, v2rso"),
+    *[
+        (
+            "analyze",
+            f"scan-{s}",
+            0,
+            f"analiza {s}: sondy na wszystkich blokach i krokach + piksele i latent; małe pliki CSV i PNG; kopia lokalnie w reports/experiments/{s}/scan",
+        )
+        for s in ("v1", "v2", "v2r", "v2rns", "v2rso")
+    ],
 ]
 
 

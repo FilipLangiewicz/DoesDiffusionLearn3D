@@ -1,0 +1,50 @@
+{
+ "name": "smoke2",
+ "sets": [
+  "v2pos",
+  "v2",
+  "v2r",
+  "v2rso"
+ ],
+ "features": {
+  "v2": [
+   "dd3d-extract-v2-",
+   "dd3d-extract-v2pos-"
+  ],
+  "v2r": [
+   "dd3d-features-v2r-"
+  ],
+  "v2rso": [
+   "dd3d-extract-v2rso-"
+  ]
+ },
+ "kernels": [
+  "jankombajn/dd3d-extract-v2-0",
+  "jankombajn/dd3d-extract-v2-1",
+  "jankombajn/dd3d-extract-v2-2",
+  "jankombajn/dd3d-extract-v2-3",
+  "jankombajn/dd3d-extract-v2-4",
+  "jankombajn/dd3d-extract-v2-5",
+  "jankombajn/dd3d-extract-v2pos-0",
+  "jankombajn/dd3d-extract-v2rso-0",
+  "jankombajn/dd3d-extract-v2rso-1",
+  "jankombajn/dd3d-extract-v2rso-2",
+  "jankombajn/dd3d-extract-v2rso-3",
+  "jankombajn/dd3d-extract-v2rso-4",
+  "jankombajn/dd3d-extract-v2rso-5",
+  "jankombajn/dd3d-renders"
+ ],
+ "datasets": [
+  "jankombajn/dd3d-features-v2r-0",
+  "jankombajn/dd3d-features-v2r-1",
+  "jankombajn/dd3d-features-v2r-2",
+  "jankombajn/dd3d-features-v2r-3",
+  "jankombajn/dd3d-features-v2r-4",
+  "jankombajn/dd3d-features-v2r-5"
+ ],
+ "commands": [
+  "python scripts/experiments/feature_scan.py --features {FEAT}/v2r --runs all --splits {DATA}/v2r/splits --images {DATA}/v2r/images --out {OUT}/v2r/smoke --blocks 10 --timesteps 400",
+  "python scripts/experiments/feature_scan.py --features {FEAT}/v2 --runs all --splits {DATA}/v2/splits --images {DATA}/v2/images --out {OUT}/v2/smoke --no-pixels --blocks 10 --timesteps 400",
+  "python scripts/experiments/feature_scan.py --features {FEAT}/v2rso --runs all --splits {DATA}/v2rso/splits --images {DATA}/v2rso/images --out {OUT}/v2rso/smoke --no-pixels --blocks 10 --timesteps 400"
+ ]
+}

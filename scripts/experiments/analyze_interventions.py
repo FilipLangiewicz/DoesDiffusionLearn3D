@@ -17,13 +17,17 @@ import argparse
 import json
 from pathlib import Path
 
-import numpy as np
-import pandas as pd
-from PIL import Image
+import matplotlib
 
-from dd3d.data import pixel_features
-from dd3d.metrics import bootstrap_ci, circular_abs_error, decode_azimuth
-from dd3d.probe import ProbeConfig, run
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt  # noqa: E402
+import numpy as np  # noqa: E402
+import pandas as pd  # noqa: E402
+from PIL import Image  # noqa: E402
+
+from dd3d.data import pixel_features  # noqa: E402
+from dd3d.metrics import bootstrap_ci, circular_abs_error, decode_azimuth  # noqa: E402
+from dd3d.probe import ProbeConfig, run  # noqa: E402
 
 
 def signed_diff(a, b) -> np.ndarray:
@@ -40,6 +44,7 @@ def main() -> None:
     parser.add_argument("--splits", type=Path, default=Path("data/v2/splits"))
     parser.add_argument("--images", type=Path, default=Path("data/v2/images"))
     parser.add_argument("--rotate", type=float, default=90.0)
+    parser.add_argument("--examples", type=int, default=4, help="Images in the example figure.")
     parser.add_argument("--out", type=Path, required=True)
     args = parser.parse_args()
 
@@ -90,7 +95,32 @@ def main() -> None:
     args.out.mkdir(parents=True, exist_ok=True)
     df.to_csv(args.out / "results.csv", index=False)
     (args.out / "results.json").write_text(json.dumps(rows, indent=1))
+    per_image = pd.DataFrame(
+        [
+            {"image_id": i, "condition": c, "label_az": float(az_label[k]), "pred_az": float(preds[c][k])}
+            for c in conditions
+            for k, i in enumerate(ids)
+        ]
+    )
+    per_image.to_csv(args.out / "per_image.csv", index=False, float_format="%.2f")
     print(df.round(2).to_string())
+
+    # Example figure: the input render, then one column for each condition.
+    n = min(args.examples, len(ids))
+    fig, axes = plt.subplots(n, len(conditions) + 1, figsize=(1.6 * (len(conditions) + 1), 1.75 * n))
+    axes = np.atleast_2d(axes)
+    for r in range(n):
+        render = Image.open(args.images / shapes[r] / f"{ids[r]}.png").convert("RGB")
+        axes[r][0].imshow(render)
+        axes[r][0].set_title(f"render\nlabel {az_label[r]:.0f}", fontsize=6)
+        for c, cond in enumerate(conditions, start=1):
+            axes[r][c].imshow(pixels[cond][r].astype(np.uint8))
+            title = cond.replace("shift:", "") if r == 0 else ""
+            axes[r][c].set_title(f"{title}\npixel probe {preds[cond][r]:.0f}", fontsize=6)
+        for ax in axes[r]:
+            ax.axis("off")
+    fig.tight_layout()
+    fig.savefig(args.out / "examples.png", dpi=110)
 
 
 if __name__ == "__main__":

@@ -14,7 +14,7 @@ The commands can use these names:
 
 - {REPO}: the repository; {OUT}: the result folder;
 - {DATA}: the render sets; {FEAT}: the feature folders;
-- {PREV}: the outputs of earlier analysis jobs, one folder for each job.
+- {PREV}: the outputs of earlier analysis and intervention jobs, one folder each.
 """
 
 import glob
@@ -138,10 +138,11 @@ for name, prefixes in PARAMS.get("features", {}).items():
             os.symlink(src, feat / name / os.path.basename(src))
             log(f"features {name}: {src}")
 
-# Outputs of earlier analysis jobs (for example a scan.csv), one link for each job.
+# Outputs of earlier jobs (for example a scan.csv or the images of a causal test),
+# one link for each job.
 prev = Path(f"{TMP}/prev")
 prev.mkdir(parents=True, exist_ok=True)
-for src in inputs("dd3d-analyze-"):
+for src in inputs("dd3d-analyze-") + inputs("dd3d-intervene-"):
     os.symlink(src, prev / os.path.basename(src))
     log(f"earlier output: {src}")
 

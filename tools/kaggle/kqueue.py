@@ -113,6 +113,9 @@ def start_fetch(job: dict) -> None:
     # images) also keeps its large output on Kaggle; an analysis job reads it there.
     large = "/extract/" in str(job["dir"]) or job["slug"].startswith("dd3d-renders")
     small = " --pattern 'results|[.]log$'" if large or (job["dir"] / ".small").exists() else ""
+    # A .pattern file gives the regular expression of the files to download.
+    if (job["dir"] / ".pattern").exists():
+        small = f" --pattern '{(job['dir'] / '.pattern').read_text().strip()}'"
     cmd = f"{sys.executable} -u {kfetch} {job['id']} {out}{small} && date > {done}"
     logf = open(job["dir"] / "fetch.log", "a")
     proc = subprocess.Popen(

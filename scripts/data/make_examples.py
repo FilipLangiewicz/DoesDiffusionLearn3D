@@ -1,8 +1,9 @@
 """Write three example images of each data set version and one overview sheet.
 
 The new versions (v2, v2ns, v2r, v2rns, v2rso, v2rot) use the same scene
-numbers. Thus each row of the sheet differs from the v2 row in one property. v1 and v2pos have their own scenes. The images are 256 px JPEG files, so
-the folder data/examples stays near 1 MB and can be in git.
+numbers. Thus each row of the sheet differs from the v2 row in one property.
+v1 and v2pos have their own scenes. The images are 256 px JPEG files, so the
+folder data/examples stays near 1 MB and can be in git.
 """
 
 from __future__ import annotations

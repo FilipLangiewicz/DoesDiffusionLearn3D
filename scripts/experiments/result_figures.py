@@ -123,6 +123,36 @@ def causal_figure(reports: Path, out: Path) -> None:
     print(f"-> {out}")
 
 
+def causal_table(reports: Path, out: Path) -> None:
+    """Write a LaTeX table: one row for each condition, one column pair for each block."""
+    files = sorted((reports / "causal").glob("b*/results.csv"))
+    if not files:
+        return
+    blocks = [int(f.parent.name[1:]) for f in files]
+    frames = {b: pd.read_csv(f).set_index("condition") for b, f in zip(blocks, files, strict=True)}
+    order = sorted(blocks)
+    conds = [c for c in frames[order[0]].index if c != "base"]
+    lines = [
+        "\\begin{tabular}{l" + "rr" * len(order) + "}",
+        "\\toprule",
+        " & " + " & ".join(f"\\multicolumn{{2}}{{c}}{{Block {b}}}" for b in order) + " \\\\",
+        "Condition" + " & rotation & pixels" * len(order) + " \\\\",
+        "\\midrule",
+    ]
+    for c in conds:
+        cells = []
+        for b in order:
+            r = frames[b].loc[c]
+            lo, hi = (float(v) for v in str(r["rotation_ci"]).strip("()").split(","))
+            cells.append(f"${r['rotation_mean']:+.0f}$ \\scriptsize{{[{lo:+.0f}, {hi:+.0f}]}}")
+            cells.append(f"{r['pixel_change']:.0f}")
+        name = c.replace("shift:", "").replace("_", "\\_")
+        lines.append(f"{name} & " + " & ".join(cells) + " \\\\")
+    lines += ["\\bottomrule", "\\end{tabular}"]
+    out.write_text("\n".join(lines) + "\n")
+    print(f"-> {out}")
+
+
 def patch_figure(reports: Path, out: Path) -> None:
     path = reports / "patch" / "summary.csv"
     if not path.exists():
@@ -167,6 +197,9 @@ def main() -> None:
     args.out.mkdir(parents=True, exist_ok=True)
     scan_figure(args.reports, args.sets.split(","), args.split, args.grid, args.out / "scan.png")
     causal_figure(args.reports, args.out / "causal.png")
+    tables = args.out.parent / "tables"
+    tables.mkdir(parents=True, exist_ok=True)
+    causal_table(args.reports, tables / "causal.tex")
     patch_figure(args.reports, args.out / "patch.png")
 
 

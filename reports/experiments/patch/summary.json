@@ -1,0 +1,422 @@
+[
+ {
+  "condition": "base",
+  "rotation_mean": 0.0,
+  "fraction_mean": 0.0,
+  "fraction_ci": [
+   0.0,
+   0.0
+  ],
+  "toward_source_share": 0.0,
+  "pixel_change": 0.0,
+  "n": 48
+ },
+ {
+  "condition": "source",
+  "rotation_mean": 90.75472513834636,
+  "fraction_mean": 1.008385834870515,
+  "fraction_ci": [
+   0.9567582096876922,
+   1.0614164861043296
+  ],
+  "toward_source_share": 0.9791666666666666,
+  "pixel_change": 4.898127101361752,
+  "n": 48
+ },
+ {
+  "condition": "patch:b10_all",
+  "rotation_mean": 65.73798688252766,
+  "fraction_mean": 0.7304220764725297,
+  "fraction_ci": [
+   0.6784667259675484,
+   0.7834221454902931
+  ],
+  "toward_source_share": 0.9375,
+  "pixel_change": 3.59701190640529,
+  "n": 48
+ },
+ {
+  "condition": "patch:b00_object",
+  "rotation_mean": 53.255937576293945,
+  "fraction_mean": 0.5917326397365994,
+  "fraction_ci": [
+   0.5353027965404369,
+   0.6517386971579658
+  ],
+  "toward_source_share": 0.6875,
+  "pixel_change": 2.240967517097791,
+  "n": 48
+ },
+ {
+  "condition": "patch:b00_shadow_src",
+  "rotation_mean": 10.786397616068522,
+  "fraction_mean": 0.11984886240076136,
+  "fraction_ci": [
+   0.0846158908031605,
+   0.15870586713155108
+  ],
+  "toward_source_share": 0.020833333333333332,
+  "pixel_change": 1.422263655733938,
+  "n": 48
+ },
+ {
+  "condition": "patch:b00_floor",
+  "rotation_mean": 0.7206767400105795,
+  "fraction_mean": 0.008007519333450881,
+  "fraction_ci": [
+   0.004790372848510742,
+   0.011406231456332735
+  ],
+  "toward_source_share": 0.0,
+  "pixel_change": 0.5851123351603746,
+  "n": 48
+ },
+ {
+  "condition": "patch:b02_object",
+  "rotation_mean": 53.05498218536377,
+  "fraction_mean": 0.5894998020595975,
+  "fraction_ci": [
+   0.5319472833032961,
+   0.6482300908477218
+  ],
+  "toward_source_share": 0.6666666666666666,
+  "pixel_change": 2.204460377494494,
+  "n": 48
+ },
+ {
+  "condition": "patch:b02_shadow_src",
+  "rotation_mean": 10.96747080485026,
+  "fraction_mean": 0.12186078672055844,
+  "fraction_ci": [
+   0.08559818921265779,
+   0.16143784249270401
+  ],
+  "toward_source_share": 0.020833333333333332,
+  "pixel_change": 1.3801681376838435,
+  "n": 48
+ },
+ {
+  "condition": "patch:b02_floor",
+  "rotation_mean": 0.7092046737670898,
+  "fraction_mean": 0.007880051930745443,
+  "fraction_ci": [
+   0.003984545336829292,
+   0.012182697013572408
+  ],
+  "toward_source_share": 0.0,
+  "pixel_change": 0.5458922628313303,
+  "n": 48
+ },
+ {
+  "condition": "patch:b04_object",
+  "rotation_mean": 52.937140464782715,
+  "fraction_mean": 0.5881904496086968,
+  "fraction_ci": [
+   0.5306741962609467,
+   0.6478798407978482
+  ],
+  "toward_source_share": 0.6458333333333334,
+  "pixel_change": 2.1813238710165024,
+  "n": 48
+ },
+ {
+  "condition": "patch:b04_shadow_src",
+  "rotation_mean": 11.002795855204264,
+  "fraction_mean": 0.12225328728004738,
+  "fraction_ci": [
+   0.08648492044872708,
+   0.1613147249045195
+  ],
+  "toward_source_share": 0.020833333333333332,
+  "pixel_change": 1.357116581639275,
+  "n": 48
+ },
+ {
+  "condition": "patch:b04_floor",
+  "rotation_mean": 0.7911888758341471,
+  "fraction_mean": 0.008790987509268301,
+  "fraction_ci": [
+   0.0047832073988737876,
+   0.013330335440459069
+  ],
+  "toward_source_share": 0.0,
+  "pixel_change": 0.5425514383241534,
+  "n": 48
+ },
+ {
+  "condition": "patch:b06_object",
+  "rotation_mean": 52.92197195688883,
+  "fraction_mean": 0.5880219106320982,
+  "fraction_ci": [
+   0.5317685189953557,
+   0.644900441787861
+  ],
+  "toward_source_share": 0.6458333333333334,
+  "pixel_change": 2.148739350338777,
+  "n": 48
+ },
+ {
+  "condition": "patch:b06_shadow_src",
+  "rotation_mean": 10.593010266621908,
+  "fraction_mean": 0.11770011407357674,
+  "fraction_ci": [
+   0.08413853892573606,
+   0.1544590891732109
+  ],
+  "toward_source_share": 0.020833333333333332,
+  "pixel_change": 1.3225024032096069,
+  "n": 48
+ },
+ {
+  "condition": "patch:b06_floor",
+  "rotation_mean": 0.7886247634887695,
+  "fraction_mean": 0.008762497372097439,
+  "fraction_ci": [
+   0.004734660784403483,
+   0.013253034485710984
+  ],
+  "toward_source_share": 0.0,
+  "pixel_change": 0.5515947624420127,
+  "n": 48
+ },
+ {
+  "condition": "patch:b08_object",
+  "rotation_mean": 53.082262674967446,
+  "fraction_mean": 0.5898029186107494,
+  "fraction_ci": [
+   0.5356311234721431,
+   0.6459516248879609
+  ],
+  "toward_source_share": 0.6666666666666666,
+  "pixel_change": 2.1231912647684417,
+  "n": 48
+ },
+ {
+  "condition": "patch:b08_shadow_src",
+  "rotation_mean": 10.626677513122559,
+  "fraction_mean": 0.11807419459025066,
+  "fraction_ci": [
+   0.08499791313100746,
+   0.15501506690625785
+  ],
+  "toward_source_share": 0.020833333333333332,
+  "pixel_change": 1.2741548789199442,
+  "n": 48
+ },
+ {
+  "condition": "patch:b08_floor",
+  "rotation_mean": 0.6998847325642904,
+  "fraction_mean": 0.007776497028492114,
+  "fraction_ci": [
+   0.003945256780695033,
+   0.01222338853058991
+  ],
+  "toward_source_share": 0.0,
+  "pixel_change": 0.5514972486222783,
+  "n": 48
+ },
+ {
+  "condition": "patch:b10_object",
+  "rotation_mean": 53.22623920440674,
+  "fraction_mean": 0.5914026578267415,
+  "fraction_ci": [
+   0.5373678349565577,
+   0.6475385188173365
+  ],
+  "toward_source_share": 0.6875,
+  "pixel_change": 2.089119548598925,
+  "n": 48
+ },
+ {
+  "condition": "patch:b10_shadow_src",
+  "rotation_mean": 10.75051212310791,
+  "fraction_mean": 0.11945013470119899,
+  "fraction_ci": [
+   0.08653060665837041,
+   0.15596732272042166
+  ],
+  "toward_source_share": 0.020833333333333332,
+  "pixel_change": 1.2286446555517614,
+  "n": 48
+ },
+ {
+  "condition": "patch:b10_floor",
+  "rotation_mean": 0.6823711395263672,
+  "fraction_mean": 0.0075819015502929694,
+  "fraction_ci": [
+   0.0036355363881146467,
+   0.011958418598881476
+  ],
+  "toward_source_share": 0.0,
+  "pixel_change": 0.5464104264974594,
+  "n": 48
+ },
+ {
+  "condition": "patch:b12_object",
+  "rotation_mean": 52.56974665323893,
+  "fraction_mean": 0.5841082961470992,
+  "fraction_ci": [
+   0.5305095395335445,
+   0.6397365850872463
+  ],
+  "toward_source_share": 0.7083333333333334,
+  "pixel_change": 2.0520504799981913,
+  "n": 48
+ },
+ {
+  "condition": "patch:b12_shadow_src",
+  "rotation_mean": 10.922046025594076,
+  "fraction_mean": 0.12135606695104528,
+  "fraction_ci": [
+   0.08919510850199946,
+   0.1564621422908924
+  ],
+  "toward_source_share": 0.020833333333333332,
+  "pixel_change": 1.2155630087169509,
+  "n": 48
+ },
+ {
+  "condition": "patch:b12_floor",
+  "rotation_mean": 0.5819387435913086,
+  "fraction_mean": 0.006465986039903428,
+  "fraction_ci": [
+   0.002750004662407769,
+   0.010434518566838014
+  ],
+  "toward_source_share": 0.0,
+  "pixel_change": 0.5419345976163944,
+  "n": 48
+ },
+ {
+  "condition": "patch:b14_object",
+  "rotation_mean": 51.371883392333984,
+  "fraction_mean": 0.5707987043592665,
+  "fraction_ci": [
+   0.5157874668969049,
+   0.6252075725131563
+  ],
+  "toward_source_share": 0.6666666666666666,
+  "pixel_change": 2.0188881581028304,
+  "n": 48
+ },
+ {
+  "condition": "patch:b14_shadow_src",
+  "rotation_mean": 10.849774678548178,
+  "fraction_mean": 0.12055305198386862,
+  "fraction_ci": [
+   0.0889648414541174,
+   0.15528770296661942
+  ],
+  "toward_source_share": 0.020833333333333332,
+  "pixel_change": 1.2002945450755458,
+  "n": 48
+ },
+ {
+  "condition": "patch:b14_floor",
+  "rotation_mean": 0.597712516784668,
+  "fraction_mean": 0.00664125018649631,
+  "fraction_ci": [
+   0.002898921613340025,
+   0.01043997905872486
+  ],
+  "toward_source_share": 0.0,
+  "pixel_change": 0.5484678214415908,
+  "n": 48
+ },
+ {
+  "condition": "patch:b16_object",
+  "rotation_mean": 52.200438817342125,
+  "fraction_mean": 0.5800048757482458,
+  "fraction_ci": [
+   0.5256336862952621,
+   0.6332605075836181
+  ],
+  "toward_source_share": 0.6875,
+  "pixel_change": 2.016996613393227,
+  "n": 48
+ },
+ {
+  "condition": "patch:b16_shadow_src",
+  "rotation_mean": 9.791561126708984,
+  "fraction_mean": 0.10879512363009984,
+  "fraction_ci": [
+   0.07972549244209574,
+   0.13951317628224688
+  ],
+  "toward_source_share": 0.020833333333333332,
+  "pixel_change": 1.1840191632509232,
+  "n": 48
+ },
+ {
+  "condition": "patch:b16_floor",
+  "rotation_mean": 0.5675544738769531,
+  "fraction_mean": 0.006306160820855035,
+  "fraction_ci": [
+   0.002687686460989493,
+   0.009994402549884937
+  ],
+  "toward_source_share": 0.0,
+  "pixel_change": 0.5528343236073852,
+  "n": 48
+ },
+ {
+  "condition": "patch:b18_object",
+  "rotation_mean": 56.278069814046226,
+  "fraction_mean": 0.6253118868227358,
+  "fraction_ci": [
+   0.5727696292488664,
+   0.6778373655566462
+  ],
+  "toward_source_share": 0.7916666666666666,
+  "pixel_change": 2.0427950024604797,
+  "n": 48
+ },
+ {
+  "condition": "patch:b18_shadow_src",
+  "rotation_mean": 8.63662052154541,
+  "fraction_mean": 0.09596245023939344,
+  "fraction_ci": [
+   0.07016821331448025,
+   0.12198552864569202
+  ],
+  "toward_source_share": 0.0,
+  "pixel_change": 1.1628826396384586,
+  "n": 48
+ },
+ {
+  "condition": "patch:b18_floor",
+  "rotation_mean": 0.3651297887166341,
+  "fraction_mean": 0.004056997652407045,
+  "fraction_ci": [
+   0.000899183926758943,
+   0.007269216643439399
+  ],
+  "toward_source_share": 0.0,
+  "pixel_change": 0.5170850766201814,
+  "n": 48
+ },
+ {
+  "condition": "patch:b10_object_early",
+  "rotation_mean": 34.99042797088623,
+  "fraction_mean": 0.38878253300984705,
+  "fraction_ci": [
+   0.34753286202748623,
+   0.432992935180664
+  ],
+  "toward_source_share": 0.20833333333333334,
+  "pixel_change": 1.6396634206175804,
+  "n": 48
+ },
+ {
+  "condition": "patch:b10_object_late",
+  "rotation_mean": 20.3407039642334,
+  "fraction_mean": 0.22600782182481552,
+  "fraction_ci": [
+   0.20375822049600106,
+   0.2489123985502455
+  ],
+  "toward_source_share": 0.0,
+  "pixel_change": 0.9844489333530267,
+  "n": 48
+ }
+]

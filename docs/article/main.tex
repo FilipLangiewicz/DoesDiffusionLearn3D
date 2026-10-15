@@ -297,7 +297,58 @@ This cue is physically correct, but it is one more 2D cue that a probe can read.
 Two more variants have the same scenes as v2r: in the first, the object casts no shadow (only its shading is left); in the second, the camera does not see the object, but its shadow stays.
 A pair of images thus differs in one cue only.
 
-\pending{RQ1 on v2 and v2r: SANA against pixels, latent and random weights; transfer from centred to random positions; cue variants; SD 1.5 and SDXL.}
+\section{Probes on the clean data}
+\label{sec:rq1}
+
+\paragraph{Protocol.}
+For each model we fit the probe on every block and on the timesteps $t\in\{100,200,400,600,800\}$.
+The features of a block are the token means on a grid of $1\times1$, $2\times2$, $4\times4$ or $8\times8$ cells; the $1\times1$ grid is the mean of all tokens and has no information about the position.
+The validation split selects the block, the timestep and the grid of each model (criterion: the sum of the azimuth and elevation MAE).
+The pixel baseline is the same probe on the RGB image at $8\times8$, $16\times16$, $32\times32$ or $64\times64$ pixels, and the validation split also selects this resolution.
+A coarse grid is often the stronger linear baseline, because it averages the position of the shadow.
+A control task with shuffled train and validation labels gives an MAE of $83\degr$ to $93\degr$ for every source, so the probes do not fit noise \citep{hewitt2019control}.
+Table~\ref{tab:rq1} compares each source with the best pixel grid on the same test images (paired bootstrap).
+
+\begin{table}[t]
+\centering
+\caption{Azimuth MAE (degrees, 95\% interval) of the probe selected on the validation split. Test: spheres and cylinders; cubes: a shape that the probe did not see. Last column: paired difference to the best pixel grid on the cubes. Block names of the UNets follow the order down, mid, up.}
+\label{tab:rq1}
+\resizebox{\linewidth}{!}{\input{tables/rq1.tex}}
+\end{table}
+
+\paragraph{With a random position, diffusion features are much better than the input.}
+On v2r the SANA probe (block 5, $t=100$, $2\times2$ grid) has an azimuth MAE of $5.4\degr$ on spheres and cylinders and $7.6\degr$ on cubes.
+The DC-AE latent gives $18.8\degr$ and $19.0\degr$, and $64\times64$ pixels give $25.1\degr$ and $25.8\degr$.
+SD~1.5 ($7.5\degr$, $11.1\degr$) and SDXL ($5.9\degr$, $7.3\degr$) show the same effect, so it is not specific to one model.
+The SANA transformer with random weights is better than the latent at a low noise level ($11.9\degr$, $15.9\degr$), because random nonlinear features of the latent already help a linear probe.
+The trained model reduces this error by about half.
+Figure~\ref{fig:scan} shows that the best blocks are early and middle blocks (4 to 10) at the lowest noise level, and that the error rises with $t$.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{figures/scan.png}
+\caption{Azimuth MAE on the cubes for the SANA probe on each block ($4\times4$ grid), one line for each timestep. Horizontal lines: the controls at their selected settings.}
+\label{fig:scan}
+\end{figure}
+
+\paragraph{The representation does not depend on the position.}
+The mean of all tokens (the $1\times1$ grid) still gives $5.9\degr$ on spheres and cylinders of v2r ($13.2\degr$ on cubes).
+A stronger test fits the probe on v2, where the object is always at the centre, and applies it to v2r.
+The pixel probe fails ($71.2\degr$ and $70.4\degr$, near chance).
+The SANA probe on the mean of all tokens (block 5, $t=100$) gives $9.0\degr$ and $17.6\degr$; SD~1.5 gives $10.6\degr$ and $22.0\degr$.
+With the $8\times8$ grid, which keeps the position, the transfer is weaker ($38.4\degr$ and $40.9\degr$).
+Thus the model has a direction code that is the same at every place in the image, and the cell features add a position-dependent part.
+
+\paragraph{Both cues are readable.}
+Without the cast shadow (v2rns), the SANA probe gives $6.9\degr$ and $9.9\degr$; the best pixel grid gives $24.6\degr$ and $23.3\degr$.
+With only the shadow (v2rso), SANA gives $5.9\degr$ and $7.9\degr$, against $24.6\degr$ and $16.9\degr$ for the pixels.
+So the model encodes the light from the shading of the object and from the cast shadow, each one alone.
+\pending{transfer between the cue variants}
+
+\paragraph{Where the probe reads.}
+The exact decomposition of the linear probe over the $8\times8$ cells (Section~\ref{sec:geometry} gives the object and shadow cells) shows that the SANA probe on v2r gives the object cells \pending{x}\% of its weight and the shadow cells \pending{y}\%, against an area share of \pending{a}\% and \pending{b}\%.
+On v2rso, where the object is not visible, the cells of the hidden object still get $25\%$ of the weight (area $15\%$).
+These cells also hold the start of the shadow, so this does not show that the model represents the hidden object.
 
 \section{Does the model use the direction?}
 \label{sec:causal}
@@ -337,7 +388,38 @@ If the patched tokens carry the light direction that the model uses, the shadow 
 We report the rotation as a fraction of the $90\degr$ offset.
 In a transformer without skip connections, a patch of all tokens at all steps makes the output equal to the source output up to the difference of the two inputs, so this condition is a positive control.
 
-\pending{results of the shift, the erasure and the patch test}
+\paragraph{Results of the shift and the erasure.}
+Table~\ref{tab:causal} and Figure~\ref{fig:causal} give the results for 60 test images of v2 and three blocks.
+The probes come from the $8\times8$ features at $t=400$ (test MAE $4.4\degr$ to $4.6\degr$).
+The base output keeps the light of the render (azimuth MAE $7.6\degr$ against the label).
+\begin{itemize}
+    \item The pattern direction turns the light of the output. With the natural size ($\times1$), the measured azimuth turns by $+60\degr$ (block~10), $+65\degr$ (block~4) and $+62\degr$ (block~18) towards the target of $+90\degr$, and $73\%$ to $82\%$ of the images end within $45\degr$ of the target.
+    This change has a mean cell norm of only $2\%$ of the mean token norm, and the mean pixel change is $4$ grey levels.
+    With $\times3$ the rotation is about $+120\degr$, so the effect grows with the dose; at this size the images show artefacts.
+    \item A random vector with the same norm in each cell does nothing ($-1.5\degr$ to $-0.2\degr$).
+    \item The shortest change along the probe weights, which moves the probe output exactly to $+90\degr$, turns the output by only $+23\degr$ to $+41\degr$. The same direction with the size of the token norm destroys the image in blocks 4 and 10 (mean pixel change above 130 grey levels).
+    \item The LEACE eraser in one block has no effect on the output light (rotation $-0.2\degr$ to $+0.2\degr$, MAE against the label $7.7\degr$ to $7.9\degr$).
+\end{itemize}
+Thus the model uses the direction of the activation pattern: a small change along it moves the shadow, and a random change of the same size does not.
+The probe weights are a worse handle, as \citet{haufe2014interpretation} predict for a regression with correlated noise.
+The erasure result does not show that the information is unused: the noisy input at $\sigma_0=0.7$ still shows the shadow, and later blocks can read the light again from it.
+\pending{rotation from the shadow region (second measure)}
+
+\begin{table}[t]
+\centering
+\caption{Rotation of the output light (degrees, mean and 95\% interval over 60 images of v2) against the base output, for a target of $+90\degr$, measured by the pixel probe. Pixel change: mean absolute difference to the base output (grey levels).}
+\label{tab:causal}
+\input{tables/causal.tex}
+\end{table}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{figures/causal.png}
+\caption{Rotation of the output light for each condition and block. The dotted line is the target ($+90\degr$).}
+\label{fig:causal}
+\end{figure}
+
+\pending{results of the patch test}
 
 \section{Discussion}
 \label{sec:discussion}

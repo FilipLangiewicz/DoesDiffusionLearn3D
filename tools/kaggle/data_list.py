@@ -58,10 +58,48 @@ GROUPS = [
         )
         for s in ("v1", "v2", "v2r", "v2rns", "v2rso")
     ],
+    *[
+        (
+            "analyze",
+            f"deep-{s}",
+            0,
+            f"analiza {s}, etap 2: wybrane sondy (porównania parami, kontrola z przetasowanymi etykietami) i mapy, gdzie sonda czyta; kopia w reports/experiments/{s}/best i maps",
+        )
+        for s in ("v1", "v2", "v2r", "v2rns", "v2rso")
+    ],
+    (
+        "analyze",
+        "transfer-pos",
+        0,
+        "transfer: sonda z v2 (obiekt na środku) testowana na v2r (losowa pozycja); kopia w reports/experiments/transfer/pos",
+    ),
+    (
+        "analyze",
+        "transfer-cue",
+        0,
+        "transfer: sonda z v2r testowana na v2rns (bez cienia) i v2rso (sam cień); kopia w reports/experiments/transfer/cue",
+    ),
+    (
+        "analyze",
+        "plans-v2",
+        0,
+        "plany testu przyczynowego na v2 (bloki 4, 10, 18; t = 400): przesunięcie wzdłuż sondy i wzorca, wymazanie LEACE",
+    ),
+    ("render", "v2rot", 1, f"pary do łatania aktywacji: 48 scen testowych v2 z azymutem +90°; {NEW}"),
+    ("intervene", "test2", 0, "test przyczynowy, próba techniczna na 2 kartach: 2 losowe plany po 2 obrazy"),
+    (
+        "intervene",
+        "causal",
+        0,
+        "test przyczynowy na v2: 60 obrazów, bloki 4, 10, 18; obrazy wyjściowe w tarach",
+    ),
+    ("intervene", "patch", 0, "łatanie aktywacji między parami v2 / v2rot: 48 par, 6 bloków, 5 obszarów"),
 ]
 
 
 def state(d: Path) -> str:
+    if not d.exists():
+        return "planowane"
     if (d / ".done").exists() or (d / ".complete").exists():
         return "gotowe"
     if (d / ".failed").exists():

@@ -1,0 +1,34 @@
+{
+ "plans": [
+  {
+   "name": "patch_part0",
+   "plan": "plan_patch_part0.dat",
+   "mode": "patch",
+   "config": {
+    "sigma0": 0.7,
+    "steps": 20
+   }
+  },
+  {
+   "name": "patch_part1",
+   "plan": "plan_patch_part1.dat",
+   "mode": "patch",
+   "config": {
+    "sigma0": 0.7,
+    "steps": 20
+   }
+  }
+ ],
+ "kernels": [
+  "jankombajn/dd3d-render-v2-0",
+  "jankombajn/dd3d-render-v2-1",
+  "jankombajn/dd3d-render-v2-2",
+  "jankombajn/dd3d-render-v2-3",
+  "jankombajn/dd3d-render-v2-4",
+  "jankombajn/dd3d-render-v2-5",
+  "jankombajn/dd3d-render-v2rot-0"
+ ],
+ "datasets": [
+  "jankombajn/dd3d-plans"
+ ]
+}

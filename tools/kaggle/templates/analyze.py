@@ -39,6 +39,12 @@ def log(msg):
     LOG.flush()
 
 
+def fail(msg):
+    # The message also goes to results.txt, which is the only log that the queue downloads.
+    log(f"ERROR: {msg}")
+    raise SystemExit(msg)
+
+
 def sh(cmd, quiet=False, check=True, cwd=None, env=None):
     log(f"$ {cmd}")
     r = subprocess.run(cmd, shell=True, capture_output=True, text=True, cwd=cwd, env=env)
@@ -95,7 +101,7 @@ for name in PARAMS.get("sets", []):
     if name == "v1":
         src = [f"{r}/final/images" for r in inputs("dd3d-v1-images") if os.path.isdir(f"{r}/final/images")]
         if not src:
-            raise SystemExit("no v1 images in the inputs")
+            fail("no v1 images in the inputs")
         os.symlink(src[0], d / "images")
         os.symlink(str(Path(src[0]).parent / "scenes"), d / "scenes")
         os.symlink(f"{repo}/data/splits", d / "splits")
@@ -112,7 +118,7 @@ for name in PARAMS.get("sets", []):
         shards.append(str(to / "images"))
     if not shards:
         if renders is None:
-            raise SystemExit(f"no renders of {name} in the inputs")
+            fail(f"no renders of {name} in the inputs")
         shards = sorted(glob.glob(f"{renders}/{name}/{name}_*/images"))
     labels = []
     for shape in SHAPES:
@@ -148,7 +154,7 @@ for name in PARAMS.get("sets", []):
     want = PARAMS.get("split_md5", {}).get(name)
     log(f"{name}: splits md5 {digest} (expected {want})")
     if want and digest != want:
-        raise SystemExit(f"{name}: the splits differ from the local splits")
+        fail(f"{name}: the splits differ from the local splits")
 
 # Feature sources: one folder for each set, with a link to each source.
 for name, prefixes in PARAMS.get("features", {}).items():

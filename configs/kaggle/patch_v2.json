@@ -6,6 +6,7 @@
  ],
  "features": {},
  "kernels": [
+  "jankombajn/dd3d-renders",
   "jankombajn/dd3d-intervene-patch"
  ],
  "datasets": [

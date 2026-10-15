@@ -122,7 +122,7 @@ def unpack(job: str, to: str) -> str:
 def causal_spec(blocks: list[int]) -> dict:
     spec = sources("v2")
     spec["features"] = {}
-    spec["kernels"] = [f"{O}/dd3d-intervene-causal", f"{O}/dd3d-analyze-plans-v2"]
+    spec["kernels"] = [RENDERS, f"{O}/dd3d-intervene-causal", f"{O}/dd3d-analyze-plans-v2"]
     cmds = [unpack("dd3d-intervene-causal", "/kaggle/temp/causal")]
     for b in blocks:
         plan = f"{{PREV}}/dd3d-analyze-plans-v2/out/plans/b{b:02d}t400/plan.npz"
@@ -137,7 +137,7 @@ def causal_spec(blocks: list[int]) -> dict:
 def patch_spec() -> dict:
     spec = sources("v2")
     spec["features"] = {}
-    spec["kernels"] = [f"{O}/dd3d-intervene-patch"]
+    spec["kernels"] = [RENDERS, f"{O}/dd3d-intervene-patch"]
     spec["datasets"] = spec["datasets"] + [f"{O}/dd3d-plans"]
     parts = (0, 1)
     outs = " ".join(f"/kaggle/temp/patch/patch_part{p}" for p in parts)

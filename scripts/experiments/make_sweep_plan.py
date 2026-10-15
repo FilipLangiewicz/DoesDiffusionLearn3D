@@ -33,7 +33,8 @@ def main() -> None:
     parser.add_argument("--features", type=Path, required=True, help="Feature root (dd3d.store).")
     parser.add_argument("--key", default="sana/block_10/t_400")
     parser.add_argument("--splits", type=Path, default=Path("data/v2/splits"))
-    parser.add_argument("--split", default="test")
+    parser.add_argument("--split", default="test,test_cubes", help="Comma list of splits to pick from.")
+    parser.add_argument("--per-shape", default="", help="Images for each shape, for example 3,3,2.")
     parser.add_argument("--n-images", type=int, default=6)
     parser.add_argument("--family", default="pattern", choices=("pattern", "probe"))
     parser.add_argument("--scales", default="1,2,4")
@@ -42,12 +43,17 @@ def main() -> None:
     parser.add_argument("--out", type=Path, required=True)
     args = parser.parse_args()
 
-    splits = {n: pd.read_csv(args.splits / f"{n}.csv") for n in ("train", "val", args.split)}
-    sub = splits[args.split]
+    picks = args.split.split(",")
+    splits = {n: pd.read_csv(args.splits / f"{n}.csv") for n in ("train", "val", *picks)}
+    # All picked splits form one frame; its features come in the same row order.
+    splits["pick"] = pd.concat([splits[n] for n in picks], ignore_index=True)
+    sub = splits["pick"]
     # One image of each shape where possible, with azimuths far apart.
-    per_shape = -(-args.n_images // sub["shape"].nunique())
+    groups = list(sub.groupby("shape", sort=False))
+    counts = [int(c) for c in args.per_shape.split(",")] if args.per_shape else []
+    counts = counts or [-(-args.n_images // len(groups))] * len(groups)
     pick = pd.concat(
-        g.sample(min(len(g), per_shape), random_state=args.seed) for _, g in sub.groupby("shape", sort=False)
+        g.sample(min(len(g), n), random_state=args.seed) for (_, g), n in zip(groups, counts, strict=False)
     )
     pick = pick.head(args.n_images)
     store = FeatureStore(args.features)
@@ -55,10 +61,10 @@ def main() -> None:
         k: (v["light_azimuth_deg"].to_numpy(), v["light_elevation_deg"].to_numpy()) for k, v in splits.items()
     }
     feats = {k: store.load(args.key, v["image_id"].tolist()) for k, v in splits.items()}
-    res = run(feats, labels, ProbeConfig())
+    res = run({k: v for k, v in feats.items() if k in ("train", "val")}, labels, ProbeConfig())
     w = probe_direction(res.model)[:2]
     b = pattern_of(feats["train"], encode_targets(*labels["train"])[:, :2])
-    before = res.model.predict(feats[args.split][sub.index.get_indexer(pick.index)])[:, :2]
+    before = res.model.predict(feats["pick"][sub.index.get_indexer(pick.index)])[:, :2]
     del feats
 
     az = pick["light_azimuth_deg"].to_numpy()

@@ -151,6 +151,52 @@ def patch_spec() -> dict:
     return {"name": "patch-v2", **spec, "commands": cmds}
 
 
+SWEEP_BLOCKS = (4, 10)
+
+
+def sweep_plans_spec() -> dict:
+    spec = sources("v2")
+    cmds = [
+        f"python scripts/experiments/make_sweep_plan.py --features {{FEAT}}/v2 --key sana/block_{b:02d}/t_400"
+        f" --splits {{DATA}}/v2/splits --per-shape 3,3,2 --family pattern --scales 0.5,1,1.5"
+        f" --out {{OUT}}/sweep/sweep_b{b:02d}"
+        for b in SWEEP_BLOCKS
+    ]
+    return {"name": "sweep-plans", **spec, "commands": cmds}
+
+
+def viewer_spec() -> dict:
+    spec = sources("v2")
+    spec["sets"] = spec["sets"] + ["v2rot"]
+    spec["features"] = {}
+    spec["kernels"] = [
+        RENDERS,
+        f"{O}/dd3d-render-v2rot-0",
+        f"{O}/dd3d-intervene-sweep",
+        f"{O}/dd3d-intervene-patch",
+        f"{O}/dd3d-analyze-sweep-plans",
+    ]
+    spec["datasets"] = [f"{O}/dd3d-plans"]
+    data = "--splits {DATA}/v2/splits --images {DATA}/v2/images"
+    cmds = [
+        unpack("dd3d-intervene-sweep", "/kaggle/temp/sweep"),
+        unpack("dd3d-intervene-patch", "/kaggle/temp/patch"),
+    ]
+    for b in SWEEP_BLOCKS:
+        cmds.append(
+            f"python scripts/experiments/sweep_package.py --outputs /kaggle/temp/sweep/sweep_b{b:02d}"
+            f" --plan {{PREV}}/dd3d-analyze-sweep-plans/out/sweep/sweep_b{b:02d}/plan.npz {data}"
+            f" --note 'SANA-1.6B, blok {b}, wzorzec z cech t = 400' --out {{OUT}}/viewer/sweep_b{b:02d}.json"
+        )
+    cmds.append(
+        "python scripts/experiments/sweep_package.py --outputs /kaggle/temp/patch/patch_part0"
+        f" --plan {{PREV}}/dd3d-plans/plan_patch_part0.dat {data} --source-images {{DATA}}/v2rot/images"
+        " --max-images 8 --note 'SANA-1.6B, przeszczep tokenów z renderu ze światłem +90 stopni'"
+        " --out {OUT}/viewer/patch.json"
+    )
+    return {"name": "viewer-data", **spec, "commands": cmds}
+
+
 def main() -> None:
     OUT.mkdir(parents=True, exist_ok=True)
     specs = {}
@@ -162,6 +208,8 @@ def main() -> None:
     specs["plans_v2"] = plans_spec(["sana/block_10/t_400", "sana/block_04/t_400", "sana/block_18/t_400"])
     specs["causal_v2"] = causal_spec([10, 4, 18])
     specs["patch_v2"] = patch_spec()
+    specs["sweep_plans"] = sweep_plans_spec()
+    specs["viewer_data"] = viewer_spec()
     for name, spec in specs.items():
         (OUT / f"{name}.json").write_text(json.dumps(spec, indent=1) + "\n")
         print(OUT / f"{name}.json")

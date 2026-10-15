@@ -1,0 +1,28 @@
+{
+ "name": "sweep-plans",
+ "sets": [
+  "v2pos",
+  "v2"
+ ],
+ "features": {
+  "v2": [
+   "dd3d-extract-v2-",
+   "dd3d-extract-v2pos-"
+  ]
+ },
+ "kernels": [
+  "jankombajn/dd3d-extract-v2-0",
+  "jankombajn/dd3d-extract-v2-1",
+  "jankombajn/dd3d-extract-v2-2",
+  "jankombajn/dd3d-extract-v2-3",
+  "jankombajn/dd3d-extract-v2-4",
+  "jankombajn/dd3d-extract-v2-5",
+  "jankombajn/dd3d-extract-v2pos-0",
+  "jankombajn/dd3d-renders"
+ ],
+ "datasets": [],
+ "commands": [
+  "python scripts/experiments/make_sweep_plan.py --features {FEAT}/v2 --key sana/block_04/t_400 --splits {DATA}/v2/splits --per-shape 3,3,2 --family pattern --scales 0.5,1,1.5 --out {OUT}/sweep/sweep_b04",
+  "python scripts/experiments/make_sweep_plan.py --features {FEAT}/v2 --key sana/block_10/t_400 --splits {DATA}/v2/splits --per-shape 3,3,2 --family pattern --scales 0.5,1,1.5 --out {OUT}/sweep/sweep_b10"
+ ]
+}

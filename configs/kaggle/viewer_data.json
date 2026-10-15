@@ -1,0 +1,26 @@
+{
+ "name": "viewer-data",
+ "sets": [
+  "v2pos",
+  "v2",
+  "v2rot"
+ ],
+ "features": {},
+ "kernels": [
+  "jankombajn/dd3d-renders",
+  "jankombajn/dd3d-render-v2rot-0",
+  "jankombajn/dd3d-intervene-sweep",
+  "jankombajn/dd3d-intervene-patch",
+  "jankombajn/dd3d-analyze-sweep-plans"
+ ],
+ "datasets": [
+  "jankombajn/dd3d-plans"
+ ],
+ "commands": [
+  "mkdir -p /kaggle/temp/sweep && for f in {PREV}/dd3d-intervene-sweep/*.tar; do tar xf $f -C /kaggle/temp/sweep; done",
+  "mkdir -p /kaggle/temp/patch && for f in {PREV}/dd3d-intervene-patch/*.tar; do tar xf $f -C /kaggle/temp/patch; done",
+  "python scripts/experiments/sweep_package.py --outputs /kaggle/temp/sweep/sweep_b04 --plan {PREV}/dd3d-analyze-sweep-plans/out/sweep/sweep_b04/plan.npz --splits {DATA}/v2/splits --images {DATA}/v2/images --note 'SANA-1.6B, blok 4, wzorzec z cech t = 400' --out {OUT}/viewer/sweep_b04.json",
+  "python scripts/experiments/sweep_package.py --outputs /kaggle/temp/sweep/sweep_b10 --plan {PREV}/dd3d-analyze-sweep-plans/out/sweep/sweep_b10/plan.npz --splits {DATA}/v2/splits --images {DATA}/v2/images --note 'SANA-1.6B, blok 10, wzorzec z cech t = 400' --out {OUT}/viewer/sweep_b10.json",
+  "python scripts/experiments/sweep_package.py --outputs /kaggle/temp/patch/patch_part0 --plan {PREV}/dd3d-plans/plan_patch_part0.dat --splits {DATA}/v2/splits --images {DATA}/v2/images --source-images {DATA}/v2rot/images --max-images 8 --note 'SANA-1.6B, przeszczep token\u00f3w z renderu ze \u015bwiat\u0142em +90 stopni' --out {OUT}/viewer/patch.json"
+ ]
+}

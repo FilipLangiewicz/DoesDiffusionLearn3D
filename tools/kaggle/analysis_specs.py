@@ -112,6 +112,42 @@ def plans_spec(keys: list[str]) -> dict:
     return {"name": "plans-v2", **spec, "commands": cmds}
 
 
+def unpack(job: str, to: str) -> str:
+    """Return a shell command that unpacks the image tar files of a GPU job."""
+    return f"mkdir -p {to} && for f in {{PREV}}/{job}/*.tar; do tar xf $f -C {to}; done"
+
+
+def causal_spec(blocks: list[int]) -> dict:
+    spec = sources("v2")
+    spec["features"] = {}
+    spec["kernels"] = [f"{O}/dd3d-intervene-causal", f"{O}/dd3d-analyze-plans-v2"]
+    cmds = [unpack("dd3d-intervene-causal", "/kaggle/temp/causal")]
+    for b in blocks:
+        plan = f"{{PREV}}/dd3d-analyze-plans-v2/out/plans/b{b:02d}t400/plan.npz"
+        cmds.append(
+            "python scripts/experiments/analyze_interventions.py"
+            f" --outputs /kaggle/temp/causal/causal_b{b:02d} --plan {plan}"
+            f" --splits {{DATA}}/v2/splits --images {{DATA}}/v2/images --out {{OUT}}/causal/b{b:02d}"
+        )
+    return {"name": "causal-v2", **spec, "commands": cmds}
+
+
+def patch_spec() -> dict:
+    spec = sources("v2")
+    spec["features"] = {}
+    spec["kernels"] = [f"{O}/dd3d-intervene-patch"]
+    spec["datasets"] = spec["datasets"] + [f"{O}/dd3d-plans"]
+    parts = (0, 1)
+    outs = " ".join(f"/kaggle/temp/patch/patch_part{p}" for p in parts)
+    plans = " ".join(f"{{PREV}}/dd3d-plans/plan_patch_part{p}.dat" for p in parts)
+    cmds = [
+        unpack("dd3d-intervene-patch", "/kaggle/temp/patch"),
+        f"python scripts/experiments/analyze_patching.py --outputs {outs} --plans {plans}"
+        f" --splits {{DATA}}/v2/splits --images {{DATA}}/v2/images --out {{OUT}}/patch",
+    ]
+    return {"name": "patch-v2", **spec, "commands": cmds}
+
+
 def main() -> None:
     OUT.mkdir(parents=True, exist_ok=True)
     specs = {}
@@ -121,6 +157,8 @@ def main() -> None:
     specs["transfer_pos"] = transfer_spec("pos", "v2", ["v2r"], "sana,sd15")
     specs["transfer_cue"] = transfer_spec("cue", "v2r", ["v2rns", "v2rso"], "sana")
     specs["plans_v2"] = plans_spec(["sana/block_10/t_400", "sana/block_04/t_400", "sana/block_18/t_400"])
+    specs["causal_v2"] = causal_spec([10, 4, 18])
+    specs["patch_v2"] = patch_spec()
     for name, spec in specs.items():
         (OUT / f"{name}.json").write_text(json.dumps(spec, indent=1) + "\n")
         print(OUT / f"{name}.json")

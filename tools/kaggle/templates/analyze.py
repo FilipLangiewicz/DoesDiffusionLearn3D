@@ -142,7 +142,7 @@ for name, prefixes in PARAMS.get("features", {}).items():
 # one link for each job.
 prev = Path(f"{TMP}/prev")
 prev.mkdir(parents=True, exist_ok=True)
-for src in inputs("dd3d-analyze-") + inputs("dd3d-intervene-"):
+for src in inputs("dd3d-analyze-") + inputs("dd3d-intervene-") + inputs("dd3d-plans"):
     os.symlink(src, prev / os.path.basename(src))
     log(f"earlier output: {src}")
 

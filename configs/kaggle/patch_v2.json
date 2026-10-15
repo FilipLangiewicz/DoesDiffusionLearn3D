@@ -1,0 +1,19 @@
+{
+ "name": "patch-v2",
+ "sets": [
+  "v2pos",
+  "v2"
+ ],
+ "features": {},
+ "kernels": [
+  "jankombajn/dd3d-intervene-patch"
+ ],
+ "datasets": [
+  "jankombajn/dd3d-renders-tar",
+  "jankombajn/dd3d-plans"
+ ],
+ "commands": [
+  "mkdir -p /kaggle/temp/patch && for f in {PREV}/dd3d-intervene-patch/*.tar; do tar xf $f -C /kaggle/temp/patch; done",
+  "python scripts/experiments/analyze_patching.py --outputs /kaggle/temp/patch/patch_part0 /kaggle/temp/patch/patch_part1 --plans {PREV}/dd3d-plans/plan_patch_part0.dat {PREV}/dd3d-plans/plan_patch_part1.dat --splits {DATA}/v2/splits --images {DATA}/v2/images --out {OUT}/patch"
+ ]
+}

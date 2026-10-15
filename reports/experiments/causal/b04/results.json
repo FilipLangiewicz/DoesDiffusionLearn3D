@@ -12,7 +12,14 @@
    5.947171569283802,
    9.27045462419589
   ],
-  "pixel_change": 0.0
+  "pixel_change": 0.0,
+  "shadow_rotation_median": 0.0,
+  "shadow_rotation_mean": 0.0,
+  "shadow_rotation_ci": [
+   0.0,
+   0.0
+  ],
+  "shadow_n": 59
  },
  {
   "condition": "shift:probe_exact",
@@ -27,7 +34,14 @@
    34.32133587311904,
    47.07542665022215
   ],
-  "pixel_change": 2.1171209812164307
+  "pixel_change": 2.1171209812164307,
+  "shadow_rotation_median": 4.25,
+  "shadow_rotation_mean": 9.05084745762712,
+  "shadow_rotation_ci": [
+   -3.010063559322031,
+   20.718220338983038
+  ],
+  "shadow_n": 59
  },
  {
   "condition": "shift:probe_r1",
@@ -42,7 +56,14 @@
    79.16057453727724,
    102.18931993052165
   ],
-  "pixel_change": 147.8769073486328
+  "pixel_change": 147.8769073486328,
+  "shadow_rotation_median": 83.0,
+  "shadow_rotation_mean": 82.86904761904762,
+  "shadow_rotation_ci": [
+   78.2842261904762,
+   88.01398809523808
+  ],
+  "shadow_n": 21
  },
  {
   "condition": "shift:random_probe",
@@ -57,7 +78,14 @@
    61.03219864220619,
    87.00960050046442
   ],
-  "pixel_change": 157.23336791992188
+  "pixel_change": 157.23336791992188,
+  "shadow_rotation_median": -22.25,
+  "shadow_rotation_mean": -17.890625,
+  "shadow_rotation_ci": [
+   -47.157031249999996,
+   12.297656249999996
+  ],
+  "shadow_n": 16
  },
  {
   "condition": "shift:pattern_x1",
@@ -72,7 +100,14 @@
    58.480133992147444,
    70.15889507172106
   ],
-  "pixel_change": 4.5713019371032715
+  "pixel_change": 4.5713019371032715,
+  "shadow_rotation_median": 6.75,
+  "shadow_rotation_mean": 18.423728813559322,
+  "shadow_rotation_ci": [
+   3.206355932203392,
+   32.86112288135593
+  ],
+  "shadow_n": 59
  },
  {
   "condition": "shift:pattern_x3",
@@ -87,7 +122,14 @@
    117.170525973018,
    123.3752408510844
   ],
-  "pixel_change": 13.469382286071777
+  "pixel_change": 13.469382286071777,
+  "shadow_rotation_median": 108.75,
+  "shadow_rotation_mean": 80.88362068965517,
+  "shadow_rotation_ci": [
+   58.18049568965518,
+   100.90980603448276
+  ],
+  "shadow_n": 58
  },
  {
   "condition": "shift:random_pattern",
@@ -102,7 +144,14 @@
    7.262109832223255,
    10.732196395683289
   ],
-  "pixel_change": 0.9908179044723511
+  "pixel_change": 0.9908179044723511,
+  "shadow_rotation_median": -0.25,
+  "shadow_rotation_mean": -2.906779661016949,
+  "shadow_rotation_ci": [
+   -9.318961864406777,
+   1.3856991525423723
+  ],
+  "shadow_n": 59
  },
  {
   "condition": "erase",
@@ -117,6 +166,13 @@
    6.0726818205515505,
    9.263319094800947
   ],
-  "pixel_change": 1.792908787727356
+  "pixel_change": 1.792908787727356,
+  "shadow_rotation_median": 0.0,
+  "shadow_rotation_mean": -0.1228813559322034,
+  "shadow_rotation_ci": [
+   -0.43230932203389816,
+   0.1526483050847452
+  ],
+  "shadow_n": 59
  }
 ]

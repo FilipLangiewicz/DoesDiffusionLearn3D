@@ -1,12 +1,12 @@
-[19:13:03] params: {"name": "causal-v2", "ref": "a889790", "sets": ["v2pos", "v2"], "features": {}, "split_md5": {"v2": "067ad25419c8b1beb3b2a0f4f9b20167"}, "commands": ["mkdir -p /kaggle/temp/causal && for f in {PREV}/dd3d-intervene-causal/*.tar; do tar xf $f -C /kaggle/temp/causal; done", "python scripts/experiments/analyze_interventions.py --outputs /kaggle/temp/causal/causal_b10 --plan {PREV}/dd3d-analyze-plans-v2/out/plans/b10t400/plan.npz --splits {DATA}/v2/splits --images {DATA}/v2/images --out {OUT}/causal/b10", "python scripts/experiments/analyze_interventions.py --outputs /kaggle/temp/causal/causal_b04 --plan {PREV}/dd3d-analyze-plans-v2/out/plans/b04t400/plan.npz --splits {DATA}/v2/splits --images {DATA}/v2/images --out {OUT}/causal/b04", "python scripts/experiments/analyze_interventions.py --outputs /kaggle/temp/causal/causal_b18 --plan {PREV}/dd3d-analyze-plans-v2/out/plans/b18t400/plan.npz --splits {DATA}/v2/splits --images {DATA}/v2/images --out {OUT}/causal/b18"]}
-[19:13:03] $ nproc; free -g | head -2; df -h /kaggle/temp /kaggle/working | tail -2
-[19:13:03] 4
+[20:00:32] params: {"name": "causal-v2", "ref": "a4f6f31", "sets": ["v2pos", "v2"], "features": {}, "split_md5": {"v2": "067ad25419c8b1beb3b2a0f4f9b20167"}, "commands": ["mkdir -p /kaggle/temp/causal && for f in {PREV}/dd3d-intervene-causal/*.tar; do tar xf $f -C /kaggle/temp/causal; done", "python scripts/experiments/analyze_interventions.py --outputs /kaggle/temp/causal/causal_b10 --plan {PREV}/dd3d-analyze-plans-v2/out/plans/b10t400/plan.npz --splits {DATA}/v2/splits --images {DATA}/v2/images --out {OUT}/causal/b10", "python scripts/experiments/analyze_interventions.py --outputs /kaggle/temp/causal/causal_b04 --plan {PREV}/dd3d-analyze-plans-v2/out/plans/b04t400/plan.npz --splits {DATA}/v2/splits --images {DATA}/v2/images --out {OUT}/causal/b04", "python scripts/experiments/analyze_interventions.py --outputs /kaggle/temp/causal/causal_b18 --plan {PREV}/dd3d-analyze-plans-v2/out/plans/b18t400/plan.npz --splits {DATA}/v2/splits --images {DATA}/v2/images --out {OUT}/causal/b18"]}
+[20:00:32] $ nproc; free -g | head -2; df -h /kaggle/temp /kaggle/working | tail -2
+[20:00:32] 4
                total        used        free      shared  buff/cache   available
 Mem:              31           0          26           0           4          30
 overlay         8.0T  7.0T  1.1T  87% /
 /dev/loop2       20G  144K   20G   1% /kaggle/working
-[19:13:03] $ ls /kaggle/input /kaggle/input/* | head -60
-[19:13:03] /kaggle/input:
+[20:00:32] $ ls /kaggle/input /kaggle/input/* | head -60
+[20:00:32] /kaggle/input:
 dd3d-renders
 notebooks
 
@@ -25,71 +25,71 @@ v2rso
 
 /kaggle/input/notebooks:
 jankombajn
-[19:13:03] $ pip install -q tabulate
-[19:13:11] $ git clone -q https://github.com/FilipLangiewicz/DoesDiffusionLearn3D /kaggle/temp/repo && cd /kaggle/temp/repo && git checkout -q a889790 && git log -1 --format=%h
-[19:13:38] a889790
-[19:13:38] $ tar xf '/kaggle/input/dd3d-renders/v2pos/v2pos_00000_00300.tar' -C /kaggle/temp/img_v2pos/0
-[19:13:39] v2pos: 1 shards, 300 labels, images {'Sphere': 100, 'SmoothCylinder': 100, 'SmoothCube_v2': 100}
-[19:13:39] $ tar xf '/kaggle/input/dd3d-renders/v2/v2_00000_00500.tar' -C /kaggle/temp/img_v2/0
-[19:13:41] $ tar xf '/kaggle/input/dd3d-renders/v2/v2_00500_01000.tar' -C /kaggle/temp/img_v2/1
-[19:13:42] $ tar xf '/kaggle/input/dd3d-renders/v2/v2_01000_01500.tar' -C /kaggle/temp/img_v2/2
-[19:13:46] $ tar xf '/kaggle/input/dd3d-renders/v2/v2_01500_02000.tar' -C /kaggle/temp/img_v2/3
-[19:13:47] $ tar xf '/kaggle/input/dd3d-renders/v2/v2_02000_02500.tar' -C /kaggle/temp/img_v2/4
-[19:13:49] $ tar xf '/kaggle/input/dd3d-renders/v2/v2_02500_03000.tar' -C /kaggle/temp/img_v2/5
-[19:13:52] v2: 6 shards, 3000 labels, images {'Sphere': 1000, 'SmoothCylinder': 1000, 'SmoothCube_v2': 1000}
-[19:13:52] $ python scripts/data/make_v2_splits.py --labels /kaggle/temp/data/v2pos/labels.csv --pos-labels none --out /kaggle/temp/data/v2pos/splits
-[19:13:55] /kaggle/temp/data/v2pos/splits/test.csv 20
+[20:00:32] $ pip install -q tabulate
+[20:00:38] $ git clone -q https://github.com/FilipLangiewicz/DoesDiffusionLearn3D /kaggle/temp/repo && cd /kaggle/temp/repo && git checkout -q a4f6f31 && git log -1 --format=%h
+[20:01:07] a4f6f31
+[20:01:07] $ tar xf '/kaggle/input/dd3d-renders/v2pos/v2pos_00000_00300.tar' -C /kaggle/temp/img_v2pos/0
+[20:01:08] v2pos: 1 shards, 300 labels, images {'Sphere': 100, 'SmoothCylinder': 100, 'SmoothCube_v2': 100}
+[20:01:08] $ tar xf '/kaggle/input/dd3d-renders/v2/v2_00000_00500.tar' -C /kaggle/temp/img_v2/0
+[20:01:10] $ tar xf '/kaggle/input/dd3d-renders/v2/v2_00500_01000.tar' -C /kaggle/temp/img_v2/1
+[20:01:11] $ tar xf '/kaggle/input/dd3d-renders/v2/v2_01000_01500.tar' -C /kaggle/temp/img_v2/2
+[20:01:12] $ tar xf '/kaggle/input/dd3d-renders/v2/v2_01500_02000.tar' -C /kaggle/temp/img_v2/3
+[20:01:15] $ tar xf '/kaggle/input/dd3d-renders/v2/v2_02000_02500.tar' -C /kaggle/temp/img_v2/4
+[20:01:16] $ tar xf '/kaggle/input/dd3d-renders/v2/v2_02500_03000.tar' -C /kaggle/temp/img_v2/5
+[20:01:18] v2: 6 shards, 3000 labels, images {'Sphere': 1000, 'SmoothCylinder': 1000, 'SmoothCube_v2': 1000}
+[20:01:18] $ python scripts/data/make_v2_splits.py --labels /kaggle/temp/data/v2pos/labels.csv --pos-labels none --out /kaggle/temp/data/v2pos/splits
+[20:01:23] /kaggle/temp/data/v2pos/splits/test.csv 20
 /kaggle/temp/data/v2pos/splits/test_cubes.csv 100
 /kaggle/temp/data/v2pos/splits/train.csv 160
 /kaggle/temp/data/v2pos/splits/val.csv 20
-[19:13:55] v2pos: splits md5 f206d018c01e6de7076d1d9ae9259893 (expected None)
-[19:13:55] $ python scripts/data/make_v2_splits.py --labels /kaggle/temp/data/v2/labels.csv --pos-labels /kaggle/temp/data/v2pos/labels.csv --out /kaggle/temp/data/v2/splits
-[19:13:56] /kaggle/temp/data/v2/splits/test.csv 200
+[20:01:23] v2pos: splits md5 f206d018c01e6de7076d1d9ae9259893 (expected None)
+[20:01:23] $ python scripts/data/make_v2_splits.py --labels /kaggle/temp/data/v2/labels.csv --pos-labels /kaggle/temp/data/v2pos/labels.csv --out /kaggle/temp/data/v2/splits
+[20:01:24] /kaggle/temp/data/v2/splits/test.csv 200
 /kaggle/temp/data/v2/splits/test_cubes.csv 1000
 /kaggle/temp/data/v2/splits/test_pos.csv 300
 /kaggle/temp/data/v2/splits/train.csv 1600
 /kaggle/temp/data/v2/splits/val.csv 200
-[19:13:56] v2: splits md5 067ad25419c8b1beb3b2a0f4f9b20167 (expected 067ad25419c8b1beb3b2a0f4f9b20167)
-[19:13:56] earlier output: /kaggle/input/notebooks/jankombajn/dd3d-analyze-plans-v2
-[19:13:56] earlier output: /kaggle/input/notebooks/jankombajn/dd3d-intervene-causal
-[19:13:56] $ mkdir -p /kaggle/temp/causal && for f in /kaggle/temp/prev/dd3d-intervene-causal/*.tar; do tar xf $f -C /kaggle/temp/causal; done
-[19:13:58] command 0 ended with code 0 after 2 s
-[19:13:58] $ python scripts/experiments/analyze_interventions.py --outputs /kaggle/temp/causal/causal_b10 --plan /kaggle/temp/prev/dd3d-analyze-plans-v2/out/plans/b10t400/plan.npz --splits /kaggle/temp/data/v2/splits --images /kaggle/temp/data/v2/images --out /kaggle/working/out/causal/b10
-[19:14:40] condition  rotation_mean                                rotation_ci  toward_target_share  label_az_error                         label_az_error_ci  pixel_change
-0                  base           0.00                                 (0.0, 0.0)                 0.00            7.61     (5.947171569283802, 9.27045462419589)          0.00
-1     shift:probe_exact          22.85    (19.84583917617798, 26.282822691599524)                 0.12           22.37  (18.035122319571173, 27.124392327817283)          1.33
-2        shift:probe_r1          -3.28  (-28.339158891042068, 20.802968336741117)                 0.45           91.57   (81.32855503400168, 101.44325764478046)        132.48
-3    shift:random_probe          -4.97  (-31.401163056691484, 20.744532235463435)                 0.22           89.88   (77.11969566294351, 102.04259837188721)        208.11
-4      shift:pattern_x1          59.87     (54.52610894521077, 65.28604267120362)                 0.73           59.09   (53.306958764330545, 65.13576155842144)          4.37
-5      shift:pattern_x3         120.86   (116.40107570648193, 125.19514779408773)                 0.78          120.08   (116.85254152010282, 123.1042228782336)         13.30
-6  shift:random_pattern          -0.39  (-2.6586658668518064, 1.7888923835754351)                 0.00           11.48   (9.508926403633753, 13.561535960038505)          2.84
-7                 erase          -0.17  (-0.6291892496744791, 0.3108190854390462)                 0.00            7.88     (6.293841125025353, 9.52094499097466)          1.55
-[19:14:40] command 1 ended with code 0 after 42 s
-[19:14:40] $ python scripts/experiments/analyze_interventions.py --outputs /kaggle/temp/causal/causal_b04 --plan /kaggle/temp/prev/dd3d-analyze-plans-v2/out/plans/b04t400/plan.npz --splits /kaggle/temp/data/v2/splits --images /kaggle/temp/data/v2/images --out /kaggle/working/out/causal/b04
-[19:15:18] condition  rotation_mean                               rotation_ci  toward_target_share  label_az_error                        label_az_error_ci  pixel_change
-0                  base           0.00                                (0.0, 0.0)                 0.00            7.61    (5.947171569283802, 9.27045462419589)          0.00
-1     shift:probe_exact          41.25    (36.18131901423136, 46.41509718577067)                 0.40           40.47   (34.32133587311904, 47.07542665022215)          2.12
-2        shift:probe_r1          -3.73  (-29.51496567408243, 21.016315199534084)                 0.35           91.11  (79.16057453727724, 102.18931993052165)        147.88
-3    shift:random_probe          -2.96  (-26.13447476704915, 19.859568614959706)                 0.25           73.79   (61.03219864220619, 87.00960050046442)        157.23
-4      shift:pattern_x1          65.08     (59.5388292948405, 70.64227112452188)                 0.82           64.30  (58.480133992147444, 70.15889507172106)          4.57
-5      shift:pattern_x3         121.13   (116.74885060628256, 125.4035166422526)                 0.77          120.36    (117.170525973018, 123.3752408510844)         13.47
-6  shift:random_pattern          -0.15  (-1.212393423716227, 0.9380383427937825)                 0.00            9.00  (7.262109832223255, 10.732196395683289)          0.99
-7                 erase          -0.19  (-0.785085334777832, 0.3643669319152831)                 0.00            7.66  (6.0726818205515505, 9.263319094800947)          1.79
-[19:15:18] command 2 ended with code 0 after 39 s
-[19:15:18] $ python scripts/experiments/analyze_interventions.py --outputs /kaggle/temp/causal/causal_b18 --plan /kaggle/temp/prev/dd3d-analyze-plans-v2/out/plans/b18t400/plan.npz --splits /kaggle/temp/data/v2/splits --images /kaggle/temp/data/v2/images --out /kaggle/working/out/causal/b18
-[19:15:59] condition  rotation_mean                               rotation_ci  toward_target_share  label_az_error                         label_az_error_ci  pixel_change
-0                  base           0.00                                (0.0, 0.0)                 0.00            7.61     (5.947171569283802, 9.27045462419589)          0.00
-1     shift:probe_exact          39.84   (35.78224619547526, 44.427708530426024)                 0.30           39.06     (33.9357678768672, 44.64183511352761)          1.78
-2        shift:probe_r1          84.46    (79.57807207107545, 89.37124671936036)                 1.00           83.68    (79.36099711808363, 88.01195433369477)         39.85
-3    shift:random_probe          13.88   (-2.94028381983439, 32.047976436614974)                 0.23           59.39   (48.125066012903055, 70.79605676931737)         49.12
-4      shift:pattern_x1          62.42    (57.50836793899536, 67.60217125574748)                 0.77           61.64     (56.5184281478246, 66.88891010971068)          4.34
-5      shift:pattern_x3         119.66   (115.4145766321818, 123.93371565500894)                 0.85          118.88  (115.68568238124848, 122.03701420995395)         12.79
-6  shift:random_pattern          -1.53  (-4.595038312276204, 1.4021524874369293)                 0.00           12.01   (9.847790477995078, 14.419321473236877)          3.09
-7                 erase           0.19  (-0.924901714324951, 1.2358143170674611)                 0.00            7.82     (6.194304466134307, 9.57827227770487)          2.12
-[19:15:59] command 3 ended with code 0 after 40 s
-[19:15:59] all commands ended with code 0
-[19:15:59] $ cd /kaggle/working/out && find . -type f | sort | head -300 && du -sh .
-[19:15:59] ./causal/b04/examples.png
+[20:01:24] v2: splits md5 067ad25419c8b1beb3b2a0f4f9b20167 (expected 067ad25419c8b1beb3b2a0f4f9b20167)
+[20:01:24] earlier output: /kaggle/input/notebooks/jankombajn/dd3d-analyze-plans-v2
+[20:01:24] earlier output: /kaggle/input/notebooks/jankombajn/dd3d-intervene-causal
+[20:01:24] $ mkdir -p /kaggle/temp/causal && for f in /kaggle/temp/prev/dd3d-intervene-causal/*.tar; do tar xf $f -C /kaggle/temp/causal; done
+[20:01:27] command 0 ended with code 0 after 3 s
+[20:01:27] $ python scripts/experiments/analyze_interventions.py --outputs /kaggle/temp/causal/causal_b10 --plan /kaggle/temp/prev/dd3d-analyze-plans-v2/out/plans/b10t400/plan.npz --splits /kaggle/temp/data/v2/splits --images /kaggle/temp/data/v2/images --out /kaggle/working/out/causal/b10
+[20:02:32] condition  rotation_mean                                rotation_ci  toward_target_share  label_az_error                         label_az_error_ci  pixel_change  shadow_rotation_median  shadow_rotation_mean                         shadow_rotation_ci  shadow_n
+0                  base           0.00                                 (0.0, 0.0)                 0.00            7.61     (5.947171569283802, 9.27045462419589)          0.00                    0.00                  0.00                                 (0.0, 0.0)        59
+1     shift:probe_exact          22.85    (19.84583917617798, 26.282822691599524)                 0.12           22.37  (18.035122319571173, 27.124392327817283)          1.33                    1.25                  1.90  (-7.6411016949152515, 11.091101694915244)        59
+2        shift:probe_r1          -3.28  (-28.339158891042068, 20.802968336741117)                 0.45           91.57   (81.32855503400168, 101.44325764478046)        132.48                   80.75                 75.94     (68.59212962962964, 82.67754629629628)        27
+3    shift:random_probe          -4.97  (-31.401163056691484, 20.744532235463435)                 0.22           89.88   (77.11969566294351, 102.04259837188721)        208.11                     NaN                   NaN                                 (nan, nan)         0
+4      shift:pattern_x1          59.87     (54.52610894521077, 65.28604267120362)                 0.73           59.09   (53.306958764330545, 65.13576155842144)          4.37                    7.00                 15.13    (2.154025423728818, 28.133792372881345)        59
+5      shift:pattern_x3         120.86   (116.40107570648193, 125.19514779408773)                 0.78          120.08   (116.85254152010282, 123.1042228782336)         13.30                  107.38                 78.98     (56.34881465517242, 98.65657327586207)        58
+6  shift:random_pattern          -0.39  (-2.6586658668518064, 1.7888923835754351)                 0.00           11.48   (9.508926403633753, 13.561535960038505)          2.84                   -0.75                 -0.42   (-10.258686440677966, 7.890995762711858)        59
+7                 erase          -0.17  (-0.6291892496744791, 0.3108190854390462)                 0.00            7.88     (6.293841125025353, 9.52094499097466)          1.55                    0.00                  0.10  (-0.1483050847457627, 0.3686440677966102)        59
+[20:02:32] command 1 ended with code 0 after 65 s
+[20:02:32] $ python scripts/experiments/analyze_interventions.py --outputs /kaggle/temp/causal/causal_b04 --plan /kaggle/temp/prev/dd3d-analyze-plans-v2/out/plans/b04t400/plan.npz --splits /kaggle/temp/data/v2/splits --images /kaggle/temp/data/v2/images --out /kaggle/working/out/causal/b04
+[20:03:36] condition  rotation_mean                               rotation_ci  toward_target_share  label_az_error                        label_az_error_ci  pixel_change  shadow_rotation_median  shadow_rotation_mean                          shadow_rotation_ci  shadow_n
+0                  base           0.00                                (0.0, 0.0)                 0.00            7.61    (5.947171569283802, 9.27045462419589)          0.00                    0.00                  0.00                                  (0.0, 0.0)        59
+1     shift:probe_exact          41.25    (36.18131901423136, 46.41509718577067)                 0.40           40.47   (34.32133587311904, 47.07542665022215)          2.12                    4.25                  9.05    (-3.010063559322031, 20.718220338983038)        59
+2        shift:probe_r1          -3.73  (-29.51496567408243, 21.016315199534084)                 0.35           91.11  (79.16057453727724, 102.18931993052165)        147.88                   83.00                 82.87       (78.2842261904762, 88.01398809523808)        21
+3    shift:random_probe          -2.96  (-26.13447476704915, 19.859568614959706)                 0.25           73.79   (61.03219864220619, 87.00960050046442)        157.23                  -22.25                -17.89   (-47.157031249999996, 12.297656249999996)        16
+4      shift:pattern_x1          65.08     (59.5388292948405, 70.64227112452188)                 0.82           64.30  (58.480133992147444, 70.15889507172106)          4.57                    6.75                 18.42      (3.206355932203392, 32.86112288135593)        59
+5      shift:pattern_x3         121.13   (116.74885060628256, 125.4035166422526)                 0.77          120.36    (117.170525973018, 123.3752408510844)         13.47                  108.75                 80.88     (58.18049568965518, 100.90980603448276)        58
+6  shift:random_pattern          -0.15  (-1.212393423716227, 0.9380383427937825)                 0.00            9.00  (7.262109832223255, 10.732196395683289)          0.99                   -0.25                 -2.91    (-9.318961864406777, 1.3856991525423723)        59
+7                 erase          -0.19  (-0.785085334777832, 0.3643669319152831)                 0.00            7.66  (6.0726818205515505, 9.263319094800947)          1.79                    0.00                 -0.12  (-0.43230932203389816, 0.1526483050847452)        59
+[20:03:36] command 2 ended with code 0 after 64 s
+[20:03:36] $ python scripts/experiments/analyze_interventions.py --outputs /kaggle/temp/causal/causal_b18 --plan /kaggle/temp/prev/dd3d-analyze-plans-v2/out/plans/b18t400/plan.npz --splits /kaggle/temp/data/v2/splits --images /kaggle/temp/data/v2/images --out /kaggle/working/out/causal/b18
+[20:04:46] condition  rotation_mean                               rotation_ci  toward_target_share  label_az_error                         label_az_error_ci  pixel_change  shadow_rotation_median  shadow_rotation_mean                          shadow_rotation_ci  shadow_n
+0                  base           0.00                                (0.0, 0.0)                 0.00            7.61     (5.947171569283802, 9.27045462419589)          0.00                    0.00                  0.00                                  (0.0, 0.0)        59
+1     shift:probe_exact          39.84   (35.78224619547526, 44.427708530426024)                 0.30           39.06     (33.9357678768672, 44.64183511352761)          1.78                    2.00                  5.20   (-2.5601694915254223, 13.710381355932189)        59
+2        shift:probe_r1          84.46    (79.57807207107545, 89.37124671936036)                 1.00           83.68    (79.36099711808363, 88.01195433369477)         39.85                   45.50                 26.75     (8.379555084745766, 43.415889830508476)        59
+3    shift:random_probe          13.88   (-2.94028381983439, 32.047976436614974)                 0.23           59.39   (48.125066012903055, 70.79605676931737)         49.12                   -3.12                  0.01    (-21.96390086206896, 22.997844827586174)        58
+4      shift:pattern_x1          62.42    (57.50836793899536, 67.60217125574748)                 0.77           61.64     (56.5184281478246, 66.88891010971068)          4.34                    5.00                  9.21    (-1.6365466101694899, 19.94544491525423)        59
+5      shift:pattern_x3         119.66   (115.4145766321818, 123.93371565500894)                 0.85          118.88  (115.68568238124848, 122.03701420995395)         12.79                   92.50                 51.51     (26.168211206896558, 74.46745689655172)        58
+6  shift:random_pattern          -1.53  (-4.595038312276204, 1.4021524874369293)                 0.00           12.01   (9.847790477995078, 14.419321473236877)          3.09                   -0.25                  0.61     (-5.643749999999998, 5.668749999999997)        58
+7                 erase           0.19  (-0.924901714324951, 1.2358143170674611)                 0.00            7.82     (6.194304466134307, 9.57827227770487)          2.12                    0.00                  0.24  (-0.25862068965517243, 0.8062499999999988)        58
+[20:04:46] command 3 ended with code 0 after 70 s
+[20:04:46] all commands ended with code 0
+[20:04:46] $ cd /kaggle/working/out && find . -type f | sort | head -300 && du -sh .
+[20:04:46] ./causal/b04/examples.png
 ./causal/b04/per_image.csv
 ./causal/b04/results.csv
 ./causal/b04/results.json

@@ -15,8 +15,8 @@ __pycache__/
 # Generated data (large or easy to make again)
 data/features/
 data/audit_renders/
-data/v2/
-data/v2*/
+# Only the images of the new data sets stay out of git; their labels and splits are small.
+data/v2*/images/
 runs/
 docs/article/build/
 data/v2_sample/

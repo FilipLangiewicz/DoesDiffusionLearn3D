@@ -70,6 +70,9 @@ def main() -> None:
     parser.add_argument(
         "--scan-grid", type=int, default=4, help="Grid of the block scan (finer grids pool to it)."
     )
+    parser.add_argument(
+        "--extra-grids", default="1,2", help="Coarser grids for every block (1: the mean of all tokens)."
+    )
     parser.add_argument("--blocks", default="", help="Comma list of blocks (empty: all).")
     parser.add_argument("--timesteps", default="", help="Comma list of timesteps (empty: all).")
     parser.add_argument("--no-pixels", action="store_true", help="Skip the pixel baseline.")
@@ -142,7 +145,8 @@ def main() -> None:
                 if only_t and t not in only_t:
                     continue
                 key = f"{run_name}/block_{b:02d}/t_{t:03d}"
-                grids = sorted({grid, min(grid, args.scan_grid)})
+                extra = {g for g in (int(v) for v in args.extra_grids.split(",") if v) if g < grid}
+                grids = sorted({grid, min(grid, args.scan_grid)} | extra)
                 if all((run_name, b, t, g) in done for g in grids) or not store.has(key):
                     continue
                 feats = load_all(key)

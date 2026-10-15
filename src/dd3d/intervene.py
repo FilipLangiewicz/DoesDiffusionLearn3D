@@ -221,8 +221,9 @@ def run_patch(cfg: PatchConfig) -> Path:
     The source pass records the output of each planned block at each step. The
     target pass starts from the target render with the same noise. In condition
     c, the tokens of the mask of c in block blocks[c] get the recorded source
-    values at each step. Block -1 means no change (the base condition). The job
-    also writes the output of the source pass (condition "source").
+    values at each step of c (all steps, or the steps of step_masks). Block -1
+    means no change (the base condition). The job also writes the output of the
+    source pass (condition "source").
     """
     from diffusers import AutoencoderDC, SanaTransformer2DModel
 
@@ -237,6 +238,8 @@ def run_patch(cfg: PatchConfig) -> Path:
     conditions = [str(s) for s in plan["conditions"]]
     blocks = [int(b) for b in plan["blocks"]]
     masks = plan["masks"]  # (n_pairs, n_cond, n_tokens) bool
+    # Optional (n_cond, steps) bool: the steps at which a condition patches (default: all).
+    step_masks = plan["step_masks"] if "step_masks" in plan.files else np.ones((len(blocks), cfg.steps), bool)
     used = sorted({b for b in blocks if b >= 0})
     t0 = time.time()
 
@@ -267,7 +270,8 @@ def run_patch(cfg: PatchConfig) -> Path:
                 src = state["rec"][(block, state["step"])]
                 h = h.clone()
                 for r, m in zip(rows, token_mask, strict=True):
-                    h[r, m] = src[m]
+                    if step_masks[r, state["step"]]:
+                        h[r, m] = src[m]
             return (h, *output[1:]) if isinstance(output, tuple) else h
 
         return hook

@@ -63,7 +63,7 @@ def main() -> None:
         base = predict(outputs / "base", frame)
         src = predict(outputs / "source", frame)
         imgs = {}
-        for cond in ["source", *[str(c) for c in plan["conditions"]]]:
+        for cond in ["base", "source", *[str(c) for c in plan["conditions"] if str(c) != "base"]]:
             folder = outputs / cond.replace(":", "_")
             pred = base if cond == "base" else (src if cond == "source" else predict(folder, frame))
             pix = np.stack(

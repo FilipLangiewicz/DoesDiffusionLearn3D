@@ -1,0 +1,58 @@
+{
+ "key": "sana/block_10/t_400",
+ "split": "test",
+ "n_images": 60,
+ "rotate": 90.0,
+ "probe": {
+  "train": {
+   "az_mae": 3.9091117538186015,
+   "el_mae": 0.5666082376003264
+  },
+  "val": {
+   "az_mae": 4.092050956929333,
+   "el_mae": 0.6624634063720705
+  },
+  "test": {
+   "az_mae": 4.442296680588848,
+   "el_mae": 0.74712532081604
+  }
+ },
+ "probe_rotation_deg": {
+  "base": -1.170473332479105e-06,
+  "shift:probe_exact": 89.99998419463333,
+  "shift:probe_r1": 90.0000148516195,
+  "shift:random_probe": -0.683086321548583,
+  "shift:pattern_x1": 90.73353370809572,
+  "shift:pattern_x3": 124.56635789327333,
+  "shift:random_pattern": -0.4638440284699665,
+  "erase": -1.170473332479105e-06
+ },
+ "mean_token_norm": 2034.524257886482,
+ "cell_norm": {
+  "base": 0.0,
+  "shift:probe_exact": 24.30937385559082,
+  "shift:probe_r1": 2034.571533203125,
+  "shift:random_probe": 2034.571044921875,
+  "shift:pattern_x1": 37.72505187988281,
+  "shift:pattern_x3": 113.17516326904297,
+  "shift:random_pattern": 113.1751937866211,
+  "erase": 0.0
+ },
+ "relative_shifts": [
+  1.0
+ ],
+ "pattern_scales": [
+  1.0,
+  3.0
+ ],
+ "conditions": [
+  "base",
+  "shift:probe_exact",
+  "shift:probe_r1",
+  "shift:random_probe",
+  "shift:pattern_x1",
+  "shift:pattern_x3",
+  "shift:random_pattern",
+  "erase"
+ ]
+}

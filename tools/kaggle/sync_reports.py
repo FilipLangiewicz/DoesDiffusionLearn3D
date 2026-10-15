@@ -22,7 +22,8 @@ def main() -> None:
     args = parser.parse_args()
 
     for job in sorted(args.jobs.glob("dd3d-analyze-*")):
-        if not (job / ".done").exists():
+        # The light test jobs check the pipeline only; their results stay out of the reports.
+        if not (job / ".done").exists() or "smoke" in job.name:
             continue
         out = job / "output" / "out"
         copied = 0

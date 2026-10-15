@@ -1,0 +1,128 @@
+[17:54:04] params: {"name": "scan-v2rns", "ref": "cf4616e", "sets": ["v2rns"], "features": {"v2rns": ["dd3d-extract-v2rns-"]}, "split_md5": {"v2rns": "219791904f9e47fbf048a1d012e5a9a6"}, "commands": ["python scripts/experiments/feature_scan.py --features {FEAT}/v2rns --runs all --splits {DATA}/v2rns/splits --images {DATA}/v2rns/images --out {OUT}/v2rns/scan", "python scripts/experiments/plot_scan.py --scan {OUT}/v2rns/scan/scan.csv --title v2rns --out {OUT}/v2rns/scan_summary"]}
+[17:54:04] $ nproc; free -g | head -2; df -h /kaggle/temp /kaggle/working | tail -2
+[17:54:04] 4
+               total        used        free      shared  buff/cache   available
+Mem:              31           0          26           0           4          30
+overlay         8.0T  7.0T  1.1T  87% /
+/dev/loop2       20G  156K   20G   1% /kaggle/working
+[17:54:04] $ ls /kaggle/input /kaggle/input/* | head -60
+[17:54:04] /kaggle/input:
+notebooks
+
+/kaggle/input/notebooks:
+jankombajn
+[17:54:04] $ pip install -q tabulate
+[17:54:11] $ git clone -q https://github.com/FilipLangiewicz/DoesDiffusionLearn3D /kaggle/temp/repo && cd /kaggle/temp/repo && git checkout -q cf4616e && git log -1 --format=%h
+[17:54:40] cf4616e
+[17:54:40] $ tar xf '/kaggle/input/notebooks/jankombajn/dd3d-renders/v2rns/v2rns_00000_00500.tar' -C /kaggle/temp/img_v2rns/0
+[17:54:41] $ tar xf '/kaggle/input/notebooks/jankombajn/dd3d-renders/v2rns/v2rns_00500_01000.tar' -C /kaggle/temp/img_v2rns/1
+[17:54:43] $ tar xf '/kaggle/input/notebooks/jankombajn/dd3d-renders/v2rns/v2rns_01000_01500.tar' -C /kaggle/temp/img_v2rns/2
+[17:54:44] $ tar xf '/kaggle/input/notebooks/jankombajn/dd3d-renders/v2rns/v2rns_01500_02000.tar' -C /kaggle/temp/img_v2rns/3
+[17:54:46] $ tar xf '/kaggle/input/notebooks/jankombajn/dd3d-renders/v2rns/v2rns_02000_02500.tar' -C /kaggle/temp/img_v2rns/4
+[17:54:47] $ tar xf '/kaggle/input/notebooks/jankombajn/dd3d-renders/v2rns/v2rns_02500_03000.tar' -C /kaggle/temp/img_v2rns/5
+[17:54:49] v2rns: 6 shards, 3000 labels, images {'Sphere': 1000, 'SmoothCylinder': 1000, 'SmoothCube_v2': 1000}
+[17:54:49] $ python scripts/data/make_v2_splits.py --labels /kaggle/temp/data/v2rns/labels.csv --pos-labels none --out /kaggle/temp/data/v2rns/splits
+[17:54:53] /kaggle/temp/data/v2rns/splits/test.csv 200
+/kaggle/temp/data/v2rns/splits/test_cubes.csv 1000
+/kaggle/temp/data/v2rns/splits/train.csv 1600
+/kaggle/temp/data/v2rns/splits/val.csv 200
+[17:54:53] v2rns: splits md5 219791904f9e47fbf048a1d012e5a9a6 (expected 219791904f9e47fbf048a1d012e5a9a6)
+[17:54:53] features v2rns: /kaggle/input/notebooks/jankombajn/dd3d-extract-v2rns-0
+[17:54:53] features v2rns: /kaggle/input/notebooks/jankombajn/dd3d-extract-v2rns-1
+[17:54:53] features v2rns: /kaggle/input/notebooks/jankombajn/dd3d-extract-v2rns-2
+[17:54:53] features v2rns: /kaggle/input/notebooks/jankombajn/dd3d-extract-v2rns-3
+[17:54:53] features v2rns: /kaggle/input/notebooks/jankombajn/dd3d-extract-v2rns-4
+[17:54:53] features v2rns: /kaggle/input/notebooks/jankombajn/dd3d-extract-v2rns-5
+[17:54:53] $ python scripts/experiments/feature_scan.py --features /kaggle/temp/feat/v2rns --runs all --splits /kaggle/temp/data/v2rns/splits --images /kaggle/temp/data/v2rns/images --out /kaggle/working/out/v2rns/scan
+[18:31:43] id': 1} cubes az  20.40 el  0.61 (2 s)
+{'run': 'sana', 'block': 15, 't': 400, 'grid': 2} cubes az  17.28 el  0.63 (4 s)
+{'run': 'sana', 'block': 15, 't': 400, 'grid': 4} cubes az  18.56 el  0.68 (8 s)
+{'run': 'sana', 'block': 15, 't': 600, 'grid': 1} cubes az  32.37 el  0.84 (2 s)
+{'run': 'sana', 'block': 15, 't': 600, 'grid': 2} cubes az  29.95 el  0.88 (4 s)
+{'run': 'sana', 'block': 15, 't': 600, 'grid': 4} cubes az  29.83 el  0.90 (8 s)
+{'run': 'sana', 'block': 15, 't': 800, 'grid': 1} cubes az  54.81 el  1.67 (2 s)
+{'run': 'sana', 'block': 15, 't': 800, 'grid': 2} cubes az  54.31 el  1.78 (4 s)
+{'run': 'sana', 'block': 15, 't': 800, 'grid': 4} cubes az  54.04 el  1.79 (8 s)
+{'run': 'sana', 'block': 16, 't': 100, 'grid': 1} cubes az  19.84 el  0.43 (2 s)
+{'run': 'sana', 'block': 16, 't': 100, 'grid': 2} cubes az  10.19 el  0.51 (4 s)
+{'run': 'sana', 'block': 16, 't': 100, 'grid': 4} cubes az  11.38 el  0.61 (8 s)
+{'run': 'sana', 'block': 16, 't': 200, 'grid': 1} cubes az  20.41 el  0.45 (2 s)
+{'run': 'sana', 'block': 16, 't': 200, 'grid': 2} cubes az  11.52 el  0.54 (4 s)
+{'run': 'sana', 'block': 16, 't': 200, 'grid': 4} cubes az  13.09 el  0.62 (8 s)
+{'run': 'sana', 'block': 16, 't': 400, 'grid': 1} cubes az  21.99 el  0.58 (2 s)
+{'run': 'sana', 'block': 16, 't': 400, 'grid': 2} cubes az  17.96 el  0.60 (4 s)
+{'run': 'sana', 'block': 16, 't': 400, 'grid': 4} cubes az  19.45 el  0.65 (7 s)
+{'run': 'sana', 'block': 16, 't': 600, 'grid': 1} cubes az  33.40 el  0.83 (2 s)
+{'run': 'sana', 'block': 16, 't': 600, 'grid': 2} cubes az  31.53 el  0.88 (4 s)
+{'run': 'sana', 'block': 16, 't': 600, 'grid': 4} cubes az  29.88 el  0.92 (8 s)
+{'run': 'sana', 'block': 16, 't': 800, 'grid': 1} cubes az  53.54 el  1.72 (2 s)
+{'run': 'sana', 'block': 16, 't': 800, 'grid': 2} cubes az  53.62 el  1.72 (4 s)
+{'run': 'sana', 'block': 16, 't': 800, 'grid': 4} cubes az  55.12 el  1.74 (8 s)
+{'run': 'sana', 'block': 17, 't': 100, 'grid': 1} cubes az  19.66 el  0.46 (2 s)
+{'run': 'sana', 'block': 17, 't': 100, 'grid': 2} cubes az  10.26 el  0.49 (4 s)
+{'run': 'sana', 'block': 17, 't': 100, 'grid': 4} cubes az  11.47 el  0.60 (8 s)
+{'run': 'sana', 'block': 17, 't': 200, 'grid': 1} cubes az  20.72 el  0.55 (3 s)
+{'run': 'sana', 'block': 17, 't': 200, 'grid': 2} cubes az  12.13 el  0.56 (4 s)
+{'run': 'sana', 'block': 17, 't': 200, 'grid': 4} cubes az  13.52 el  0.64 (8 s)
+{'run': 'sana', 'block': 17, 't': 400, 'grid': 1} cubes az  23.22 el  0.56 (2 s)
+{'run': 'sana', 'block': 17, 't': 400, 'grid': 2} cubes az  19.86 el  0.62 (4 s)
+{'run': 'sana', 'block': 17, 't': 400, 'grid': 4} cubes az  21.93 el  0.68 (8 s)
+{'run': 'sana', 'block': 17, 't': 600, 'grid': 1} cubes az  33.36 el  0.80 (2 s)
+{'run': 'sana', 'block': 17, 't': 600, 'grid': 2} cubes az  33.87 el  0.84 (4 s)
+{'run': 'sana', 'block': 17, 't': 600, 'grid': 4} cubes az  31.95 el  0.91 (8 s)
+{'run': 'sana', 'block': 17, 't': 800, 'grid': 1} cubes az  54.96 el  1.74 (2 s)
+{'run': 'sana', 'block': 17, 't': 800, 'grid': 2} cubes az  54.48 el  1.78 (3 s)
+{'run': 'sana', 'block': 17, 't': 800, 'grid': 4} cubes az  54.34 el  1.74 (8 s)
+{'run': 'sana', 'block': 18, 't': 100, 'grid': 1} cubes az  21.24 el  0.42 (2 s)
+{'run': 'sana', 'block': 18, 't': 100, 'grid': 2} cubes az  11.06 el  0.52 (4 s)
+{'run': 'sana', 'block': 18, 't': 100, 'grid': 4} cubes az  11.92 el  0.60 (8 s)
+{'run': 'sana', 'block': 18, 't': 100, 'grid': 8} cubes az  12.43 el  0.68 (26 s)
+{'run': 'sana', 'block': 18, 't': 200, 'grid': 1} cubes az  20.48 el  0.51 (2 s)
+{'run': 'sana', 'block': 18, 't': 200, 'grid': 2} cubes az  12.86 el  0.55 (4 s)
+{'run': 'sana', 'block': 18, 't': 200, 'grid': 4} cubes az  14.55 el  0.68 (8 s)
+{'run': 'sana', 'block': 18, 't': 200, 'grid': 8} cubes az  15.56 el  0.79 (26 s)
+{'run': 'sana', 'block': 18, 't': 400, 'grid': 1} cubes az  24.94 el  0.58 (2 s)
+{'run': 'sana', 'block': 18, 't': 400, 'grid': 2} cubes az  22.21 el  0.67 (5 s)
+{'run': 'sana', 'block': 18, 't': 400, 'grid': 4} cubes az  24.88 el  0.71 (10 s)
+{'run': 'sana', 'block': 18, 't': 400, 'grid': 8} cubes az  26.52 el  0.82 (27 s)
+{'run': 'sana', 'block': 18, 't': 600, 'grid': 1} cubes az  34.13 el  0.82 (2 s)
+{'run': 'sana', 'block': 18, 't': 600, 'grid': 2} cubes az  34.78 el  0.90 (4 s)
+{'run': 'sana', 'block': 18, 't': 600, 'grid': 4} cubes az  36.69 el  0.94 (8 s)
+{'run': 'sana', 'block': 18, 't': 600, 'grid': 8} cubes az  41.31 el  1.05 (26 s)
+{'run': 'sana', 'block': 18, 't': 800, 'grid': 1} cubes az  54.90 el  1.66 (2 s)
+{'run': 'sana', 'block': 18, 't': 800, 'grid': 2} cubes az  54.34 el  1.67 (3 s)
+{'run': 'sana', 'block': 18, 't': 800, 'grid': 4} cubes az  54.34 el  1.73 (8 s)
+{'run': 'sana', 'block': 18, 't': 800, 'grid': 8} cubes az  58.03 el  1.77 (27 s)
+{'run': 'sana', 'block': 19, 't': 100, 'grid': 1} cubes az  21.93 el  0.43 (2 s)
+{'run': 'sana', 'block': 19, 't': 100, 'grid': 2} cubes az  11.13 el  0.56 (4 s)
+{'run': 'sana', 'block': 19, 't': 100, 'grid': 4} cubes az  12.19 el  0.64 (8 s)
+{'run': 'sana', 'block': 19, 't': 200, 'grid': 1} cubes az  21.63 el  0.53 (2 s)
+{'run': 'sana', 'block': 19, 't': 200, 'grid': 2} cubes az  13.25 el  0.65 (3 s)
+{'run': 'sana', 'block': 19, 't': 200, 'grid': 4} cubes az  14.67 el  0.79 (8 s)
+{'run': 'sana', 'block': 19, 't': 400, 'grid': 1} cubes az  25.43 el  0.67 (2 s)
+{'run': 'sana', 'block': 19, 't': 400, 'grid': 2} cubes az  22.48 el  0.79 (4 s)
+{'run': 'sana', 'block': 19, 't': 400, 'grid': 4} cubes az  26.00 el  0.79 (8 s)
+{'run': 'sana', 'block': 19, 't': 600, 'grid': 1} cubes az  34.53 el  0.82 (2 s)
+{'run': 'sana', 'block': 19, 't': 600, 'grid': 2} cubes az  35.56 el  0.88 (4 s)
+{'run': 'sana', 'block': 19, 't': 600, 'grid': 4} cubes az  37.73 el  0.94 (8 s)
+{'run': 'sana', 'block': 19, 't': 800, 'grid': 1} cubes az  54.75 el  1.66 (2 s)
+{'run': 'sana', 'block': 19, 't': 800, 'grid': 2} cubes az  54.52 el  1.68 (4 s)
+{'run': 'sana', 'block': 19, 't': 800, 'grid': 4} cubes az  55.64 el  1.73 (8 s)
+-> /kaggle/working/out/v2rns/scan/scan.csv
+[18:31:43] command 0 ended with code 0 after 2210 s
+[18:31:43] $ python scripts/experiments/plot_scan.py --scan /kaggle/working/out/v2rns/scan/scan.csv --title v2rns --out /kaggle/working/out/v2rns/scan_summary
+[18:31:46] run  grid  block    t     val_az            test_az  test_el      test_cubes_az  test_cubes_el
+0      pixels    64     -1   -1  41.612695  43.9 [38.9, 49.2]      1.9  42.5 [40.4, 44.7]            1.9
+1        sana     1      9  100   7.699377     8.6 [7.5, 9.7]      0.3  14.9 [14.1, 15.8]            0.4
+2        sana     2      5  100   5.850228     6.9 [6.2, 7.6]      0.3    9.9 [9.4, 10.4]            0.3
+3        sana     4      5  100   6.061236     6.9 [6.1, 7.8]      0.3    9.8 [9.3, 10.3]            0.4
+4        sana     8      4  100   7.668345     8.3 [7.4, 9.4]      0.4  11.3 [10.7, 11.9]            0.4
+5  vae_latent    32     -1   -1  29.388382  29.0 [25.2, 33.0]      1.1  30.7 [29.0, 32.5]            1.1
+[18:31:46] command 1 ended with code 0 after 3 s
+[18:31:46] all commands ended with code 0
+[18:31:46] $ cd /kaggle/working/out && find . -type f | sort | head -300 && du -sh .
+[18:31:46] ./v2rns/scan/scan.csv
+./v2rns/scan_summary.csv
+./v2rns/scan_summary.md
+./v2rns/scan_summary.png
+284K	.

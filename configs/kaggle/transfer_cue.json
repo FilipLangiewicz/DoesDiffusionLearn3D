@@ -41,6 +41,6 @@
   "jankombajn/dd3d-features-v2r-5"
  ],
  "commands": [
-  "python scripts/experiments/transfer.py --fit v2r --tests v2rns,v2rso --data-root {DATA} --feature-root {FEAT} --scan {PREV}/dd3d-analyze-scan-v2r/out/v2r/scan/scan.csv --runs sana --out {OUT}/transfer/cue"
+  "python scripts/experiments/transfer.py --fit v2r --tests v2rns,v2rso --data-root {DATA} --feature-root {FEAT} --scan {PREV}/dd3d-analyze-scan-v2r/out/v2r/scan/scan.csv --runs sana --pooled-grids 1,2 --out {OUT}/transfer/cue"
  ]
 }

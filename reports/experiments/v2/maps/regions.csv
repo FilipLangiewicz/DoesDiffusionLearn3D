@@ -1,0 +1,4 @@
+source,test_az_mae,test_cubes_az_mae,share_object,share_shadow,share_rest,area_object,area_shadow,area_rest
+pixels 8x8,5.2591,26.9503,0.5909,0.0385,0.3706,0.1412,0.0392,0.8196
+sana/block_04/t_100,2.2281,7.3394,0.4833,0.0724,0.4443,0.1412,0.0392,0.8196
+sd15/block_04/t_100,3.3093,8.8951,0.3573,0.1272,0.5155,0.1412,0.0392,0.8196

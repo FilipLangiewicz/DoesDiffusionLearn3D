@@ -97,7 +97,8 @@ def transfer_spec(name: str, fit: str, tests: list[str], runs: str) -> dict:
     spec["kernels"] = spec["kernels"] + [f"{O}/dd3d-analyze-scan-{fit}"]
     cmd = (
         f"python scripts/experiments/transfer.py --fit {fit} --tests {','.join(tests)} --data-root {{DATA}}"
-        f" --feature-root {{FEAT}} --scan {scan_csv(fit)} --runs {runs} --out {{OUT}}/transfer/{name}"
+        f" --feature-root {{FEAT}} --scan {scan_csv(fit)} --runs {runs} --pooled-grids 1,2"
+        f" --out {{OUT}}/transfer/{name}"
     )
     return {"name": f"transfer-{name}", **spec, "commands": [cmd]}
 

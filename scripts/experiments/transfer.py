@@ -37,7 +37,16 @@ def main() -> None:
     parser.add_argument("--tests", required=True, help="Comma list of test data sets, for example v2r.")
     parser.add_argument("--data-root", type=Path, default=Path("data"))
     parser.add_argument("--feature-root", type=Path, default=Path("data/features"))
-    parser.add_argument("--features", default="", help="Comma list of run/block_<bb>/t_<ttt> keys.")
+    parser.add_argument(
+        "--features",
+        default="",
+        help="Comma list of run/block_<bb>/t_<ttt>[@grid] keys (@1: mean of all tokens).",
+    )
+    parser.add_argument(
+        "--pooled-grids",
+        default="",
+        help="Also fit each run of --runs at its best block and t for these grids.",
+    )
     parser.add_argument("--scan", type=Path, default=None, help="scan.csv of the fit set (selection).")
     parser.add_argument("--runs", default="", help="Comma list of runs to select from --scan.")
     parser.add_argument("--out", type=Path, required=True)
@@ -67,14 +76,27 @@ def main() -> None:
 
     # Each source is (label, key, grid); key None means the pixels.
     sources: list[tuple[str, str | None, int | None]] = [("pixels", None, None)]
-    for key in (f for f in args.features.split(",") if f):
-        sources.append((key, key, None))
+    for item in (f for f in args.features.split(",") if f):
+        key, _, g = item.partition("@")
+        sources.append((item, key, int(g) if g else None))
     if args.scan is not None and args.runs:
         sel = selected(pd.read_csv(args.scan))
         for _, row in sel[sel["run"].isin(args.runs.split(","))].iterrows():
             key = feature_key(row["run"], row["block"], row["t"])
             sources.append((f"{key}/grid_{int(row['grid'])}", key, int(row["grid"])))
+        # The best block and timestep of each pooled grid, also selected on the val split.
+        scan = pd.read_csv(args.scan)
+        val = scan[(scan["split"] == "val") & (scan["target"] == "global")]
+        for g in (int(v) for v in args.pooled_grids.split(",") if v):
+            for run_name in args.runs.split(","):
+                v = val[(val["run"] == run_name) & (val["grid"] == g)]
+                if v.empty:
+                    continue
+                r = v.loc[(v["az_mae"] + v["el_mae"]).idxmin()]
+                key = feature_key(run_name, r["block"], r["t"])
+                sources.append((f"{key}/grid_{g}", key, g))
 
+    sources = list(dict.fromkeys(sources))
     rows = []
     for label, key, grid in sources:
         feats = {}

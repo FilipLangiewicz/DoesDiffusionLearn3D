@@ -1,0 +1,257 @@
+<title>Pokrętło światła SANA</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;800&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a work bench. Scene strip on top, two image panes, a control column with a light compass. */
+:root {
+  --bg: #eef0f3;
+  --panel: #ffffff;
+  --ink: #1c1f26;
+  --muted: #5d6472;
+  --line: #d5d9e1;
+  --accent: #7b3fd0;      /* the purple of the rendered object */
+  --sun: #d98a00;         /* light of the scene */
+  --target: #0f7c8c;      /* the direction we ask for */
+  --read: #c2306a;        /* the direction a pixel probe reads from the output */
+  --chip: #e6e1f5;
+  --font-display: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --font-body: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --font-data: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #14161b; --panel: #1d2028; --ink: #e8eaf0; --muted: #9aa1b0; --line: #313644;
+    --accent: #b38cf2; --sun: #f0b13c; --target: #3cc3d4; --read: #f06a9d; --chip: #2c2540;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #14161b; --panel: #1d2028; --ink: #e8eaf0; --muted: #9aa1b0; --line: #313644;
+  --accent: #b38cf2; --sun: #f0b13c; --target: #3cc3d4; --read: #f06a9d; --chip: #2c2540;
+  color-scheme: dark;
+}
+body {
+  background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 20px 40px;
+}
+.wrap { max-width: 1180px; margin: 0 auto; display: grid; gap: 18px; }
+header { display: grid; gap: 6px; }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(24px, 3.2vw, 34px); margin: 0; letter-spacing: -0.01em; text-wrap: balance; }
+.lede { margin: 0; color: var(--muted); max-width: 70ch; }
+.tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+.tab { font: 600 14px var(--font-body); border: 1px solid var(--line); background: var(--panel); color: var(--ink); padding: 8px 14px; border-radius: 999px; cursor: pointer; }
+.tab[aria-selected="true"] { background: var(--accent); border-color: var(--accent); color: var(--bg); }
+.tab:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid var(--target); outline-offset: 2px; }
+.strip { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; }
+.thumb { flex: 0 0 auto; width: 76px; border: 2px solid transparent; border-radius: 8px; padding: 0; background: var(--panel); cursor: pointer; overflow: hidden; }
+.thumb img { display: block; width: 100%; aspect-ratio: 1; }
+.thumb[aria-pressed="true"] { border-color: var(--accent); }
+.bench { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 300px; gap: 14px; align-items: start; }
+@media (max-width: 920px) { .bench { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } .controls { grid-column: 1 / -1; } }
+@media (max-width: 560px) { .bench { grid-template-columns: minmax(0, 1fr); } }
+figure { margin: 0; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+figure img { display: block; width: 100%; aspect-ratio: 1; max-width: 100%; }
+figcaption { padding: 8px 10px; font-size: 13px; color: var(--muted); display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+figcaption b { color: var(--ink); font-weight: 600; }
+.controls { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px; display: grid; gap: 14px; min-width: 0; }
+.field { display: grid; gap: 6px; }
+.field label, .eyebrow { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 600; }
+.field output { font-family: var(--font-data); font-size: 13px; color: var(--ink); }
+input[type="range"] { width: 100%; accent-color: var(--accent); }
+.seg { display: flex; flex-wrap: wrap; gap: 6px; }
+.seg button { font: 500 13px var(--font-body); border: 1px solid var(--line); background: var(--bg); color: var(--ink); border-radius: 6px; padding: 5px 10px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--chip); border-color: var(--accent); color: var(--ink); }
+.compass { display: grid; justify-items: center; gap: 6px; }
+.compass svg { width: 100%; max-width: 230px; height: auto; }
+.legend { display: grid; gap: 4px; font-size: 13px; width: 100%; }
+.legend div { display: flex; justify-content: space-between; gap: 8px; }
+.legend span:last-child { font-family: var(--font-data); font-variant-numeric: tabular-nums; }
+.key { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: middle; }
+.verdict { font-size: 13px; padding: 8px 10px; border-radius: 6px; background: var(--chip); }
+.note { font-size: 13px; color: var(--muted); max-width: 80ch; margin: 0; }
+.mono { font-family: var(--font-data); }
+@media (prefers-reduced-motion: no-preference) { figure img { transition: opacity 120ms ease; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Pokrętło światła SANA</h1>
+    <p class="lede">Render sceny trafia do SANA-1.6B (SDEdit, szum do σ = 0,7, 20 kroków). W trakcie odszumiania zmieniamy aktywacje jednego bloku transformera. Patrzymy, czy cień na obrazie wyjściowym się obraca. Kierunek cienia na wyjściu mierzy liniowa sonda na pikselach.</p>
+  </header>
+
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" id="tab-sweep" aria-selected="true">Sterowanie kierunkiem</button>
+    <button class="tab" role="tab" id="tab-patch" aria-selected="false">Przeszczep światła</button>
+  </div>
+
+  <div class="strip" id="strip" aria-label="Sceny"></div>
+
+  <div class="bench">
+    <figure>
+      <img id="img-left" alt="Render wejściowy">
+      <figcaption><b id="cap-left">Render</b><span id="cap-left-2"></span></figcaption>
+    </figure>
+    <figure>
+      <img id="img-right" alt="Obraz wyjściowy">
+      <figcaption><b id="cap-right">Wyjście</b><span id="cap-right-2"></span></figcaption>
+    </figure>
+    <div class="controls">
+      <div id="ctl-sweep" class="field-group" style="display:grid;gap:14px">
+        <div class="field">
+          <label for="rot">Obrót kierunku w cechach</label>
+          <input type="range" id="rot" min="0" max="11" step="1" value="3">
+          <output id="rot-out" for="rot"></output>
+        </div>
+        <div class="field">
+          <span class="eyebrow">Siła przesunięcia</span>
+          <div class="seg" id="strength"></div>
+        </div>
+      </div>
+      <div id="ctl-patch" hidden style="display:grid;gap:14px">
+        <div class="field">
+          <label for="block">Blok transformera</label>
+          <input type="range" id="block" min="0" max="9" step="1" value="5">
+          <output id="block-out" for="block"></output>
+        </div>
+        <div class="field">
+          <span class="eyebrow">Obszar przeszczepu</span>
+          <div class="seg" id="region"></div>
+        </div>
+      </div>
+      <div class="compass">
+        <span class="eyebrow">Kierunek światła (widok z góry)</span>
+        <svg viewBox="-120 -120 240 240" role="img" aria-label="Kompas kierunku światła" id="dial"></svg>
+        <div class="legend" id="legend"></div>
+      </div>
+      <div class="verdict" id="verdict"></div>
+    </div>
+  </div>
+  <p class="note" id="note"></p>
+</div>
+
+<script type="application/json" id="data">__DATA__</script>
+<script>
+(function () {
+  const DATA = JSON.parse(document.getElementById("data").textContent);
+  const $ = (id) => document.getElementById(id);
+  const state = { tab: DATA.sweep ? "sweep" : "patch", scene: 0, rot: 3, k: null, block: 5, region: "object" };
+  const REGION_NAMES = { object: "obiekt", shadow_src: "cień źródła", floor: "podłoga", all: "wszystko", object_early: "obiekt, 1. połowa kroków", object_late: "obiekt, 2. połowa kroków" };
+  const fmt = (a) => `${Math.round(((a % 360) + 360) % 360)}°`;
+  const diff = (a, b) => ((a - b + 540) % 360) - 180;
+
+  function set() { return DATA[state.tab]; }
+  function scene() { return set().scenes[state.scene]; }
+
+  function arrow(az, color, dash, len) {
+    // Azimuth: 0 deg on the right, counter-clockwise (the convention of the renders).
+    const r = (az * Math.PI) / 180, x = Math.cos(r) * len, y = -Math.sin(r) * len;
+    return `<line x1="0" y1="0" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}" stroke="${color}" stroke-width="4" stroke-linecap="round" ${dash ? 'stroke-dasharray="7 6"' : ""}/>` +
+      `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="7" fill="${color}"/>`;
+  }
+  function dial(items) {
+    const ticks = [0, 90, 180, 270].map((a) => {
+      const r = (a * Math.PI) / 180, x = Math.cos(r) * 108, y = -Math.sin(r) * 108;
+      return `<text x="${x.toFixed(1)}" y="${(y + 4).toFixed(1)}" text-anchor="middle" font-size="11" fill="var(--muted)" font-family="var(--font-data)">${a}°</text>`;
+    }).join("");
+    $("dial").innerHTML = `<circle cx="0" cy="0" r="92" fill="var(--bg)" stroke="var(--line)" stroke-width="2"/>` +
+      `<circle cx="0" cy="0" r="12" fill="var(--accent)"/>` + ticks +
+      items.map((it) => arrow(it.az, it.color, it.dash, it.len || 86)).join("");
+    $("legend").innerHTML = items.map((it) =>
+      `<div><span><span class="key" style="background:${it.color}"></span>${it.label}</span><span>${fmt(it.az)}</span></div>`).join("");
+  }
+
+  function strip() {
+    $("strip").innerHTML = set().scenes.map((s, i) =>
+      `<button class="thumb" aria-pressed="${i === state.scene}" data-i="${i}" title="${s.image_id}"><img alt="${s.image_id}" src="data:image/jpeg;base64,${s.render}"></button>`).join("");
+    $("strip").querySelectorAll(".thumb").forEach((b) => b.addEventListener("click", () => { state.scene = +b.dataset.i; render(); }));
+  }
+
+  function renderSweep() {
+    const s = scene();
+    const outs = s.outputs.filter((o) => o.condition !== "base");
+    const base = s.outputs.find((o) => o.condition === "base");
+    const ks = [...new Set(outs.map((o) => o.strength))].sort((a, b) => a - b);
+    const rots = [0, ...[...new Set(outs.map((o) => o.rotation))].sort((a, b) => a - b)];
+    if (state.k === null || !ks.includes(state.k)) state.k = ks[Math.min(1, ks.length - 1)];
+    $("rot").max = rots.length - 1;
+    state.rot = Math.min(state.rot, rots.length - 1);
+    $("rot").value = state.rot;
+    const r = rots[state.rot];
+    $("rot-out").textContent = r === 0 ? "0° (bez zmiany)" : `+${r}° względem światła sceny`;
+    $("strength").innerHTML = ks.map((k) => `<button aria-pressed="${k === state.k}" data-k="${k}">×${k}</button>`).join("");
+    $("strength").querySelectorAll("button").forEach((b) => b.addEventListener("click", () => { state.k = +b.dataset.k; render(); }));
+    const o = r === 0 ? base : outs.find((x) => x.rotation === r && x.strength === state.k);
+    $("img-left").src = `data:image/jpeg;base64,${s.render}`;
+    $("cap-left").textContent = "Render";
+    $("cap-left-2").textContent = `światło ${fmt(s.label_az)}`;
+    $("img-right").src = `data:image/jpeg;base64,${o.image}`;
+    $("cap-right").textContent = r === 0 ? "Wyjście bez zmiany" : `Wyjście, cel +${r}°, siła ×${state.k}`;
+    $("cap-right-2").textContent = `sonda: ${fmt(o.read_az)}`;
+    const target = s.label_az + r;
+    dial([
+      { az: s.label_az, color: "var(--sun)", label: "Światło sceny" },
+      { az: target, color: "var(--target)", label: "Cel w cechach", dash: true, len: 74 },
+      { az: o.read_az, color: "var(--read)", label: "Odczyt z obrazu", len: 62 },
+    ]);
+    const moved = diff(o.read_az, base.read_az), want = diff(target, s.label_az);
+    $("verdict").innerHTML = r === 0
+      ? "Bez przesunięcia. Odczyt z obrazu to punkt odniesienia."
+      : `Cień obrócił się o <b class="mono">${moved > 0 ? "+" : ""}${Math.round(moved)}°</b> względem wyjścia bez zmiany (cel ${want > 0 ? "+" : ""}${Math.round(want)}°).`;
+  }
+
+  function renderPatch() {
+    const s = scene();
+    const outs = s.outputs.filter((o) => o.block >= 0);
+    const blocks = [...new Set(outs.filter((o) => !["all", "object_early", "object_late"].includes(o.region)).map((o) => o.block))].sort((a, b) => a - b);
+    const regions = [...new Set(outs.map((o) => o.region))];
+    $("block").max = blocks.length - 1;
+    state.block = Math.min(state.block, blocks.length - 1);
+    $("block").value = state.block;
+    let b = blocks[state.block];
+    let o = outs.find((x) => x.block === b && x.region === state.region);
+    if (!o) { o = outs.find((x) => x.region === state.region); b = o ? o.block : b; }
+    $("block-out").textContent = `blok ${b} z 20` + (o && o.block !== blocks[state.block] ? " (ten obszar ma tylko jeden blok)" : "");
+    $("region").innerHTML = regions.map((g) => `<button aria-pressed="${g === state.region}" data-g="${g}">${REGION_NAMES[g] || g}</button>`).join("");
+    $("region").querySelectorAll("button").forEach((x) => x.addEventListener("click", () => { state.region = x.dataset.g; render(); }));
+    const base = s.outputs.find((x) => x.condition === "base");
+    const src = s.outputs.find((x) => x.condition === "source");
+    $("img-left").src = `data:image/jpeg;base64,${s.source_render}`;
+    $("cap-left").textContent = "Źródło: ta sama scena, światło +90°";
+    $("cap-left-2").textContent = `światło ${fmt(s.label_az + 90)}`;
+    $("img-right").src = `data:image/jpeg;base64,${(o || base).image}`;
+    $("cap-right").textContent = o ? `Cel z przeszczepem: ${REGION_NAMES[state.region] || state.region}, blok ${b}` : "Cel bez zmiany";
+    $("cap-right-2").textContent = `sonda: ${fmt((o || base).read_az)}`;
+    dial([
+      { az: s.label_az, color: "var(--sun)", label: "Światło celu" },
+      { az: s.label_az + 90, color: "var(--target)", label: "Światło źródła", dash: true, len: 74 },
+      { az: (o || base).read_az, color: "var(--read)", label: "Odczyt z obrazu", len: 62 },
+    ]);
+    const moved = diff((o || base).read_az, base.read_az), full = diff(src.read_az, base.read_az);
+    $("verdict").innerHTML = `Cień obrócił się o <b class="mono">${moved > 0 ? "+" : ""}${Math.round(moved)}°</b> w stronę źródła. Pełne źródło daje ${full > 0 ? "+" : ""}${Math.round(full)}°.`;
+  }
+
+  function render() {
+    $("tab-sweep").setAttribute("aria-selected", state.tab === "sweep");
+    $("tab-patch").setAttribute("aria-selected", state.tab === "patch");
+    $("ctl-sweep").hidden = state.tab !== "sweep";
+    $("ctl-patch").hidden = state.tab !== "patch";
+    $("ctl-sweep").style.display = state.tab === "sweep" ? "grid" : "none";
+    $("ctl-patch").style.display = state.tab === "patch" ? "grid" : "none";
+    state.scene = Math.min(state.scene, set().scenes.length - 1);
+    strip();
+    if (state.tab === "sweep") renderSweep(); else renderPatch();
+    $("note").textContent = set().note || "";
+  }
+
+  $("tab-sweep").disabled = !DATA.sweep;
+  $("tab-patch").disabled = !DATA.patch;
+  $("tab-sweep").addEventListener("click", () => { state.tab = "sweep"; state.scene = 0; render(); });
+  $("tab-patch").addEventListener("click", () => { state.tab = "patch"; state.scene = 0; render(); });
+  $("rot").addEventListener("input", (e) => { state.rot = +e.target.value; render(); });
+  $("block").addEventListener("input", (e) => { state.block = +e.target.value; render(); });
+  render();
+})();
+</script>

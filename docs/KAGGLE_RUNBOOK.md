@@ -21,7 +21,9 @@ This file tells how the project runs work on Kaggle. Read it before you start or
 
 | Tool | Use |
 |---|---|
-| `make_jobs.py render/extract/intervene` | Writes job folders (run.py + kernel-metadata.json) from `templates/`. `extract --gpus 2` uses both GPUs of a T4x2 session. |
+| `make_jobs.py render/extract/intervene/analyze` | Writes job folders (run.py + kernel-metadata.json) from `templates/`. `extract --gpus 2` uses both GPUs of a T4x2 session. `intervene --spec` and `analyze --spec` read a JSON file in `configs/kaggle/`. |
+| `analysis_specs.py` | Writes the specs of all analysis jobs to `configs/kaggle/` (scan, deep, transfer, plans, causal, patch). |
+| `sync_reports.py` | Copies the small results of finished analysis jobs from `runs/kaggle/analyze/` to `reports/experiments/` (in git). |
 | `kqueue.py` | The queue. Pushes the jobs of `runs/kaggle/queue.txt` when Kaggle has a free session, checks their state and downloads the output with `kfetch.py`. For extraction jobs and render packs, it downloads only `results.txt` and the log. After each round it writes `docs/KAGGLE_DATA.md`. |
 | `restart_queue.sh` | Stops and starts the queue, detached from the terminal. |
 | `kfetch.py` | Downloads job output files to disk with resume (`--pattern` selects files). The Kaggle CLI reads each file into RAM, so do not use `kaggle kernels output` for large files. |
@@ -38,12 +40,32 @@ This file tells how the project runs work on Kaggle. Read it before you start or
 
 The queue reads the file in each round (every 2 minutes), so a new line needs no restart. Marker files in each job folder keep the state: `.pushed`, `.complete`, `.done`, `.failed`. To run a job again, delete its markers (and see the rules above).
 
+Two more markers control the download of a finished job:
+
+- `.small`: the queue downloads only `results.txt` and the log. Use it for GPU jobs with many output images. An analysis job reads these images on Kaggle.
+- `.pattern`: a regular expression of the files to download, for example `results|[.]log$|[.]json$`.
+
 ## Start a new job
 
 1. Commit and push the code.
 2. `python tools/kaggle/make_jobs.py extract --name <set> --tasks 6 --gpus 2 --runs sana,sd15 --kernel jankombajn/<source> ... --ref <commit> --out-root runs/kaggle/extract`
 3. Add the job folders to `runs/kaggle/queue.txt`.
 4. If the queue does not run (`pgrep -af kqueue.py` shows nothing): `tools/kaggle/restart_queue.sh`.
+
+## Analysis jobs (CPU)
+
+The template `templates/analyze.py` runs scripts of the repository on Kaggle, next to the stored features. The spec (`configs/kaggle/<name>.json`) gives the render sets, the feature sources, the inputs and the commands. The job does these steps:
+
+1. It clones the repository at the given commit.
+2. It unpacks the render tars of each set and makes the splits. The tars come from the job `dd3d-renders` or from render jobs.
+3. It stops if the image ids of a split differ from the local split (md5 check).
+4. It links the feature sources of each set into `{FEAT}/<set>`. `dd3d.store` reads the chunks in place from data sets and tar files.
+5. It links the outputs of earlier jobs and the data set `dd3d-plans` into `{PREV}/<slug>`.
+6. It runs the commands. The results go to `{OUT}`, and the queue downloads them to the laptop.
+
+The stages: `scan-<set>` (all blocks and timesteps), then `deep-<set>`, `transfer-pos` and `transfer-cue`. The second stage reads `scan.csv` from `{PREV}`. `plans-v2` writes the plans of the causal test. `causal-v2` and `patch-v2` analyse the images of the GPU jobs on Kaggle.
+
+Test a new template or spec with a light job first (`configs/kaggle/smoke2.json`: one block, one timestep).
 
 ## Logs
 
@@ -66,3 +88,6 @@ The Kaggle API makes a data set only from local files. The user makes data sets 
 - The T4 has no bfloat16. SANA runs in float16 (same features as float32). The old noise rule overflows in float16 and runs in float32.
 - Blender 2.78c cannot use the Kaggle GPUs; renders run on the CPU (about 7 s for each image).
 - A restart of WSL stops the queue; start it again with `restart_queue.sh`.
+- Do not attach the data set `dd3d-renders-tar` (18,000 PNG files). A job with it waited 47 minutes for its inputs. Use the job output `dd3d-renders` (tar files).
+- A job that reads large tar files of other jobs can wait some minutes at the start, because Kaggle copies the inputs.
+- The queue downloads all of `{OUT}` of an analysis job. Do not write large files there, for example plan files of 150 MB. If you must, add a `.pattern` marker.

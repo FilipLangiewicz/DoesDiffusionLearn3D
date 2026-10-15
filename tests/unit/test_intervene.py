@@ -33,3 +33,12 @@ def test_spread_cells_keeps_the_cell_mean():
     for b in range(2):
         pooled = pool_tokens(tokens[b : b + 1], grid)
         assert np.allclose(pooled, delta[b].numpy(), atol=1e-2)
+
+
+def test_cell_mask_to_tokens_follows_the_token_order():
+    from dd3d.intervene import cell_mask_to_tokens
+
+    cells = np.zeros((2, 2), dtype=bool)
+    cells[0, 1] = True  # top right cell
+    tokens = cell_mask_to_tokens(cells, 4).reshape(4, 4)
+    assert tokens[:2, 2:].all() and tokens.sum() == 4

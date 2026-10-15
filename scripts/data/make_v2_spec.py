@@ -50,6 +50,17 @@ def main() -> None:
         action="store_true",
         help="Random position in [-3, 3]^2 where the largest object is fully in the image.",
     )
+    parser.add_argument(
+        "--azimuth-offset",
+        type=float,
+        default=0.0,
+        help="Add this angle to every azimuth. With the same seed, image i keeps its scene.",
+    )
+    parser.add_argument(
+        "--only",
+        default="",
+        help="Comma list of image numbers <shape>_<i> to keep, for example Sphere_00012 (empty: all).",
+    )
     parser.add_argument("--no-object-shadow", action="store_true", help="The object casts no shadow.")
     parser.add_argument("--shadow-only", action="store_true", help="The camera sees only the shadow.")
     args = parser.parse_args()
@@ -68,7 +79,7 @@ def main() -> None:
             row = {
                 "image_id": image_id,
                 "shape": shape,
-                "light_azimuth_deg": round(rng.uniform(0.0, 360.0), 2),
+                "light_azimuth_deg": round((rng.uniform(0.0, 360.0) + args.azimuth_offset) % 360.0, 2),
                 "light_elevation_deg": round(rng.uniform(args.el_min, args.el_max), 2),
                 "size": round(rng.uniform(args.size_min, args.size_max), 3),
                 "rotation_rad": round(rng.uniform(0.0, 2 * math.pi), 4),
@@ -106,6 +117,11 @@ def main() -> None:
                     "object_camera": not args.shadow_only,
                 }
             )
+    if args.only:
+        # The generators run over all images first, so each kept image keeps its scene.
+        keep = {f"{args.prefix}_{k}" for k in args.only.split(",")}
+        pairs = [(r, j) for r, j in zip(rows, jobs, strict=True) if r["image_id"] in keep]
+        rows, jobs = [r for r, _ in pairs], [j for _, j in pairs]
     args.out_dir.mkdir(parents=True, exist_ok=True)
     pd.DataFrame(rows).to_csv(args.out_dir / "labels.csv", index=False)
     (args.out_dir / "render_spec.json").write_text(json.dumps(jobs, indent=1))

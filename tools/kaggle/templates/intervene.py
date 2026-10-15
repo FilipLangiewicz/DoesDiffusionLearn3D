@@ -73,12 +73,15 @@ import json, sys, time
 from pathlib import Path
 cfg = json.load(open(sys.argv[1]))
 sys.path.insert(0, cfg["repo"] + "/src")
-from dd3d.intervene import InterveneConfig, run
+from dd3d.intervene import InterveneConfig, PatchConfig, run, run_patch
 for p in cfg["plans"]:
     t0 = time.time()
-    c = InterveneConfig(images_dir=Path(cfg["images_dir"]), out_dir=Path(cfg["out"]) / p["name"],
-                        plan=Path(p["path"]), **p["config"])
-    run(c)
+    out = Path(cfg["out"]) / p["name"]
+    common = dict(images_dir=Path(cfg["images_dir"]), out_dir=out, plan=Path(p["path"]))
+    if p.get("mode") == "patch":
+        run_patch(PatchConfig(**common, **p["config"]))
+    else:
+        run(InterveneConfig(**common, **p["config"]))
     print(f"plan {p['name']}: done in {time.time() - t0:.0f} s", flush=True)
 """
 gpus = max(1, min(len(sh("nvidia-smi -L", quiet=True).splitlines()), len(plans)))

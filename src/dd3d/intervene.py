@@ -190,3 +190,157 @@ def run(cfg: InterveneConfig) -> Path:
         + "".join(f"{r['image_id']},{r['shape']},{r['condition']}\n" for r in rows)
     )
     return cfg.out_dir
+
+
+def cell_mask_to_tokens(mask: np.ndarray, side: int) -> np.ndarray:
+    """Spread (..., grid, grid) cell masks to (..., side * side) token masks (row-major)."""
+    grid = mask.shape[-1]
+    k = side // grid
+    tokens = np.repeat(np.repeat(mask, k, axis=-2), k, axis=-1)
+    return tokens.reshape(*mask.shape[:-2], side * side)
+
+
+@dataclass
+class PatchConfig:
+    images_dir: Path
+    out_dir: Path
+    plan: Path  # npz with target_ids, source_ids, shapes, conditions, blocks (n_cond) and masks
+    sigma0: float = 0.7
+    steps: int = 20
+    seed: int = 1234
+    dtype: str = "float16"
+    device: str = "cuda"
+    text_encoder_device: str = "cpu"
+    image_size: int = 1024
+    model_id: str = MODEL_ID
+
+
+def run_patch(cfg: PatchConfig) -> Path:
+    """Patch activations of a source render into a target render (same scene, other light).
+
+    The source pass records the output of each planned block at each step. The
+    target pass starts from the target render with the same noise. In condition
+    c, the tokens of the mask of c in block blocks[c] get the recorded source
+    values at each step. Block -1 means no change (the base condition). The job
+    also writes the output of the source pass (condition "source").
+    """
+    from diffusers import AutoencoderDC, SanaTransformer2DModel
+
+    from dd3d.extract import ExtractConfig
+
+    torch.set_grad_enabled(False)
+    dtype = getattr(torch, cfg.dtype)
+    plan = np.load(cfg.plan, allow_pickle=False)
+    targets = [str(s) for s in plan["target_ids"]]
+    sources = [str(s) for s in plan["source_ids"]]
+    shapes = [str(s) for s in plan["shapes"]]
+    conditions = [str(s) for s in plan["conditions"]]
+    blocks = [int(b) for b in plan["blocks"]]
+    masks = plan["masks"]  # (n_pairs, n_cond, n_tokens) bool
+    used = sorted({b for b in blocks if b >= 0})
+    t0 = time.time()
+
+    ecfg = ExtractConfig(
+        images_dir=cfg.images_dir,
+        out_dir=cfg.out_dir,
+        device=cfg.device,
+        dtype=cfg.dtype,
+        text_encoder_device=cfg.text_encoder_device,
+        model_id=cfg.model_id,
+    )
+    embeds, mask = encode_prompt(ecfg, dtype)
+    vae = AutoencoderDC.from_pretrained(cfg.model_id, subfolder="vae", torch_dtype=dtype).to(cfg.device)
+    model = SanaTransformer2DModel.from_pretrained(
+        cfg.model_id, subfolder="transformer", torch_dtype=dtype, variant="bf16"
+    ).to(cfg.device)
+    model.eval()
+
+    state: dict = {"mode": "off", "step": 0, "rec": {}, "rows": {}}
+
+    def make_hook(block: int):
+        def hook(_module, _inputs, output):
+            h = output[0] if isinstance(output, tuple) else output
+            if state["mode"] == "record":
+                state["rec"][(block, state["step"])] = h[0].detach().clone()
+            elif state["mode"] == "patch" and block in state["rows"]:
+                rows, token_mask = state["rows"][block]
+                src = state["rec"][(block, state["step"])]
+                h = h.clone()
+                for r, m in zip(rows, token_mask, strict=True):
+                    h[r, m] = src[m]
+            return (h, *output[1:]) if isinstance(output, tuple) else h
+
+        return hook
+
+    handles = [model.transformer_blocks[b].register_forward_hook(make_hook(b)) for b in used]
+    sigmas = np.linspace(cfg.sigma0, 0.0, cfg.steps + 1)
+
+    def integrate(xt: torch.Tensor, mode: str) -> torch.Tensor:
+        n = xt.shape[0]
+        enc = embeds.to(cfg.device).expand(n, *embeds.shape[1:])
+        enc_mask = mask.to(cfg.device).expand(n, *mask.shape[1:])
+        state["mode"] = mode
+        for step, (s_now, s_next) in enumerate(zip(sigmas[:-1], sigmas[1:], strict=True)):
+            state["step"] = step
+            t = torch.full((n,), s_now * 1000.0, device=cfg.device)
+            v = model(
+                hidden_states=xt.to(dtype),
+                encoder_hidden_states=enc,
+                encoder_attention_mask=enc_mask,
+                timestep=t,
+                return_dict=False,
+            )[0]
+            xt = xt + (s_next - s_now) * v.float()
+        state["mode"] = "off"
+        return xt
+
+    def decode(x: torch.Tensor) -> np.ndarray:
+        img = vae.decode((x / vae.config.scaling_factor).to(dtype)).sample
+        img = ((img.float().clamp(-1, 1) + 1) * 127.5).round().byte().permute(0, 2, 3, 1).cpu().numpy()[0]
+        torch.cuda.empty_cache()
+        return img
+
+    def save(img: np.ndarray, name: str, shape: str, image_id: str) -> None:
+        out = cfg.out_dir / name.replace(":", "_") / shape
+        out.mkdir(parents=True, exist_ok=True)
+        Image.fromarray(img).resize((512, 512), Image.BICUBIC).save(out / f"{image_id}.png")
+
+    cfg.out_dir.mkdir(parents=True, exist_ok=True)
+    rows = []
+    for i, (tid, sid, shape) in enumerate(zip(targets, sources, shapes, strict=True)):
+        latents = {}
+        for key in (tid, sid):
+            x = preprocess(cfg.images_dir / shape / f"{key}.png", cfg.image_size).to(cfg.device, dtype)
+            latents[key] = vae.encode(x).latent * vae.config.scaling_factor
+        gen = torch.Generator().manual_seed(image_seed(cfg.seed, tid))
+        eps = torch.randn(latents[tid].shape, generator=gen).to(cfg.device, dtype)
+        # The same noise for both passes, so only the scene light differs.
+        x_src = ((1 - cfg.sigma0) * latents[sid] + cfg.sigma0 * eps).float()
+        x_tgt = ((1 - cfg.sigma0) * latents[tid] + cfg.sigma0 * eps).float()
+        state["rec"] = {}
+        out_src = integrate(x_src, "record")
+        n_c = len(conditions)
+        token_masks = torch.tensor(masks[i], device=cfg.device)
+        state["rows"] = {}
+        for b in used:
+            rows_b = [c for c in range(n_c) if blocks[c] == b]
+            state["rows"][b] = (rows_b, [token_masks[c] for c in rows_b])
+        out = integrate(x_tgt.expand(n_c, -1, -1, -1).clone(), "patch")
+        save(decode(out_src), "source", shape, tid)
+        for c, name in enumerate(conditions):
+            save(decode(out[c : c + 1]), name, shape, tid)
+            rows.append({"image_id": tid, "source_id": sid, "shape": shape, "condition": name})
+        state["rec"] = {}
+        if i < 3 or (i + 1) % 10 == 0:
+            print(f"[{i + 1}/{len(targets)}] {tid} after {time.time() - t0:.0f} s", flush=True)
+    for h in handles:
+        h.remove()
+    meta = {k: str(v) for k, v in cfg.__dict__.items()}
+    meta["conditions"] = conditions
+    meta["blocks"] = blocks
+    (cfg.out_dir / "meta.json").write_text(json.dumps(meta, indent=1))
+    (cfg.out_dir / "images.csv").write_text(
+        "image_id,source_id,shape,condition\n"
+        + "".join(f"{r['image_id']},{r['source_id']},{r['shape']},{r['condition']}\n" for r in rows)
+    )
+    return cfg.out_dir

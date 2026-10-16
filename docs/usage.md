@@ -24,14 +24,14 @@ On the cluster, use your own environment (for example conda) and install the pac
 
 | Path | Content | In git |
 |---|---|---|
-| `data/final/images/<shape>/` | 3000 renders (512 x 512 PNG) | no (1.1 GB) |
-| `data/final/scenes/<shape>/` | one JSON file for each render | no |
-| `data/final_example/` | 10 renders and JSON files for each shape | yes |
-| `data/master_labels.csv` | labels of all renders | yes |
-| `data/splits/` | train, val, test (spheres and cylinders), test_cubes | yes |
-| `data/features/` | extracted features (output of `dd3d extract`) | no |
+| `data/final/scenes/<shape>/` | one JSON file for each render of v1 | no |
+| `data/final_example/` | 10 renders and JSON files for each shape of v1 | yes |
+| `data/master_labels.csv` | labels of all v1 renders | yes |
+| `data/splits/` | v1 splits: train, val, test (spheres and cylinders), test_cubes | yes |
+| `data/v2*/labels.csv`, `data/v2*/splits/` | labels and splits of the new data sets | yes |
+| `data/examples/` | three images of each data set version and an overview sheet | yes |
 
-Do not change the files in `data/final`, `data/master_labels.csv` and `data/splits`. All new outputs go to `data/features`, `reports` or `data/audit_renders`.
+The images and the features are on Kaggle only (`docs/KAGGLE_DATA.md`). Do not copy them to the laptop. Do not change the label and split files.
 
 ## 4. Commands
 
@@ -111,13 +111,13 @@ To render a data set, do these steps:
 
 1. Write the job folders: `python tools/kaggle/make_jobs.py render --name v2 --shards 6 --ref <commit> --out-root runs/kaggle/render`.
 2. Push each job and wait for it: `python tools/kaggle/kjob.py run runs/kaggle/render/dd3d-render-v2-0`.
-3. Unpack the images: `python tools/kaggle/collect.py runs/kaggle/render dd3d-render-v2- data/v2`.
+3. The queue downloads only the logs. The images stay on Kaggle; the analysis jobs read them there.
 
 To extract the features, do these steps:
 
 1. Write the job folders: `python tools/kaggle/make_jobs.py extract --name v1 --tasks 6 --dataset jankombajn/dd3d-v1-images --ref <commit> --out-root runs/kaggle/extract`. For the renders of a Kaggle job, use `--kernel <owner>/<slug>` in place of `--dataset`.
 2. Push each job on a T4: `python tools/kaggle/kjob.py run runs/kaggle/extract/dd3d-extract-v1-0 --accelerator NvidiaTeslaT4`.
-3. Unpack and merge the features: `python tools/kaggle/collect.py runs/kaggle/extract dd3d-extract-v1- data/features/v1 --merge`.
+3. Do not unpack the features. Run the probes as a Kaggle analysis job (`docs/KAGGLE_RUNBOOK.md`, section Analysis jobs).
 
 Obey these limits of Kaggle:
 

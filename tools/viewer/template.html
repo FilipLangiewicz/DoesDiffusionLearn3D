@@ -81,7 +81,7 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
 <div class="wrap">
   <header>
     <h1>Pokrętło światła SANA</h1>
-    <p class="lede">Render sceny trafia do SANA-1.6B (SDEdit, szum do σ = 0,7, 20 kroków). W trakcie odszumiania zmieniamy aktywacje jednego bloku transformera i patrzymy, jak zmienia się światło na obrazie. Kierunek światła na wyjściu mierzą dwie miary: liniowa sonda na pikselach (czyta głównie cieniowanie obiektu) i geometria ciemnej plamy cienia rzucanego.</p>
+    <p class="lede">Render sceny trafia do SANA-1.6B (SDEdit, szum do σ = 0,7, 20 kroków). W trakcie odszumiania zmieniamy aktywacje jednego bloku transformera i patrzymy, jak zmienia się światło na obrazie. Kierunek światła na wyjściu mierzą dwie miary: liniowa sonda na pikselach (czyta głównie cieniowanie obiektu) i geometria ciemnej plamy na podłodze. Trzecia liczba mówi, ile ostrego cienia z wyjścia bez zmiany zostało na miejscu: 100% znaczy, że cień rzucany się nie przesunął.</p>
   </header>
 
   <div class="tabs" role="tablist">
@@ -162,7 +162,7 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
     return { read, shade };
   }
   function shadowItem(o) {
-    return o.shadow_az == null ? [] : [{ az: o.shadow_az, color: "var(--shade)", label: "Kierunek cienia rzucanego", len: 50 }];
+    return o.shadow_az == null ? [] : [{ az: o.shadow_az, color: "var(--shade)", label: "Kierunek ciemnej plamy", len: 50 }];
   }
   function scene() { return set().scenes[state.scene]; }
 
@@ -223,7 +223,8 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
     const m = measures(o, base);
     $("verdict").innerHTML = r === 0
       ? "Bez przesunięcia. To wyjście jest punktem odniesienia dla obu miar."
-      : `Cel: <b class="mono">${signed(r)}</b>. Sonda pikselowa: <b class="mono">${signed(m.read)}</b>. Cień rzucany: <b class="mono">${m.shade == null ? "brak pomiaru" : signed(m.shade)}</b>.`;
+      : `Cel: <b class="mono">${signed(r)}</b>. Sonda pikselowa: <b class="mono">${signed(m.read)}</b>. Kierunek ciemnej plamy: <b class="mono">${m.shade == null ? "brak pomiaru" : signed(m.shade)}</b>. ` +
+        `Ostry cień z wyjścia bez zmiany zostaje w <b class="mono">${o.kept == null ? "?" : Math.round(o.kept * 100) + "%"}</b>.`;
   }
 
   function renderPatch() {
@@ -257,7 +258,8 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
     ]);
     const m = measures(o || base, base), f = measures(src, base);
     $("verdict").innerHTML = `Obrót w stronę źródła (pełne źródło: sonda ${signed(f.read)}, cień ${f.shade == null ? "?" : signed(f.shade)}). ` +
-      `Sonda pikselowa: <b class="mono">${signed(m.read)}</b>. Cień rzucany: <b class="mono">${m.shade == null ? "brak pomiaru" : signed(m.shade)}</b>.`;
+      `Sonda pikselowa: <b class="mono">${signed(m.read)}</b>. Kierunek ciemnej plamy: <b class="mono">${m.shade == null ? "brak pomiaru" : signed(m.shade)}</b>. ` +
+      `Ostry cień celu zostaje w <b class="mono">${(o || base).kept == null ? "?" : Math.round((o || base).kept * 100) + "%"}</b>, cień źródła pojawia się w <b class="mono">${(o || base).shown == null ? "?" : Math.round((o || base).shown * 100) + "%"}</b>.`;
   }
 
   function render() {

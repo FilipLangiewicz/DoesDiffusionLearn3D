@@ -20,18 +20,37 @@ from pathlib import Path
 import numpy as np
 from PIL import Image
 
-from dd3d.cues import shadow_azimuth
+from dd3d.cues import shadow_azimuth, shadow_kept
 
 TEMPLATE = Path(__file__).resolve().parent / "template.html"
 
 
+def decode(b64: str) -> np.ndarray:
+    return np.asarray(Image.open(io.BytesIO(base64.b64decode(b64))).convert("RGB"))
+
+
 def add_shadow(block: dict) -> None:
-    """Add the azimuth of the dark shadow region (dd3d.cues.shadow_azimuth) to each output."""
+    """Add two shadow measures to each output.
+
+    shadow_az is the azimuth of the dark shadow region (dd3d.cues.shadow_azimuth).
+    kept is the share of the crisp shadow of the base output that stays in place
+    (dd3d.cues.shadow_kept); for a patch, shown is the share of the crisp shadow
+    of the source output that appears.
+    """
     for scene in block["scenes"]:
+        base = next(o for o in scene["outputs"] if o["condition"] == "base")
+        source = next((o for o in scene["outputs"] if o["condition"] == "source"), None)
+        base_rgb = decode(base["image"])
+        source_rgb = decode(source["image"]) if source else None
         for out in scene["outputs"]:
-            rgb = np.asarray(Image.open(io.BytesIO(base64.b64decode(out["image"]))).convert("RGB"))
+            rgb = decode(out["image"])
             az = shadow_azimuth(rgb)
             out["shadow_az"] = None if np.isnan(az) else round(float(az), 1)
+            kept = shadow_kept(base_rgb, rgb)
+            out["kept"] = None if np.isnan(kept) else round(kept, 2)
+            if source_rgb is not None:
+                shown = shadow_kept(source_rgb, rgb)
+                out["shown"] = None if np.isnan(shown) else round(shown, 2)
 
 
 def main() -> None:

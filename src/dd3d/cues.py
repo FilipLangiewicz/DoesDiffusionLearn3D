@@ -144,3 +144,23 @@ def shadow_azimuth(rgb: np.ndarray, base_px: np.ndarray | None = None, drop: flo
     d = np.abs((table - angle + 180.0) % 360.0 - 180.0)
     shadow_dir = grid[int(np.argmin(d))]
     return float((shadow_dir + 180.0) % 360.0)
+
+
+def crisp_shadow_mask(rgb: np.ndarray, drop: float = 40.0) -> np.ndarray:
+    """Return the floor pixels that are much darker than the floor median (the crisp cast shadow)."""
+    obj = object_mask(rgb)
+    lum = rgb.astype(np.float32).mean(axis=2)
+    floor = ~dilate(obj, 3)
+    return floor & (lum < np.median(lum[floor]) - drop)
+
+
+def shadow_kept(base_rgb: np.ndarray, rgb: np.ndarray, drop: float = 40.0) -> float:
+    """Return the share of the crisp shadow pixels of ``base_rgb`` that are still crisp shadow in ``rgb``.
+
+    A value near 1 means that the cast shadow stays in its place. A shadow that
+    turns around the object leaves only the pixels near the object base.
+    """
+    base = crisp_shadow_mask(base_rgb, drop)
+    if base.sum() < 30:
+        return float("nan")
+    return float((base & crisp_shadow_mask(rgb, drop)).sum() / base.sum())

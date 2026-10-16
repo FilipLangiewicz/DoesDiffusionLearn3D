@@ -8,7 +8,9 @@ each output image. For each condition the script reports:
 - label error: the azimuth error against the label of the input render;
 - pixel change: the mean absolute pixel difference against the base image;
 - shadow rotation: the same rotation, measured from the dark shadow region
-  (dd3d.cues.shadow_azimuth). This measure uses no fitted model.
+  (dd3d.cues.shadow_azimuth). This measure uses no fitted model;
+- shadow kept: the share of the crisp shadow pixels of the base output that are
+  still crisp shadow (1: the cast shadow stays; near 0: it moved).
 
 All means have 95% bootstrap intervals over the images.
 """
@@ -27,7 +29,7 @@ import numpy as np  # noqa: E402
 import pandas as pd  # noqa: E402
 from PIL import Image  # noqa: E402
 
-from dd3d.cues import shadow_azimuth  # noqa: E402
+from dd3d.cues import shadow_azimuth, shadow_kept  # noqa: E402
 from dd3d.data import pixel_features  # noqa: E402
 from dd3d.metrics import bootstrap_ci, circular_abs_error, decode_azimuth  # noqa: E402
 from dd3d.probe import ProbeConfig, run  # noqa: E402
@@ -86,6 +88,13 @@ def main() -> None:
         err = circular_abs_error(preds[cond], az_label)
         change = np.abs(pixels[cond] - pixels["base"]).mean(axis=(1, 2, 3))
         srot = signed_diff(shadow[cond], shadow["base"])
+        kept = np.array(
+            [
+                shadow_kept(pixels["base"][k].astype(np.uint8), pixels[cond][k].astype(np.uint8))
+                for k in range(len(ids))
+            ]
+        )
+        kept = kept[~np.isnan(kept)]
         srot = srot[~np.isnan(srot)]
         rows.append(
             {
@@ -100,6 +109,8 @@ def main() -> None:
                 "shadow_rotation_mean": float(srot.mean()) if len(srot) else float("nan"),
                 "shadow_rotation_ci": bootstrap_ci(srot) if len(srot) else (float("nan"), float("nan")),
                 "shadow_n": int(len(srot)),
+                "shadow_kept": float(kept.mean()) if len(kept) else float("nan"),
+                "shadow_kept_ci": bootstrap_ci(kept) if len(kept) else (float("nan"), float("nan")),
             }
         )
     df = pd.DataFrame(rows)

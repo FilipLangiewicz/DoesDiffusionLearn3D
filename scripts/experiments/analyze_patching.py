@@ -7,7 +7,9 @@ offset between source and target: 1 means that the output follows the source.
 It also reports the rotation of the source output, as the upper bound. A second
 measure reads the direction of the dark shadow region (dd3d.cues.shadow_azimuth).
 It uses no fitted model and does not look at the object, so a patch of the object
-tokens cannot move it by a copy of the object shading. The
+tokens cannot move it by a copy of the object shading. Two more columns give the
+share of the crisp target shadow that stays (shadow_kept) and the share of the
+crisp source shadow that appears (source_shadow_shown). The
 figure is a map of the mean fraction over the blocks and the regions.
 """
 
@@ -25,7 +27,7 @@ import numpy as np  # noqa: E402
 import pandas as pd  # noqa: E402
 from PIL import Image  # noqa: E402
 
-from dd3d.cues import shadow_azimuth  # noqa: E402
+from dd3d.cues import shadow_azimuth, shadow_kept  # noqa: E402
 from dd3d.data import pixel_features  # noqa: E402
 from dd3d.metrics import bootstrap_ci, decode_azimuth  # noqa: E402
 from dd3d.probe import ProbeConfig, run  # noqa: E402
@@ -81,6 +83,8 @@ def main() -> None:
             if cond == "base":
                 imgs["base"] = pix
                 base_shadow = shadow
+            if cond == "source":
+                imgs["source"] = pix
             rot = signed_diff(pred, base)
             srot = signed_diff(shadow, base_shadow)
             for k, image_id in enumerate(frame["image_id"]):
@@ -92,6 +96,12 @@ def main() -> None:
                         "pred_az": float(pred[k]),
                         "rotation": float(rot[k]),
                         "shadow_rotation": float(srot[k]),
+                        "shadow_kept": shadow_kept(imgs["base"][k].astype(np.uint8), pix[k].astype(np.uint8)),
+                        "source_shadow_shown": shadow_kept(
+                            imgs["source"][k].astype(np.uint8), pix[k].astype(np.uint8)
+                        )
+                        if "source" in imgs
+                        else float("nan"),
                         "pixel_change": float(np.abs(pix[k] - imgs["base"][k]).mean())
                         if "base" in imgs
                         else 0.0,
@@ -114,6 +124,8 @@ def main() -> None:
                 "shadow_fraction_mean": float(sfrac.mean()) if len(sfrac) else float("nan"),
                 "shadow_fraction_ci": bootstrap_ci(sfrac) if len(sfrac) else (float("nan"), float("nan")),
                 "shadow_n": int(len(sfrac)),
+                "shadow_kept": float(g["shadow_kept"].mean()),
+                "source_shadow_shown": float(g["source_shadow_shown"].mean()),
                 "n": len(g),
             }
         )

@@ -102,6 +102,9 @@ def run(cfg: InterveneConfig) -> Path:
     shapes = [str(s) for s in plan["shapes"]]
     conditions = [str(s) for s in plan["conditions"]]  # "base", "shift:<name>", "erase"
     shifts = plan["shifts"]  # (n_img, n_cond, D); zero rows for base and erase
+    # A plan with shift_blocks has one shift for each listed block: (n_img, n_cond, n_blocks, D).
+    multi = "shift_blocks" in plan.files
+    shift_blocks = [int(b) for b in plan["shift_blocks"]] if multi else [cfg.block]
     t0 = time.time()
 
     ecfg = ExtractConfig(
@@ -127,21 +130,24 @@ def run(cfg: InterveneConfig) -> Path:
             torch.tensor(plan["eraser_mean"], device=cfg.device, dtype=torch.float32),
             torch.tensor(plan["eraser_matrix"], device=cfg.device, dtype=torch.float32),
         )
-    state: dict[str, torch.Tensor | None] = {"delta": None}
+    state: dict[int, torch.Tensor] = {}
 
-    def hook(_module, _inputs, output):
-        h = output[0] if isinstance(output, tuple) else output
-        h32 = h.float()
-        if eraser is not None:
-            mean, a = eraser
-            erased = h32 - (h32 - mean) @ a.T
-            h32 = torch.where(erase_rows[:, None, None], erased, h32)
-        if state["delta"] is not None:
-            h32 = h32 + state["delta"]
-        out = h32.to(h.dtype)
-        return (out, *output[1:]) if isinstance(output, tuple) else out
+    def make_hook(block: int):
+        def hook(_module, _inputs, output):
+            h = output[0] if isinstance(output, tuple) else output
+            h32 = h.float()
+            if eraser is not None and block == cfg.block:
+                mean, a = eraser
+                erased = h32 - (h32 - mean) @ a.T
+                h32 = torch.where(erase_rows[:, None, None], erased, h32)
+            if block in state:
+                h32 = h32 + state[block]
+            out = h32.to(h.dtype)
+            return (out, *output[1:]) if isinstance(output, tuple) else out
 
-    handle = model.transformer_blocks[cfg.block].register_forward_hook(hook)
+        return hook
+
+    handles = [model.transformer_blocks[b].register_forward_hook(make_hook(b)) for b in shift_blocks]
     enc = embeds.to(cfg.device).expand(n_c, *embeds.shape[1:])
     enc_mask = mask.to(cfg.device).expand(n_c, *mask.shape[1:])
     sigmas = np.linspace(cfg.sigma0, 0.0, cfg.steps + 1)
@@ -155,8 +161,9 @@ def run(cfg: InterveneConfig) -> Path:
         eps = torch.randn(x0.shape, generator=gen).to(cfg.device, dtype)
         # The same noise for all conditions, so only the change in the block differs.
         xt = ((1 - cfg.sigma0) * x0 + cfg.sigma0 * eps).float().expand(n_c, -1, -1, -1).clone()
-        delta = torch.tensor(shifts[i], device=cfg.device, dtype=torch.float32)
-        state["delta"] = spread_cells(delta, cfg.grid, side)
+        for j, b in enumerate(shift_blocks):
+            d = shifts[i][:, j] if multi else shifts[i]
+            state[b] = spread_cells(torch.tensor(d, device=cfg.device, dtype=torch.float32), cfg.grid, side)
         for s_now, s_next in zip(sigmas[:-1], sigmas[1:], strict=True):
             t = torch.full((n_c,), s_now * 1000.0, device=cfg.device)
             v = model(
@@ -181,9 +188,11 @@ def run(cfg: InterveneConfig) -> Path:
             rows.append({"image_id": image_id, "shape": shape, "condition": name})
         if i < 3 or (i + 1) % 10 == 0:
             print(f"[{i + 1}/{len(image_ids)}] {image_id} after {time.time() - t0:.0f} s", flush=True)
-    handle.remove()
+    for h in handles:
+        h.remove()
     meta = {k: str(v) for k, v in cfg.__dict__.items()}
     meta["conditions"] = conditions
+    meta["shift_blocks"] = shift_blocks
     (cfg.out_dir / "meta.json").write_text(json.dumps(meta, indent=1))
     (cfg.out_dir / "images.csv").write_text(
         "image_id,shape,condition\n"

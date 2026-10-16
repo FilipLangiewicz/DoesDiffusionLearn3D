@@ -1,0 +1,27 @@
+{
+ "name": "plans-multi",
+ "sets": [
+  "v2pos",
+  "v2"
+ ],
+ "features": {
+  "v2": [
+   "dd3d-extract-v2-",
+   "dd3d-extract-v2pos-"
+  ]
+ },
+ "kernels": [
+  "jankombajn/dd3d-extract-v2-0",
+  "jankombajn/dd3d-extract-v2-1",
+  "jankombajn/dd3d-extract-v2-2",
+  "jankombajn/dd3d-extract-v2-3",
+  "jankombajn/dd3d-extract-v2-4",
+  "jankombajn/dd3d-extract-v2-5",
+  "jankombajn/dd3d-extract-v2pos-0",
+  "jankombajn/dd3d-renders"
+ ],
+ "datasets": [],
+ "commands": [
+  "python scripts/experiments/make_multiblock_plan.py --features {FEAT}/v2 --t 100 --grid 4 --splits {DATA}/v2/splits --n-images 48 --scales 0.25,0.5,1 --out {OUT}/plans/multi_all"
+ ]
+}

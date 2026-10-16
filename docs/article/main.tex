@@ -428,7 +428,16 @@ The base output keeps the light of the render (pixel probe MAE $7.6\degr$ agains
 Thus the pattern direction is a causal handle on the light of the output. The probe weights are a worse handle, as \citet{haufe2014interpretation} predict for a regression with correlated noise.
 But a small step along the pattern changes the shading of the object, not the cast shadow. The cast shadow follows only a large step, with artefacts.
 The erasure result does not show that the information is unused. The noisy input at $\sigma_0=0.7$ still shows the shadow and the shading, and later blocks can read the light again from them.
-\pending{causal test with more noise ($\sigma_0=0.85$ and $0.95$)}
+\paragraph{More noise does not free the shadow.}
+At $\sigma_0=0.7$ the noisy input still shows the old shadow, which can resist a shift.
+We repeated the test in block~4 with $\sigma_0=0.85$ and $\sigma_0=0.95$ (60 images each).
+The base output then keeps less of the input light: its pixel probe MAE against the label rises from $7.6\degr$ to $34.8\degr$ and $70\degr$.
+At $\sigma_0=0.85$ the pattern shift ($\times1$) still turns the pixel probe by $+63\degr$ (95\% interval $[41, 84]$).
+The cast shadow does not follow: its median rotation is $-9\degr$, and $-3\degr$ with $\times3$.
+At $\sigma_0=0.95$ the effects are small and uncertain (pixel probe $+27\degr$, shadow $+2\degr$).
+So the weak response of the shadow is not an effect of the input alone.
+It also suggests that part of the shadow rotation with $\times3$ at $\sigma_0=0.7$ comes from the dark artefacts on the floor.
+\pending{causal test in block 5 with the probe of the best layer}
 
 \begin{table}[t]
 \centering

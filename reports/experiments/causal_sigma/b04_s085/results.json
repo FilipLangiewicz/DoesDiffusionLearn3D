@@ -1,0 +1,178 @@
+[
+ {
+  "condition": "base",
+  "rotation_mean": 0.0,
+  "rotation_ci": [
+   0.0,
+   0.0
+  ],
+  "toward_target_share": 0.0,
+  "label_az_error": 34.76388703735669,
+  "label_az_error_ci": [
+   26.378130363257725,
+   43.97121667941609
+  ],
+  "pixel_change": 0.0,
+  "shadow_rotation_median": 0.0,
+  "shadow_rotation_mean": 0.0,
+  "shadow_rotation_ci": [
+   0.0,
+   0.0
+  ],
+  "shadow_n": 56
+ },
+ {
+  "condition": "shift:probe_exact",
+  "rotation_mean": 50.303810119628906,
+  "rotation_ci": [
+   30.136532605489098,
+   69.1107048479716
+  ],
+  "toward_target_share": 0.55,
+  "label_az_error": 92.13000993537904,
+  "label_az_error_ci": [
+   83.22509058512847,
+   101.35813773511249
+  ],
+  "pixel_change": 3.7608401775360107,
+  "shadow_rotation_median": -0.25,
+  "shadow_rotation_mean": 8.15,
+  "shadow_rotation_ci": [
+   -11.81465909090908,
+   29.191136363636364
+  ],
+  "shadow_n": 55
+ },
+ {
+  "condition": "shift:probe_r1",
+  "rotation_mean": 6.565867900848389,
+  "rotation_ci": [
+   -22.832143796284985,
+   35.01419137954711
+  ],
+  "toward_target_share": 0.21666666666666667,
+  "label_az_error": 90.91090268452962,
+  "label_az_error_ci": [
+   79.02066670544944,
+   101.76593891270953
+  ],
+  "pixel_change": 150.45819091796875,
+  "shadow_rotation_median": 93.625,
+  "shadow_rotation_mean": 58.8625,
+  "shadow_rotation_ci": [
+   16.360937500000002,
+   97.95562499999997
+  ],
+  "shadow_n": 20
+ },
+ {
+  "condition": "shift:random_probe",
+  "rotation_mean": 10.675424575805664,
+  "rotation_ci": [
+   -15.715835240681956,
+   36.234663963317864
+  ],
+  "toward_target_share": 0.16666666666666666,
+  "label_az_error": 83.50763687260947,
+  "label_az_error_ci": [
+   70.58130677410762,
+   96.41297406342825
+  ],
+  "pixel_change": 163.82057189941406,
+  "shadow_rotation_median": -35.75,
+  "shadow_rotation_mean": -41.95,
+  "shadow_rotation_ci": [
+   -85.13458333333334,
+   2.8345833333333266
+  ],
+  "shadow_n": 15
+ },
+ {
+  "condition": "shift:pattern_x1",
+  "rotation_mean": 63.287803649902344,
+  "rotation_ci": [
+   40.546245435078944,
+   83.88418883005777
+  ],
+  "toward_target_share": 0.5833333333333334,
+  "label_az_error": 106.00461467615764,
+  "label_az_error_ci": [
+   99.32128246107102,
+   112.79950243945122
+  ],
+  "pixel_change": 7.788943290710449,
+  "shadow_rotation_median": -9.0,
+  "shadow_rotation_mean": -7.1454545454545455,
+  "shadow_rotation_ci": [
+   -27.414886363636363,
+   14.448636363636346
+  ],
+  "shadow_n": 55
+ },
+ {
+  "condition": "shift:pattern_x3",
+  "rotation_mean": 91.66535949707031,
+  "rotation_ci": [
+   67.9410222307841,
+   111.83715485254923
+  ],
+  "toward_target_share": 0.55,
+  "label_az_error": 128.38215701293947,
+  "label_az_error_ci": [
+   124.71810440241497,
+   132.08661538241705
+  ],
+  "pixel_change": 19.969633102416992,
+  "shadow_rotation_median": -3.25,
+  "shadow_rotation_mean": 0.031818181818181815,
+  "shadow_rotation_ci": [
+   -29.445681818181818,
+   29.42454545454542
+  ],
+  "shadow_n": 55
+ },
+ {
+  "condition": "shift:random_pattern",
+  "rotation_mean": 0.7601268887519836,
+  "rotation_ci": [
+   -6.076772689819335,
+   7.432158479690547
+  ],
+  "toward_target_share": 0.03333333333333333,
+  "label_az_error": 32.62300436079502,
+  "label_az_error_ci": [
+   26.546747182861964,
+   39.503864431263004
+  ],
+  "pixel_change": 2.278691053390503,
+  "shadow_rotation_median": 0.0,
+  "shadow_rotation_mean": -1.8045454545454545,
+  "shadow_rotation_ci": [
+   -12.064204545454546,
+   8.573522727272723
+  ],
+  "shadow_n": 55
+ },
+ {
+  "condition": "erase",
+  "rotation_mean": 1.1524327993392944,
+  "rotation_ci": [
+   -1.7099529329935703,
+   4.839155648549398
+  ],
+  "toward_target_share": 0.016666666666666666,
+  "label_az_error": 34.282013381958,
+  "label_az_error_ci": [
+   26.783501202964782,
+   43.32446427656807
+  ],
+  "pixel_change": 3.8994252681732178,
+  "shadow_rotation_median": -0.25,
+  "shadow_rotation_mean": -2.5727272727272728,
+  "shadow_rotation_ci": [
+   -11.134772727272722,
+   5.132159090909089
+  ],
+  "shadow_n": 55
+ }
+]

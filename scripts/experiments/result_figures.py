@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import shutil
 from pathlib import Path
 
 import matplotlib
@@ -176,8 +177,8 @@ def patch_figure(reports: Path, out: Path) -> None:
     p["region"] = p["condition"].str.extract(r"b\d+_(\w+)$")[0]
     names = {"object": "object tokens", "shadow_src": "source shadow tokens", "floor": "other floor tokens"}
     measures = (
-        ("fraction_mean", "pixel probe (mean)"),
-        ("shadow_fraction_median", "cast shadow region (median)"),
+        ("fraction_mean", "pixel probe: share of the rotation"),
+        ("source_shadow_shown", "crisp source shadow that appears"),
     )
     fig, axes = plt.subplots(1, 2, figsize=(9.0, 3.0), sharey=True)
     for ax, (col, title) in zip(axes, measures, strict=True):
@@ -194,8 +195,9 @@ def patch_figure(reports: Path, out: Path) -> None:
         ax.axhline(0, color="k", lw=0.8)
         ax.set_title(title, fontsize=9)
         ax.set_xlabel("patched block")
+        ax.set_xticks(range(0, 19, 2))
         ax.grid(alpha=0.3)
-    axes[0].set_ylabel("rotation / 90 deg")
+    axes[0].set_ylabel("share")
     axes[1].legend(fontsize=7)
     fig.tight_layout()
     fig.savefig(out, dpi=180)
@@ -217,6 +219,10 @@ def main() -> None:
     tables.mkdir(parents=True, exist_ok=True)
     causal_table(args.reports, tables / "causal.tex")
     patch_figure(args.reports, args.out / "patch.png")
+    examples = args.reports / "causal_b05" / "b05t100" / "examples.png"
+    if examples.exists():
+        shutil.copy(examples, args.out / "causal_examples.png")
+        print(f"-> {args.out / 'causal_examples.png'}")
 
 
 if __name__ == "__main__":

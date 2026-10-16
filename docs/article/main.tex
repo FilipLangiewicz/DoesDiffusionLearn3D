@@ -43,8 +43,8 @@ The code does not depend on the position: a probe on the mean of all tokens, fit
 Interventions show that the model uses the code.
 A small shift along the activation pattern of the light turns the shading of the object by $60\degr$ to $65\degr$ towards a target of $90\degr$.
 A random shift of the same size does nothing.
-The cast shadow follows only a three times larger shift.
-A patch of the object tokens from a scene with another light changes the shading, but not the shadow.
+Large shifts remove the old cast shadow and darken the floor towards the target, but they draw no new crisp shadow.
+A patch of the object tokens from a scene with another light moves the shading and about a third of the cast shadow.
 We give a checklist for probe studies and release the code, the data and a fix for the library pitfall.
 \end{abstract}
 
@@ -71,7 +71,7 @@ Our contributions are:
     \item An audit that finds four problems in the original pipeline (Section~\ref{sec:audit}). Each problem can explain the result without 3D knowledge. Controls on the original data show that the floor carries the information (Section~\ref{sec:controls}).
     \item A corrected pipeline (Section~\ref{sec:pipeline}). On the original data it gives $4.8\degr$ on cubes instead of $14.5\degr$. The wrong noise, not the model, limited the original probe.
     \item New data sets without the shortcuts, with paired renders that separate the cues (Section~\ref{sec:clean}). Probes with four controls on three diffusion models show that the light direction is readable far beyond the input (Section~\ref{sec:rq1}). The code does not depend on the position, and it comes from the shading and from the cast shadow.
-    \item Interventions during generation, with two independent measures of the output light (Section~\ref{sec:causal}). A shift along the activation pattern of the light changes the shading of the object. The cast shadow follows only larger shifts, and it does not come from the object tokens alone.
+    \item Interventions during generation, with two independent measures of the output light (Section~\ref{sec:causal}). A shift along the activation pattern of the light changes the shading of the object. Large shifts remove the old cast shadow but draw no new one, and the object tokens carry only part of the shadow.
     \item A checklist for probe studies of generative models (Section~\ref{sec:discussion}). We also release an exact model of the render geometry and a fix with tests for a pitfall in a popular diffusion library.
 \end{enumerate}
 
@@ -385,7 +385,9 @@ We report the signed rotation of the output light against the base output of the
 \begin{itemize}
     \item The pixel probe, fitted on the v2 renders, reads the azimuth from the whole image. On v2 it gives $59\%$ of its weight to the object cells, so it mostly reads the shading of the object.
     \item The shadow measure uses no fitted model. It takes the floor pixels that are darker than the floor median and computes their darkness-weighted centroid. The camera model turns the image vector from the object base to this centroid into a ground azimuth. On the v2 renders its median error is $6.4\degr$ ($10.3\degr$ on cubes); it fails on short shadows under a high light, so we report medians.
+    \item The kept share compares the crisp shadow of an output (floor pixels 40 grey levels below the floor median) with the crisp shadow of the base output. It is the share of the base shadow pixels that are still in shadow. On render pairs it is $1.00$ for the same image and $0.00$ to $0.01$ when the light turns by $90\degr$.
 \end{itemize}
+A centroid of dark pixels cannot separate a turned shadow from an old shadow plus a new dark region, so the kept share and a visual check complete it.
 
 \paragraph{Shift along a direction.}
 The probe of block $b$ is linear in the cell features: $\hat{\mathbf y}=W h+c$.
@@ -418,26 +420,29 @@ SANA has no skip connections between blocks. Thus a patch of all tokens at all s
 Table~\ref{tab:causal} and Figure~\ref{fig:causal} give the results for 60 test images of v2 and three blocks.
 The probes come from the $8\times8$ features at $t=400$ (test MAE $4.4\degr$ to $4.6\degr$).
 The base output keeps the light of the render (pixel probe MAE $7.6\degr$ against the label).
+A random change of the base output, for example a random shift, keeps $82\%$ to $88\%$ of its crisp shadow, so this is the level of no effect.
 \begin{itemize}
-    \item The pattern direction changes the light of the output, but the two measures disagree at the natural size ($\times1$). The pixel probe turns by $+60\degr$ to $+65\degr$ towards the target of $+90\degr$. The median rotation of the cast shadow is only $+5\degr$ to $+7\degr$. The change has a mean cell norm of $2\%$ of the mean token norm, and the mean pixel change is $4$ grey levels. Thus the model changes the shading of the object and keeps the cast shadow.
-    \item With $\times3$ both measures move: the pixel probe by about $+120\degr$ and the cast shadow by $+92\degr$ to $+109\degr$ (median). At this size the images show dark artefacts on the floor (mean pixel change $13$).
-    \item A random vector with the same norm in each cell does nothing (both measures within $\pm2\degr$).
-    \item The shortest change along the probe weights turns the pixel probe by $+23\degr$ to $+41\degr$ and the cast shadow by $+1\degr$ to $+4\degr$. The same direction at the size of the token norm destroys the image in blocks 4 and 10 (mean pixel change above 100). The readings of these outputs have no meaning.
-    \item The LEACE eraser in one block has no effect on either measure (rotation $0\degr$; pixel probe MAE against the label $7.7\degr$ to $7.9\degr$).
+    \item The pattern direction at the natural size ($\times1$) turns the pixel probe by $+60\degr$ to $+65\degr$ towards the target of $+90\degr$. The change has a mean cell norm of $2\%$ of the mean token norm, and the mean pixel change is $4$ grey levels. The crisp shadow stays: $68\%$ to $80\%$ of it is kept, and its direction turns by $+5\degr$ to $+7\degr$ (median). So the shift changes the shading of the object, not the cast shadow.
+    \item With $\times3$ the pixel probe turns by about $+120\degr$. Only $32\%$ to $40\%$ of the old crisp shadow stays, and a diffuse dark region appears on the floor towards the target, which turns the dark-region measure by $+92\degr$ to $+109\degr$. The images show no new crisp shadow (Figure~\ref{fig:causal_examples}).
+    \item A random vector with the same norm in each cell does nothing (both rotation measures within $\pm2\degr$).
+    \item The shortest change along the probe weights turns the pixel probe by $+23\degr$ to $+41\degr$ and keeps $74\%$ to $89\%$ of the crisp shadow. The same direction at the size of the token norm destroys the image in blocks 4 and 10 (mean pixel change above 100). The readings of these outputs have no meaning.
+    \item The LEACE eraser in one block has no effect on any measure (rotation $0\degr$, kept share $0.93$ to $0.99$).
 \end{itemize}
 Thus the pattern direction is a causal handle on the light of the output. The probe weights are a worse handle, as \citet{haufe2014interpretation} predict for a regression with correlated noise.
-But a small step along the pattern changes the shading of the object, not the cast shadow. The cast shadow follows only a large step, with artefacts.
+A step of natural size along the pattern changes the shading of the object, but not the cast shadow.
+A large step removes much of the old shadow and darkens the floor towards the target, without a new crisp shadow.
 The erasure result does not show that the information is unused. The noisy input at $\sigma_0=0.7$ still shows the shadow and the shading, and later blocks can read the light again from them.
-\paragraph{More noise does not free the shadow.}
-At $\sigma_0=0.7$ the noisy input still shows the old shadow, which can resist a shift.
-We repeated the test in block~4 with $\sigma_0=0.85$ and $\sigma_0=0.95$ (60 images each).
-The base output then keeps less of the input light: its pixel probe MAE against the label rises from $7.6\degr$ to $34.8\degr$ and $70\degr$.
-At $\sigma_0=0.85$ the pattern shift ($\times1$) still turns the pixel probe by $+63\degr$ (95\% interval $[41, 84]$).
-The cast shadow does not follow: its median rotation is $-9\degr$, and $-3\degr$ with $\times3$.
-At $\sigma_0=0.95$ the effects are small and uncertain (pixel probe $+27\degr$, shadow $+2\degr$).
-So the weak response of the shadow is not an effect of the input alone.
-It also suggests that part of the shadow rotation with $\times3$ at $\sigma_0=0.7$ comes from the dark artefacts on the floor.
-\pending{causal test in block 5 with the probe of the best layer}
+
+\paragraph{The best layer and more noise.}
+The probe reads best in block~5 at $t=100$ (test MAE $2.6\degr$ on v2), so we repeated the test with the pattern of these features (Table~\ref{tab:causal_more}).
+The effect grows with the dose: the pixel probe turns by $+30\degr$, $+79\degr$ and $+105\degr$ for $\times1$, $\times2$ and $\times3$, and the kept share of the crisp shadow falls from $0.76$ to $0.55$ and $0.41$.
+At $\times2$ the shading reaches the target in all 60 images, while half of the old shadow stays.
+We also repeated the block~4 test with more noise, because the noisy input at $\sigma_0=0.7$ can hold the old shadow.
+With $\sigma_0=0.85$ and $0.95$ the base output keeps less of the input light (MAE $34.8\degr$ and $70\degr$).
+At $\sigma_0=0.85$ the pattern shift ($\times1$) still turns the pixel probe by $+63\degr$, but the dark region does not turn ($-9\degr$; $-3\degr$ with $\times3$).
+At $\sigma_0=0.95$ the effects are small and uncertain.
+So the weak response of the cast shadow is not an effect of the input alone.
+
 
 \begin{table}[t]
 \centering
@@ -453,21 +458,53 @@ It also suggests that part of the shadow rotation with $\times3$ at $\sigma_0=0.
 \label{fig:causal}
 \end{figure}
 
+\begin{table}[t]
+\centering
+\caption{Causal test with the pattern of block~5 at $t=100$ ($\sigma_0=0.7$), and with the pattern of block~4 at more noise. Rotation of the pixel probe (mean) and of the dark region (median) in degrees, kept share of the crisp shadow, mean pixel change. Target: $+90\degr$; 60 images of v2.}
+\label{tab:causal_more}
+\begin{tabular}{llrrrr}
+\toprule
+Setting & Condition & Probe & Dark region & Kept & Pixels \\
+\midrule
+Block 5, $t=100$ & pattern $\times1$ & $+30$ & $+2$ & $0.76$ & 4 \\
+ & pattern $\times2$ & $+79$ & $+40$ & $0.55$ & 9 \\
+ & pattern $\times3$ & $+105$ & $+88$ & $0.41$ & 13 \\
+ & random & $+1$ & $0$ & $0.88$ & 1 \\
+\midrule
+Block 4, $\sigma_0=0.85$ & pattern $\times1$ & $+63$ & $-9$ & $0.49$ & 8 \\
+ & pattern $\times3$ & $+92$ & $-3$ & $0.40$ & 20 \\
+ & random & $+1$ & $0$ & $0.73$ & 2 \\
+\midrule
+Block 4, $\sigma_0=0.95$ & pattern $\times1$ & $+27$ & $+2$ & $0.67$ & 12 \\
+ & random & $+7$ & $+2$ & $0.78$ & 4 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{figures/causal_examples.png}
+\caption{Four test images: the render, the base output and each condition of the shift test in block~5 ($t=100$ pattern). Large pattern steps darken the floor towards the target, but the crisp shadow keeps its place. Titles: the azimuth that the pixel probe reads.}
+\label{fig:causal_examples}
+\end{figure}
+
 \paragraph{Results of the patch test.}
-Figure~\ref{fig:patch} gives the share of the $90\degr$ light change that each patch moves into the output, for 48 pairs.
-The full source pass moves $1.01$ of the change by the pixel probe and $0.91$ by the shadow measure (median).
-A patch of all tokens of block~10 moves $0.73$ and $0.80$.
-A patch of the object tokens (about $10\%$ of the image) moves $0.57$ to $0.63$ by the pixel probe in every block from 0 to 18. By the shadow measure it moves only $0.08$ to $0.15$.
-So the object tokens carry the shading of the object, which the pixel probe reads, but not the direction of the cast shadow.
-A patch of the tokens where the source shadow lies moves $0.22$ to $0.26$ of the shadow (median) and $0.12$ by the pixel probe. It copies part of the source shadow to its place.
-The other floor tokens move nothing.
-The sum of the three regions ($\approx0.4$) is far below the patch of all tokens ($0.80$). Thus the cast shadow does not come from one region of the image. The model draws it from information that is spread over the object, the shadow and their surroundings.
-In block~10, the first half of the steps moves more than the second half (object tokens: $0.39$ against $0.23$ by the pixel probe).
+Figure~\ref{fig:patch} gives the results for 48 pairs.
+The full source pass turns the pixel probe by $1.01$ of the $90\degr$ offset, and its crisp shadow is the source shadow by construction.
+A patch of all tokens of block~10 moves $0.73$ of the rotation; $84\%$ of the source shadow appears, and only $16\%$ of the target shadow stays.
+A patch of the object tokens (about $10\%$ of the image) moves $0.57$ to $0.63$ of the rotation by the pixel probe in every block from 0 to 18.
+It also moves part of the cast shadow: $33\%$ to $38\%$ of the crisp source shadow appears, and $60\%$ to $67\%$ of the target shadow stays.
+The patch of the other floor tokens gives the reference: $12\%$ of the source shadow (the two shadows meet at the object base) and $96\%$ of the target shadow.
+A patch of the tokens where the source shadow lies copies $59\%$ of the source shadow to its place, but keeps $92\%$ of the target shadow: the output has two shadows.
+In block~10, the first half of the steps moves more than the second half (object tokens: $28\%$ against $16\%$ of the source shadow).
+Thus the object tokens carry the light code that sets the shading and part of the cast shadow.
+The rest of the shadow needs the other tokens: no single region moves it as a patch of all tokens does.
+The results are the same in every block, because a patch of a token replaces its whole state, which later blocks only refine.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=\linewidth]{figures/patch.png}
-\caption{Share of the light change from the source scene ($+90\degr$) that a patch of one region in one block moves into the output, 48 pairs. Left: pixel probe (mostly the shading of the object). Right: the dark shadow region (median). Lines: the full source pass and a patch of all tokens in block~10.}
+\caption{Patch of one region in one block, 48 pairs (source light $+90\degr$). Left: share of the rotation that the pixel probe reads (mostly the shading of the object). Right: share of the crisp source shadow that appears in the output. Lines: the full source pass and a patch of all tokens in block~10.}
 \label{fig:patch}
 \end{figure}
 
@@ -487,9 +524,10 @@ The code survives the mean over all tokens and transfers from centred objects to
 The model reads the light from the shading of the object and from the cast shadow, each one alone.
 A network with the same architecture and random weights also beats the pixels at a low noise level. Part of the effect thus comes from the architecture, and training halves the remaining error.
 The model also uses a direction of its activations. A small shift along the activation pattern of the light changes the light of the output, and a random shift does not.
-This change appears first in the shading of the object.
-The cast shadow needs the 3D relation between light, object and floor. It moves only with a larger shift, and a patch of a single region does not move it.
-We read this as a code of the light that controls the appearance of the lit object directly. The shadow comes from information that is spread over the image.
+This change appears in the shading of the object.
+The cast shadow needs the 3D relation between light, object and floor. A shift along the pattern does not draw it again in the new direction. Small shifts keep it, and large shifts only remove it and darken the floor.
+A patch of the object tokens moves about a third of the shadow, and only a patch of all tokens moves it fully.
+We read this as a code of the light at the object that controls its shading directly and the cast shadow only in part. The rest of the shadow comes from information that is spread over the image.
 The data do not show if the model uses one code for both, or a second code for the shadow that our linear handles do not reach.
 
 \paragraph{Probes and their measures.}
@@ -524,7 +562,7 @@ All runs use float16 on T4 GPUs; float32 gives the same features on a test set (
 A probe that reads a scene property from a generative model is a starting point, not evidence of 3D knowledge.
 In the case that we studied, the first probe result was right for the wrong reasons. The shortcut made the pixels as good as the model, and a noise pitfall made the model look no better than the pixels.
 With correct noise, controlled data and controls, SANA and two other diffusion models carry the light direction in a form that the input does not offer. SANA uses it to light the object.
-A measure of the whole image cannot show if the model also draws the cast shadow from this code. Our shadow measure shows that it does so only for large changes.
+A measure of the whole image cannot show if the model also draws the cast shadow from this code. Our shadow measures show that a shift along the code does not draw a new shadow. The tokens at the object carry part of it.
 We release the tools so that other studies can run the same checks.
 
 \paragraph{Reproducibility.}

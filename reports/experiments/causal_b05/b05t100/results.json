@@ -1,0 +1,191 @@
+[
+ {
+  "condition": "base",
+  "rotation_mean": 0.0,
+  "rotation_ci": [
+   0.0,
+   0.0
+  ],
+  "toward_target_share": 0.0,
+  "label_az_error": 7.603324560324349,
+  "label_az_error_ci": [
+   5.948635912656783,
+   9.269551051902765
+  ],
+  "pixel_change": 0.0,
+  "shadow_rotation_median": 0.0,
+  "shadow_rotation_mean": 0.0,
+  "shadow_rotation_ci": [
+   0.0,
+   0.0
+  ],
+  "shadow_n": 59,
+  "shadow_kept": 1.0,
+  "shadow_kept_ci": [
+   1.0,
+   1.0
+  ]
+ },
+ {
+  "condition": "shift:probe_exact",
+  "rotation_mean": 3.1292340755462646,
+  "rotation_ci": [
+   2.507849095662435,
+   3.801246236165365
+  ],
+  "toward_target_share": 0.0,
+  "label_az_error": 8.846750074783959,
+  "label_az_error_ci": [
+   7.222453809024888,
+   10.665414936037857
+  ],
+  "pixel_change": 0.5642629861831665,
+  "shadow_rotation_median": 0.375,
+  "shadow_rotation_mean": 0.8318965517241379,
+  "shadow_rotation_ci": [
+   0.19385775862068985,
+   1.5130387931034477
+  ],
+  "shadow_n": 58,
+  "shadow_kept": 0.8725750514414441,
+  "shadow_kept_ci": [
+   0.812614622319367,
+   0.9250172971834059
+  ]
+ },
+ {
+  "condition": "shift:pattern_x1",
+  "rotation_mean": 30.401912689208984,
+  "rotation_ci": [
+   27.050426731109624,
+   34.05910999298094
+  ],
+  "toward_target_share": 0.15,
+  "label_az_error": 29.953167697906498,
+  "label_az_error_ci": [
+   25.293740830707552,
+   34.85407110462188
+  ],
+  "pixel_change": 4.104470729827881,
+  "shadow_rotation_median": 2.0,
+  "shadow_rotation_mean": 7.056034482758621,
+  "shadow_rotation_ci": [
+   -4.9024784482758585,
+   18.099892241379308
+  ],
+  "shadow_n": 58,
+  "shadow_kept": 0.7618504714433393,
+  "shadow_kept_ci": [
+   0.6847229831498288,
+   0.8321224366042809
+  ]
+ },
+ {
+  "condition": "shift:pattern_x2",
+  "rotation_mean": 78.9752197265625,
+  "rotation_ci": [
+   73.94645226796469,
+   83.887485332489
+  ],
+  "toward_target_share": 0.95,
+  "label_az_error": 78.19231649748485,
+  "label_az_error_ci": [
+   73.46758509488107,
+   82.80249185973804
+  ],
+  "pixel_change": 8.847112655639648,
+  "shadow_rotation_median": 40.0,
+  "shadow_rotation_mean": 30.771186440677965,
+  "shadow_rotation_ci": [
+   7.235169491525427,
+   51.74989406779659
+  ],
+  "shadow_n": 59,
+  "shadow_kept": 0.5514359628651767,
+  "shadow_kept_ci": [
+   0.46016460195553655,
+   0.6455974132744732
+  ]
+ },
+ {
+  "condition": "shift:pattern_x3",
+  "rotation_mean": 104.77259826660156,
+  "rotation_ci": [
+   100.38208716074627,
+   109.21747310638428
+  ],
+  "toward_target_share": 0.95,
+  "label_az_error": 103.9896898956299,
+  "label_az_error_ci": [
+   100.56895931228003,
+   107.17494965689977
+  ],
+  "pixel_change": 13.233545303344727,
+  "shadow_rotation_median": 87.5,
+  "shadow_rotation_mean": 55.25,
+  "shadow_rotation_ci": [
+   31.97306034482759,
+   76.8560344827586
+  ],
+  "shadow_n": 58,
+  "shadow_kept": 0.41227563862284394,
+  "shadow_kept_ci": [
+   0.3154176982726074,
+   0.5153035884166147
+  ]
+ },
+ {
+  "condition": "shift:random_pattern",
+  "rotation_mean": 0.782762885093689,
+  "rotation_ci": [
+   0.04410381317138696,
+   1.5403289413452144
+  ],
+  "toward_target_share": 0.0,
+  "label_az_error": 8.566954570770262,
+  "label_az_error_ci": [
+   6.775244845994312,
+   10.353246727180474
+  ],
+  "pixel_change": 1.3908733129501343,
+  "shadow_rotation_median": 0.0,
+  "shadow_rotation_mean": 0.8706896551724138,
+  "shadow_rotation_ci": [
+   -0.6770474137931028,
+   2.6298491379310316
+  ],
+  "shadow_n": 58,
+  "shadow_kept": 0.8799747854938268,
+  "shadow_kept_ci": [
+   0.8296139123056833,
+   0.9240909892513675
+  ]
+ },
+ {
+  "condition": "erase",
+  "rotation_mean": -0.49464085698127747,
+  "rotation_ci": [
+   -2.464355367024739,
+   1.40473636627197
+  ],
+  "toward_target_share": 0.0,
+  "label_az_error": 11.081079366366067,
+  "label_az_error_ci": [
+   9.066769160008432,
+   13.15846963090896
+  ],
+  "pixel_change": 4.014252662658691,
+  "shadow_rotation_median": 0.0,
+  "shadow_rotation_mean": -0.09322033898305085,
+  "shadow_rotation_ci": [
+   -0.9067796610169492,
+   0.6866525423728802
+  ],
+  "shadow_n": 59,
+  "shadow_kept": 0.9939251072319939,
+  "shadow_kept_ci": [
+   0.989476374614407,
+   0.9975672889331162
+  ]
+ }
+]

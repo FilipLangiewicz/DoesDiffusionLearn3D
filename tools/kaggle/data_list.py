@@ -137,6 +137,18 @@ GROUPS = [
         0,
         "dane podglądu: obrazy JPEG i odczyty kierunku z przemiatania i łatania (małe pliki JSON)",
     ),
+    (
+        "intervene",
+        "causal-sigma",
+        0,
+        "test przyczynowy bloku 4 przy większym szumie (sigma0 = 0,85 i 0,95), 60 obrazów v2; obrazy w tarach",
+    ),
+    (
+        "analyze",
+        "causal-sigma-v2",
+        0,
+        "analiza testu przy większym szumie (sonda pikselowa i obszar cienia); kopia w reports/experiments/causal_sigma",
+    ),
 ]
 
 

@@ -123,20 +123,30 @@ def causal_figure(reports: Path, out: Path) -> None:
     print(f"-> {out}")
 
 
-def causal_table(reports: Path, out: Path) -> None:
-    """Write a LaTeX table: one row for each condition, one column pair for each block."""
-    files = sorted((reports / "causal").glob("b*/results.csv"))
+def signed(v: float) -> str:
+    """Format a rotation with its sign; a value that rounds to zero is 0."""
+    r = round(float(v))
+    return "0" if r == 0 else f"{r:+d}"
+
+
+def causal_table(reports: Path, out: Path, folder: str = "causal") -> None:
+    """Write a LaTeX table: one row for each condition, two measures for each block.
+
+    The first measure is the pixel probe (mean rotation with a 95% interval). The
+    second is the dark shadow region (median rotation over the images).
+    """
+    files = sorted((reports / folder).glob("b*/results.csv"))
     if not files:
         return
-    blocks = [int(f.parent.name[1:]) for f in files]
+    blocks = [int(f.parent.name[1:3]) for f in files]
     frames = {b: pd.read_csv(f).set_index("condition") for b, f in zip(blocks, files, strict=True)}
     order = sorted(blocks)
     conds = [c for c in frames[order[0]].index if c != "base"]
     lines = [
-        "\\begin{tabular}{l" + "rr" * len(order) + "}",
+        "\\begin{tabular}{l" + "rr" * len(order) + "r}",
         "\\toprule",
-        " & " + " & ".join(f"\\multicolumn{{2}}{{c}}{{Block {b}}}" for b in order) + " \\\\",
-        "Condition" + " & rotation & pixels" * len(order) + " \\\\",
+        " & " + " & ".join(f"\\multicolumn{{2}}{{c}}{{Block {b}}}" for b in order) + " & \\\\",
+        "Condition" + " & probe & shadow" * len(order) + " & pixels \\\\",
         "\\midrule",
     ]
     for c in conds:
@@ -144,10 +154,12 @@ def causal_table(reports: Path, out: Path) -> None:
         for b in order:
             r = frames[b].loc[c]
             lo, hi = (float(v) for v in str(r["rotation_ci"]).strip("()").split(","))
-            cells.append(f"${r['rotation_mean']:+.0f}$ \\scriptsize{{[{lo:+.0f}, {hi:+.0f}]}}")
-            cells.append(f"{r['pixel_change']:.0f}")
+            cells.append(f"${signed(r['rotation_mean'])}$ \\scriptsize{{[{signed(lo)}, {signed(hi)}]}}")
+            sm = r.get("shadow_rotation_median", float("nan"))
+            cells.append("--" if pd.isna(sm) else f"${signed(sm)}$")
+        change = np.mean([frames[b].loc[c, "pixel_change"] for b in order])
         name = c.replace("shift:", "").replace("_", "\\_")
-        lines.append(f"{name} & " + " & ".join(cells) + " \\\\")
+        lines.append(f"{name} & " + " & ".join(cells) + f" & {change:.0f} \\\\")
     lines += ["\\bottomrule", "\\end{tabular}"]
     out.write_text("\n".join(lines) + "\n")
     print(f"-> {out}")
@@ -162,25 +174,29 @@ def patch_figure(reports: Path, out: Path) -> None:
     p = df[df["condition"].str.match(r"patch:b\d+_(object|shadow_src|floor)$")].copy()
     p["block"] = p["condition"].str.extract(r"b(\d+)_")[0].astype(int)
     p["region"] = p["condition"].str.extract(r"b\d+_(\w+)$")[0]
-    fig, ax = plt.subplots(figsize=(5.2, 3.0))
     names = {"object": "object tokens", "shadow_src": "source shadow tokens", "floor": "other floor tokens"}
-    for region, label in names.items():
-        g = p[p["region"] == region].sort_values("block")
-        ci = np.array([json.loads(str(c).replace("(", "[").replace(")", "]")) for c in g["fraction_ci"]])
-        ax.plot(g["block"], g["fraction_mean"], marker="o", ms=3, label=label)
-        ax.fill_between(g["block"], ci[:, 0], ci[:, 1], alpha=0.2)
-    for cond, style, label in (
-        ("source", "--", "full source pass"),
-        ("patch:b10_all", ":", "all tokens, block 10"),
-    ):
-        v = df[df["condition"] == cond]
-        if len(v):
-            ax.axhline(v["fraction_mean"].iloc[0], color="k", ls=style, lw=1, label=label)
-    ax.axhline(0, color="k", lw=0.8)
-    ax.set_xlabel("patched block")
-    ax.set_ylabel("rotation / 90 deg")
-    ax.legend(fontsize=7)
-    ax.grid(alpha=0.3)
+    measures = (
+        ("fraction_mean", "pixel probe (mean)"),
+        ("shadow_fraction_median", "cast shadow region (median)"),
+    )
+    fig, axes = plt.subplots(1, 2, figsize=(9.0, 3.0), sharey=True)
+    for ax, (col, title) in zip(axes, measures, strict=True):
+        for region, label in names.items():
+            g = p[p["region"] == region].sort_values("block")
+            ax.plot(g["block"], g[col], marker="o", ms=3, label=label)
+        for cond, style, label in (
+            ("source", "--", "full source pass"),
+            ("patch:b10_all", ":", "all tokens, block 10"),
+        ):
+            v = df[df["condition"] == cond]
+            if len(v):
+                ax.axhline(v[col].iloc[0], color="k", ls=style, lw=1, label=label)
+        ax.axhline(0, color="k", lw=0.8)
+        ax.set_title(title, fontsize=9)
+        ax.set_xlabel("patched block")
+        ax.grid(alpha=0.3)
+    axes[0].set_ylabel("rotation / 90 deg")
+    axes[1].legend(fontsize=7)
     fig.tight_layout()
     fig.savefig(out, dpi=180)
     print(f"-> {out}")

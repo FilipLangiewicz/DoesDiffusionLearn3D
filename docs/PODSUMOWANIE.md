@@ -1,12 +1,24 @@
-# Podsumowanie prac (stan na 13.10.2026)
+# Podsumowanie prac (stan na 16.10.2026)
 
 Ten plik zbiera w jednym miejscu wszystko, co zostało sprawdzone i zrobione. Każdy rozdział odpowiada na jedno pytanie, podaje fakty z liczbami i pokazuje rysunek. Szczegóły techniczne (po angielsku) są w plikach podanych na końcu rozdziałów, ale nie trzeba ich czytać, żeby odpowiadać na pytania.
 
-Cała praca jest na gałęzi `siwy-xai`. Gałąź `main` jest nietknięta i nic nie zostało wypchnięte na GitHub.
+Bieżąca praca jest na gałęzi `feat/kaggle-pipeline` (wypchniętej na GitHub). Krótki stan dla prowadzącego jest w `docs/STAN_PRAC.md`, a artykuł w `docs/article/`.
 
 ---
 
 ## 0. Najkrócej
+
+### Wyniki z 15–16.10 (poprawiony pipeline, nowe dane, interwencje)
+
+1. **Na starych danych poprawiony szum zmienia wynik:** SANA daje 4,8° na sześcianach, a najlepsze piksele 12,8°. Ze starym szumem wychodzi 14,5°, jak w ZZSN. Błędny szum ukrył informację, którą model ma.
+2. **Na scenach bez skrótów (v2r, obiekt w losowym miejscu) SANA wyraźnie bije wejście:** 7,6° na sześcianach, a najlepsze piksele 20,1°, latent 19,0°, ta sama sieć z losowymi wagami 15,9°. SD 1.5 (11,1°) i SDXL (7,3°) zachowują się podobnie.
+3. **Kod kierunku nie zależy od pozycji:** sonda na średniej wszystkich tokenów, uczona na obiektach w środku, daje 9,0° / 17,6° na obiektach w losowych miejscach (piksele: 71°).
+4. **Model czyta osobno cieniowanie i cień:** bez cienia 9,9°, sam cień 7,9° (piksele 23,3° i 16,9°).
+5. **Model używa tego kierunku do cieniowania obiektu:** mała zmiana wzdłuż „wzorca” (2% normy tokenu) obraca odczyt światła o 60–65° w stronę celu +90°, a losowa zmiana tej samej wielkości nic nie robi.
+6. **Cień rzucany reaguje dopiero na dużą zmianę** (×3) i nie pochodzi z jednego obszaru obrazu. Przeszczep tokenów obiektu przenosi cieniowanie, ale nie cień.
+7. Szczegóły i tabele: `docs/STAN_PRAC.md`, `reports/experiments/`, interaktywny podgląd w `tools/viewer/`.
+
+### Audyt (12–13.10)
 
 1. **Wynik z ZZSN nie dowodzi tego, co twierdził.** Ta sama sonda na surowych pikselach obrazu (64×64) daje ten sam błąd co sonda na SANA: 14,1° wobec 14,0° na sześcianach.
 2. **Sonda czyta podłogę, a nie obiekt.** Sama podłoga (z usuniętym obiektem) przewiduje etykietę lepiej niż cały obraz: 9,4° wobec 14,3° na sześcianach. Stąd „generalizacja na sześciany”: podłoga nie zależy od kształtu.

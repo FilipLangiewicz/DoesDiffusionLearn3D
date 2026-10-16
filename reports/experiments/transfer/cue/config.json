@@ -1,0 +1,10 @@
+{
+ "fit": "v2r",
+ "tests": "v2rns,v2rso",
+ "data_root": "/kaggle/temp/data",
+ "feature_root": "/kaggle/temp/feat",
+ "features": "",
+ "scan": "/kaggle/temp/prev/dd3d-analyze-scan-v2r/out/v2r/scan/scan.csv",
+ "runs": "sana",
+ "out": "/kaggle/working/out/transfer/cue"
+}

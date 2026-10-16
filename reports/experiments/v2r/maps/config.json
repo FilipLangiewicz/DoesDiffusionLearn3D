@@ -1,0 +1,13 @@
+{
+ "features": "/kaggle/temp/feat/v2r",
+ "keys": "",
+ "scan": "/kaggle/temp/prev/dd3d-analyze-scan-v2r/out/v2r/scan/scan.csv",
+ "runs": "sana,sana_random_init,sd15,sdxl",
+ "grid": 8,
+ "pixel_grid": 8,
+ "splits": "/kaggle/temp/data/v2r/splits",
+ "images": "/kaggle/temp/data/v2r/images",
+ "labels": "/kaggle/temp/data/v2r/labels.csv",
+ "title": "v2r",
+ "out": "/kaggle/working/out/v2r/maps"
+}

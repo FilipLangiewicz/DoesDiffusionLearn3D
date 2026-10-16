@@ -1,0 +1,8 @@
+{
+ "scan": "/kaggle/temp/prev/dd3d-analyze-scan-v1/out/v1/scan/scan.csv",
+ "features": "/kaggle/temp/feat/v1",
+ "splits": "/kaggle/temp/data/v1/splits",
+ "images": "/kaggle/temp/data/v1/images",
+ "shuffles": 3,
+ "out": "/kaggle/working/out/v1/best"
+}

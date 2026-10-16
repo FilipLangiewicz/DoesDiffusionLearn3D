@@ -15,6 +15,7 @@
   --target: #0f7c8c;      /* the direction we ask for */
   --read: #c2306a;        /* the direction a pixel probe reads from the output */
   --chip: #e6e1f5;
+  --shade: #3d5a80;       /* the direction of the dark shadow region (geometry) */
   --font-display: "Archivo", "Helvetica Neue", Arial, sans-serif;
   --font-body: "Archivo", "Helvetica Neue", Arial, sans-serif;
   --font-data: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
@@ -22,13 +23,13 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --bg: #14161b; --panel: #1d2028; --ink: #e8eaf0; --muted: #9aa1b0; --line: #313644;
-    --accent: #b38cf2; --sun: #f0b13c; --target: #3cc3d4; --read: #f06a9d; --chip: #2c2540;
+    --accent: #b38cf2; --sun: #f0b13c; --target: #3cc3d4; --read: #f06a9d; --chip: #2c2540; --shade: #8fb3e0;
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --bg: #14161b; --panel: #1d2028; --ink: #e8eaf0; --muted: #9aa1b0; --line: #313644;
-  --accent: #b38cf2; --sun: #f0b13c; --target: #3cc3d4; --read: #f06a9d; --chip: #2c2540;
+  --accent: #b38cf2; --sun: #f0b13c; --target: #3cc3d4; --read: #f06a9d; --chip: #2c2540; --shade: #8fb3e0;
   color-scheme: dark;
 }
 body {
@@ -80,7 +81,7 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
 <div class="wrap">
   <header>
     <h1>Pokrętło światła SANA</h1>
-    <p class="lede">Render sceny trafia do SANA-1.6B (SDEdit, szum do σ = 0,7, 20 kroków). W trakcie odszumiania zmieniamy aktywacje jednego bloku transformera. Patrzymy, czy cień na obrazie wyjściowym się obraca. Kierunek cienia na wyjściu mierzy liniowa sonda na pikselach.</p>
+    <p class="lede">Render sceny trafia do SANA-1.6B (SDEdit, szum do σ = 0,7, 20 kroków). W trakcie odszumiania zmieniamy aktywacje jednego bloku transformera i patrzymy, jak zmienia się światło na obrazie. Kierunek światła na wyjściu mierzą dwie miary: liniowa sonda na pikselach (czyta głównie cieniowanie obiektu) i geometria ciemnej plamy cienia rzucanego.</p>
   </header>
 
   <div class="tabs" role="tablist">
@@ -101,6 +102,10 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
     </figure>
     <div class="controls">
       <div id="ctl-sweep" class="field-group" style="display:grid;gap:14px">
+        <div class="field">
+          <span class="eyebrow">Blok, w którym zmieniamy cechy</span>
+          <div class="seg" id="sweep-block"></div>
+        </div>
         <div class="field">
           <label for="rot">Obrót kierunku w cechach</label>
           <input type="range" id="rot" min="0" max="11" step="1" value="3">
@@ -142,12 +147,23 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
 (function () {
   const DATA = JSON.parse(document.getElementById("data").textContent);
   const $ = (id) => document.getElementById(id);
-  const state = { tab: DATA.sweep ? "sweep" : "patch", scene: 0, rot: 3, k: null, block: 5, region: "object" };
+  const SWEEPS = DATA.sweeps || (DATA.sweep ? [DATA.sweep] : []);
+  const state = { tab: SWEEPS.length ? "sweep" : "patch", sw: 0, scene: 0, rot: 3, k: null, block: 5, region: "object" };
   const REGION_NAMES = { object: "obiekt", shadow_src: "cień źródła", shadow_tgt: "cień celu", floor: "podłoga", all: "wszystko", object_early: "obiekt, 1. połowa kroków", object_late: "obiekt, 2. połowa kroków" };
   const fmt = (a) => `${Math.round(((a % 360) + 360) % 360)}°`;
   const diff = (a, b) => ((a - b + 540) % 360) - 180;
 
-  function set() { return DATA[state.tab]; }
+  function set() { return state.tab === "sweep" ? SWEEPS[state.sw] : DATA.patch; }
+  const signed = (a) => { const d = diff(a, 0); return `${d > 0 ? "+" : ""}${Math.round(d)}°`; };
+  function measures(o, base) {
+    // Rotation against the output without a change, for both measures.
+    const read = diff(o.read_az, base.read_az);
+    const shade = o.shadow_az == null || base.shadow_az == null ? null : diff(o.shadow_az, base.shadow_az);
+    return { read, shade };
+  }
+  function shadowItem(o) {
+    return o.shadow_az == null ? [] : [{ az: o.shadow_az, color: "var(--shade)", label: "Kierunek cienia rzucanego", len: 50 }];
+  }
   function scene() { return set().scenes[state.scene]; }
 
   function arrow(az, color, dash, len) {
@@ -185,7 +201,9 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
     state.rot = Math.min(state.rot, rots.length - 1);
     $("rot").value = state.rot;
     const r = rots[state.rot];
-    $("rot-out").textContent = r === 0 ? "0° (bez zmiany)" : `+${r}° względem światła sceny`;
+    $("rot-out").textContent = r === 0 ? "0° (bez zmiany)" : `${signed(r)} względem światła sceny`;
+    $("sweep-block").innerHTML = SWEEPS.map((w, i) => `<button aria-pressed="${i === state.sw}" data-i="${i}">blok ${w.block ?? i}</button>`).join("");
+    $("sweep-block").querySelectorAll("button").forEach((b) => b.addEventListener("click", () => { state.sw = +b.dataset.i; render(); }));
     $("strength").innerHTML = ks.map((k) => `<button aria-pressed="${k === state.k}" data-k="${k}">×${k}</button>`).join("");
     $("strength").querySelectorAll("button").forEach((b) => b.addEventListener("click", () => { state.k = +b.dataset.k; render(); }));
     const o = r === 0 ? base : outs.find((x) => x.rotation === r && x.strength === state.k);
@@ -193,18 +211,19 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
     $("cap-left").textContent = "Wyjście bez przesunięcia";
     $("cap-left-2").textContent = `światło sceny ${fmt(s.label_az)}, sonda ${fmt(base.read_az)}`;
     $("img-right").src = `data:image/jpeg;base64,${o.image}`;
-    $("cap-right").textContent = r === 0 ? "Wyjście bez zmiany" : `Wyjście, cel +${r}°, siła ×${state.k}`;
+    $("cap-right").textContent = r === 0 ? "Wyjście bez zmiany" : `Wyjście, cel ${signed(r)}, siła ×${state.k}`;
     $("cap-right-2").textContent = `sonda: ${fmt(o.read_az)}`;
     const target = s.label_az + r;
     dial([
       { az: s.label_az, color: "var(--sun)", label: "Światło sceny" },
       { az: target, color: "var(--target)", label: "Cel w cechach", dash: true, len: 74 },
-      { az: o.read_az, color: "var(--read)", label: "Odczyt z obrazu", len: 62 },
+      { az: o.read_az, color: "var(--read)", label: "Odczyt sondy pikselowej", len: 62 },
+      ...shadowItem(o),
     ]);
-    const moved = diff(o.read_az, base.read_az), want = diff(target, s.label_az);
+    const m = measures(o, base);
     $("verdict").innerHTML = r === 0
-      ? "Bez przesunięcia. Odczyt z obrazu to punkt odniesienia."
-      : `Cień obrócił się o <b class="mono">${moved > 0 ? "+" : ""}${Math.round(moved)}°</b> względem wyjścia bez zmiany (cel ${want > 0 ? "+" : ""}${Math.round(want)}°).`;
+      ? "Bez przesunięcia. To wyjście jest punktem odniesienia dla obu miar."
+      : `Cel: <b class="mono">${signed(r)}</b>. Sonda pikselowa: <b class="mono">${signed(m.read)}</b>. Cień rzucany: <b class="mono">${m.shade == null ? "brak pomiaru" : signed(m.shade)}</b>.`;
   }
 
   function renderPatch() {
@@ -233,10 +252,12 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
     dial([
       { az: s.label_az, color: "var(--sun)", label: "Światło celu" },
       { az: s.label_az + 90, color: "var(--target)", label: "Światło źródła", dash: true, len: 74 },
-      { az: (o || base).read_az, color: "var(--read)", label: "Odczyt z obrazu", len: 62 },
+      { az: (o || base).read_az, color: "var(--read)", label: "Odczyt sondy pikselowej", len: 62 },
+      ...shadowItem(o || base),
     ]);
-    const moved = diff((o || base).read_az, base.read_az), full = diff(src.read_az, base.read_az);
-    $("verdict").innerHTML = `Cień obrócił się o <b class="mono">${moved > 0 ? "+" : ""}${Math.round(moved)}°</b> w stronę źródła. Pełne źródło daje ${full > 0 ? "+" : ""}${Math.round(full)}°.`;
+    const m = measures(o || base, base), f = measures(src, base);
+    $("verdict").innerHTML = `Obrót w stronę źródła (pełne źródło: sonda ${signed(f.read)}, cień ${f.shade == null ? "?" : signed(f.shade)}). ` +
+      `Sonda pikselowa: <b class="mono">${signed(m.read)}</b>. Cień rzucany: <b class="mono">${m.shade == null ? "brak pomiaru" : signed(m.shade)}</b>.`;
   }
 
   function render() {
@@ -253,7 +274,7 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
     $("note").textContent = set().note || "";
   }
 
-  $("tab-sweep").disabled = !DATA.sweep;
+  $("tab-sweep").disabled = !SWEEPS.length;
   $("tab-patch").disabled = !DATA.patch;
   $("tab-sweep").addEventListener("click", () => { state.tab = "sweep"; state.scene = 0; render(); });
   $("tab-patch").addEventListener("click", () => { state.tab = "patch"; state.scene = 0; render(); });

@@ -1,0 +1,89 @@
+[20:27:41] params: {"name": "transfer-cue-pooled", "ref": "ba50e74", "sets": ["v2r", "v2rns", "v2rso"], "features": {"v2r": ["dd3d-features-v2r-"], "v2rns": ["dd3d-extract-v2rns-"], "v2rso": ["dd3d-extract-v2rso-"]}, "split_md5": {"v2r": "60dbed752369c6ed9b577a2138f9b33b", "v2rns": "219791904f9e47fbf048a1d012e5a9a6", "v2rso": "681a036cabca7db69f5cb7deceff3b7d"}, "commands": ["python scripts/experiments/transfer.py --fit v2r --tests v2rns,v2rso --data-root {DATA} --feature-root {FEAT} --scan {PREV}/dd3d-analyze-scan-v2r/out/v2r/scan/scan.csv --runs sana --pooled-grids 1,2 --out {OUT}/transfer/cue_pooled"]}
+[20:27:41] $ nproc; free -g | head -2; df -h /kaggle/temp /kaggle/working | tail -2
+[20:27:41] 4
+               total        used        free      shared  buff/cache   available
+Mem:              31           0          26           0           4          30
+overlay         8.0T  7.0T  1.1T  87% /
+/dev/loop2       20G  216K   20G   1% /kaggle/working
+[20:27:41] $ ls /kaggle/input /kaggle/input/* | head -60
+[20:27:41] /kaggle/input:
+datasets
+notebooks
+
+/kaggle/input/datasets:
+jankombajn
+
+/kaggle/input/notebooks:
+jankombajn
+[20:27:41] $ pip install -q tabulate
+[20:27:49] $ git clone -q https://github.com/FilipLangiewicz/DoesDiffusionLearn3D /kaggle/temp/repo && cd /kaggle/temp/repo && git checkout -q ba50e74 && git log -1 --format=%h
+[20:28:37] ba50e74
+[20:28:37] $ tar xf '/kaggle/input/notebooks/jankombajn/dd3d-renders/v2r/v2r_00000_00500.tar' -C /kaggle/temp/img_v2r/0
+[20:28:39] $ tar xf '/kaggle/input/notebooks/jankombajn/dd3d-renders/v2r/v2r_00500_01000.tar' -C /kaggle/temp/img_v2r/1
+[20:28:40] $ tar xf '/kaggle/input/notebooks/jankombajn/dd3d-renders/v2r/v2r_01000_01500.tar' -C /kaggle/temp/img_v2r/2
+[20:28:42] $ tar xf '/kaggle/input/notebooks/jankombajn/dd3d-renders/v2r/v2r_01500_02000.tar' -C /kaggle/temp/img_v2r/3
+[20:28:44] $ tar xf '/kaggle/input/notebooks/jankombajn/dd3d-renders/v2r/v2r_02000_02500.tar' -C /kaggle/temp/img_v2r/4
+[20:28:45] $ tar xf '/kaggle/input/notebooks/jankombajn/dd3d-renders/v2r/v2r_02500_03000.tar' -C /kaggle/temp/img_v2r/5
+[20:28:47] v2r: 6 shards, 3000 labels, images {'Sphere': 1000, 'SmoothCylinder': 1000, 'SmoothCube_v2': 1000}
+[20:28:47] $ tar xf '/kaggle/input/notebooks/jankombajn/dd3d-renders/v2rns/v2rns_00000_00500.tar' -C /kaggle/temp/img_v2rns/0
+[20:28:50] $ tar xf '/kaggle/input/notebooks/jankombajn/dd3d-renders/v2rns/v2rns_00500_01000.tar' -C /kaggle/temp/img_v2rns/1
+[20:28:51] $ tar xf '/kaggle/input/notebooks/jankombajn/dd3d-renders/v2rns/v2rns_01000_01500.tar' -C /kaggle/temp/img_v2rns/2
+[20:28:55] $ tar xf '/kaggle/input/notebooks/jankombajn/dd3d-renders/v2rns/v2rns_01500_02000.tar' -C /kaggle/temp/img_v2rns/3
+[20:28:57] $ tar xf '/kaggle/input/notebooks/jankombajn/dd3d-renders/v2rns/v2rns_02000_02500.tar' -C /kaggle/temp/img_v2rns/4
+[20:28:59] $ tar xf '/kaggle/input/notebooks/jankombajn/dd3d-renders/v2rns/v2rns_02500_03000.tar' -C /kaggle/temp/img_v2rns/5
+[20:29:01] v2rns: 6 shards, 3000 labels, images {'Sphere': 1000, 'SmoothCylinder': 1000, 'SmoothCube_v2': 1000}
+[20:29:01] $ tar xf '/kaggle/input/notebooks/jankombajn/dd3d-renders/v2rso/v2rso_00000_00500.tar' -C /kaggle/temp/img_v2rso/0
+[20:29:02] $ tar xf '/kaggle/input/notebooks/jankombajn/dd3d-renders/v2rso/v2rso_00500_01000.tar' -C /kaggle/temp/img_v2rso/1
+[20:29:03] $ tar xf '/kaggle/input/notebooks/jankombajn/dd3d-renders/v2rso/v2rso_01000_01500.tar' -C /kaggle/temp/img_v2rso/2
+[20:29:05] $ tar xf '/kaggle/input/notebooks/jankombajn/dd3d-renders/v2rso/v2rso_01500_02000.tar' -C /kaggle/temp/img_v2rso/3
+[20:29:06] $ tar xf '/kaggle/input/notebooks/jankombajn/dd3d-renders/v2rso/v2rso_02000_02500.tar' -C /kaggle/temp/img_v2rso/4
+[20:29:08] $ tar xf '/kaggle/input/notebooks/jankombajn/dd3d-renders/v2rso/v2rso_02500_03000.tar' -C /kaggle/temp/img_v2rso/5
+[20:29:10] v2rso: 6 shards, 3000 labels, images {'Sphere': 1000, 'SmoothCylinder': 1000, 'SmoothCube_v2': 1000}
+[20:29:10] $ python scripts/data/make_v2_splits.py --labels /kaggle/temp/data/v2r/labels.csv --pos-labels none --out /kaggle/temp/data/v2r/splits
+[20:29:17] /kaggle/temp/data/v2r/splits/test.csv 200
+/kaggle/temp/data/v2r/splits/test_cubes.csv 1000
+/kaggle/temp/data/v2r/splits/train.csv 1600
+/kaggle/temp/data/v2r/splits/val.csv 200
+[20:29:17] v2r: splits md5 60dbed752369c6ed9b577a2138f9b33b (expected 60dbed752369c6ed9b577a2138f9b33b)
+[20:29:17] $ python scripts/data/make_v2_splits.py --labels /kaggle/temp/data/v2rns/labels.csv --pos-labels none --out /kaggle/temp/data/v2rns/splits
+[20:29:18] /kaggle/temp/data/v2rns/splits/test.csv 200
+/kaggle/temp/data/v2rns/splits/test_cubes.csv 1000
+/kaggle/temp/data/v2rns/splits/train.csv 1600
+/kaggle/temp/data/v2rns/splits/val.csv 200
+[20:29:18] v2rns: splits md5 219791904f9e47fbf048a1d012e5a9a6 (expected 219791904f9e47fbf048a1d012e5a9a6)
+[20:29:18] $ python scripts/data/make_v2_splits.py --labels /kaggle/temp/data/v2rso/labels.csv --pos-labels none --out /kaggle/temp/data/v2rso/splits
+[20:29:19] /kaggle/temp/data/v2rso/splits/test.csv 200
+/kaggle/temp/data/v2rso/splits/test_cubes.csv 1000
+/kaggle/temp/data/v2rso/splits/train.csv 1600
+/kaggle/temp/data/v2rso/splits/val.csv 200
+[20:29:19] v2rso: splits md5 681a036cabca7db69f5cb7deceff3b7d (expected 681a036cabca7db69f5cb7deceff3b7d)
+[20:29:19] features v2r: /kaggle/input/datasets/jankombajn/dd3d-features-v2r-0
+[20:29:19] features v2r: /kaggle/input/datasets/jankombajn/dd3d-features-v2r-1
+[20:29:19] features v2r: /kaggle/input/datasets/jankombajn/dd3d-features-v2r-2
+[20:29:19] features v2r: /kaggle/input/datasets/jankombajn/dd3d-features-v2r-3
+[20:29:19] features v2r: /kaggle/input/datasets/jankombajn/dd3d-features-v2r-4
+[20:29:19] features v2r: /kaggle/input/datasets/jankombajn/dd3d-features-v2r-5
+[20:29:19] features v2rns: /kaggle/input/notebooks/jankombajn/dd3d-extract-v2rns-0
+[20:29:19] features v2rns: /kaggle/input/notebooks/jankombajn/dd3d-extract-v2rns-1
+[20:29:19] features v2rns: /kaggle/input/notebooks/jankombajn/dd3d-extract-v2rns-2
+[20:29:19] features v2rns: /kaggle/input/notebooks/jankombajn/dd3d-extract-v2rns-3
+[20:29:19] features v2rns: /kaggle/input/notebooks/jankombajn/dd3d-extract-v2rns-4
+[20:29:19] features v2rns: /kaggle/input/notebooks/jankombajn/dd3d-extract-v2rns-5
+[20:29:19] features v2rso: /kaggle/input/notebooks/jankombajn/dd3d-extract-v2rso-0
+[20:29:19] features v2rso: /kaggle/input/notebooks/jankombajn/dd3d-extract-v2rso-1
+[20:29:19] features v2rso: /kaggle/input/notebooks/jankombajn/dd3d-extract-v2rso-2
+[20:29:19] features v2rso: /kaggle/input/notebooks/jankombajn/dd3d-extract-v2rso-3
+[20:29:19] features v2rso: /kaggle/input/notebooks/jankombajn/dd3d-extract-v2rso-4
+[20:29:19] features v2rso: /kaggle/input/notebooks/jankombajn/dd3d-extract-v2rso-5
+[20:29:19] earlier output: /kaggle/input/notebooks/jankombajn/dd3d-analyze-scan-v2r
+[20:29:19] $ python scripts/experiments/transfer.py --fit v2r --tests v2rns,v2rso --data-root /kaggle/temp/data --feature-root /kaggle/temp/feat --scan /kaggle/temp/prev/dd3d-analyze-scan-v2r/out/v2r/scan/scan.csv --runs sana --pooled-grids 1,2 --out /kaggle/working/out/transfer/cue_pooled
+[20:31:12] pixels {'v2r:test': 25.1, 'v2r:test_cubes': 25.8, 'v2rns:test': 72.7, 'v2rns:test_cubes': 71.9, 'v2rso:test': 74.6, 'v2rso:test_cubes': 75.8}
+sana/block_05/t_100/grid_2 {'v2r:test': 5.4, 'v2r:test_cubes': 7.6, 'v2rns:test': 33.3, 'v2rns:test_cubes': 34.9, 'v2rso:test': 30.2, 'v2rso:test_cubes': 38.7}
+sana/block_05/t_100/grid_1 {'v2r:test': 5.9, 'v2r:test_cubes': 13.2, 'v2rns:test': 48.9, 'v2rns:test_cubes': 61.6, 'v2rso:test': 44.0, 'v2rso:test_cubes': 64.0}
+[20:31:12] command 0 ended with code 0 after 114 s
+[20:31:12] all commands ended with code 0
+[20:31:12] $ cd /kaggle/working/out && find . -type f | sort | head -300 && du -sh .
+[20:31:12] ./transfer/cue_pooled/config.json
+./transfer/cue_pooled/transfer.csv
+./transfer/cue_pooled/transfer.md
+24K	.

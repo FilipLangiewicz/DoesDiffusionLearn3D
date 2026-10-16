@@ -1,0 +1,11 @@
+run,block,t,grid
+pixels,-1,-1,64
+sana,7,100,4
+sana_legacy_noise,18,200,4
+sana_random_init,4,100,2
+sd15,6,100,8
+sdxl,3,100,4
+vae_latent,-1,-1,32
+pixels8,-1,-1,8
+pixels16,-1,-1,16
+pixels32,-1,-1,32

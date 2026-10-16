@@ -1,0 +1,146 @@
+[21:49:18] params: {"name": "deep-v2r", "ref": "7b593c7", "sets": ["v2r"], "features": {"v2r": ["dd3d-features-v2r-"]}, "split_md5": {"v2r": "60dbed752369c6ed9b577a2138f9b33b"}, "commands": ["python scripts/experiments/best_probes.py --scan {PREV}/dd3d-analyze-scan-v2r/out/v2r/scan/scan.csv --features {FEAT}/v2r --splits {DATA}/v2r/splits --images {DATA}/v2r/images --out {OUT}/v2r/best", "python scripts/experiments/probe_maps.py --features {FEAT}/v2r --scan {PREV}/dd3d-analyze-scan-v2r/out/v2r/scan/scan.csv --runs sana,sana_random_init,sd15,sdxl --splits {DATA}/v2r/splits --images {DATA}/v2r/images --labels {DATA}/v2r/labels.csv --title v2r --out {OUT}/v2r/maps"]}
+[21:49:18] $ nproc; free -g | head -2; df -h /kaggle/temp /kaggle/working | tail -2
+[21:49:18] 4
+               total        used        free      shared  buff/cache   available
+Mem:              31           0          26           0           4          30
+overlay         8.0T  7.0T  1.1T  87% /
+/dev/loop2       20G  168K   20G   1% /kaggle/working
+[21:49:18] $ ls /kaggle/input /kaggle/input/* | head -60
+[21:49:18] /kaggle/input:
+datasets
+notebooks
+
+/kaggle/input/datasets:
+jankombajn
+
+/kaggle/input/notebooks:
+jankombajn
+[21:49:18] $ pip install -q tabulate
+[21:49:26] $ git clone -q https://github.com/FilipLangiewicz/DoesDiffusionLearn3D /kaggle/temp/repo && cd /kaggle/temp/repo && git checkout -q 7b593c7 && git log -1 --format=%h
+[21:49:55] 7b593c7
+[21:49:55] $ tar xf '/kaggle/input/notebooks/jankombajn/dd3d-renders/v2r/v2r_00000_00500.tar' -C /kaggle/temp/img_v2r/0
+[21:49:58] $ tar xf '/kaggle/input/notebooks/jankombajn/dd3d-renders/v2r/v2r_00500_01000.tar' -C /kaggle/temp/img_v2r/1
+[21:50:01] $ tar xf '/kaggle/input/notebooks/jankombajn/dd3d-renders/v2r/v2r_01000_01500.tar' -C /kaggle/temp/img_v2r/2
+[21:50:04] $ tar xf '/kaggle/input/notebooks/jankombajn/dd3d-renders/v2r/v2r_01500_02000.tar' -C /kaggle/temp/img_v2r/3
+[21:50:07] $ tar xf '/kaggle/input/notebooks/jankombajn/dd3d-renders/v2r/v2r_02000_02500.tar' -C /kaggle/temp/img_v2r/4
+[21:50:12] $ tar xf '/kaggle/input/notebooks/jankombajn/dd3d-renders/v2r/v2r_02500_03000.tar' -C /kaggle/temp/img_v2r/5
+[21:50:14] v2r: 6 shards, 3000 labels, images {'Sphere': 1000, 'SmoothCylinder': 1000, 'SmoothCube_v2': 1000}
+[21:50:14] $ python scripts/data/make_v2_splits.py --labels /kaggle/temp/data/v2r/labels.csv --pos-labels none --out /kaggle/temp/data/v2r/splits
+[21:50:20] /kaggle/temp/data/v2r/splits/test.csv 200
+/kaggle/temp/data/v2r/splits/test_cubes.csv 1000
+/kaggle/temp/data/v2r/splits/train.csv 1600
+/kaggle/temp/data/v2r/splits/val.csv 200
+[21:50:20] v2r: splits md5 60dbed752369c6ed9b577a2138f9b33b (expected 60dbed752369c6ed9b577a2138f9b33b)
+[21:50:20] features v2r: /kaggle/input/datasets/jankombajn/dd3d-features-v2r-0
+[21:50:20] features v2r: /kaggle/input/datasets/jankombajn/dd3d-features-v2r-1
+[21:50:20] features v2r: /kaggle/input/datasets/jankombajn/dd3d-features-v2r-2
+[21:50:20] features v2r: /kaggle/input/datasets/jankombajn/dd3d-features-v2r-3
+[21:50:20] features v2r: /kaggle/input/datasets/jankombajn/dd3d-features-v2r-4
+[21:50:20] features v2r: /kaggle/input/datasets/jankombajn/dd3d-features-v2r-5
+[21:50:20] earlier output: /kaggle/input/notebooks/jankombajn/dd3d-analyze-scan-v2r
+[21:50:20] $ python scripts/experiments/best_probes.py --scan /kaggle/temp/prev/dd3d-analyze-scan-v2r/out/v2r/scan/scan.csv --features /kaggle/temp/feat/v2r --splits /kaggle/temp/data/v2r/splits --images /kaggle/temp/data/v2r/images --out /kaggle/working/out/v2r/best
+[21:55:11] Warning: Ill-conditioned matrix (rcond=3.22417e-08): result may not be accurate.
+  return f(*arrays, *other_args, **kwargs)
+/usr/local/lib/python3.13/dist-packages/scipy/_lib/_util.py:1233: LinAlgWarning: Ill-conditioned matrix (rcond=3.22514e-11): result may not be accurate.
+  return f(*arrays, *other_args, **kwargs)
+/usr/local/lib/python3.13/dist-packages/scipy/_lib/_util.py:1233: LinAlgWarning: Ill-conditioned matrix (rcond=6.9486e-11): result may not be accurate.
+  return f(*arrays, *other_args, **kwargs)
+/usr/local/lib/python3.13/dist-packages/scipy/_lib/_util.py:1233: LinAlgWarning: Ill-conditioned matrix (rcond=1.49707e-10): result may not be accurate.
+  return f(*arrays, *other_args, **kwargs)
+/usr/local/lib/python3.13/dist-packages/scipy/_lib/_util.py:1233: LinAlgWarning: Ill-conditioned matrix (rcond=3.22544e-10): result may not be accurate.
+  return f(*arrays, *other_args, **kwargs)
+/usr/local/lib/python3.13/dist-packages/scipy/_lib/_util.py:1233: LinAlgWarning: Ill-conditioned matrix (rcond=6.94921e-10): result may not be accurate.
+  return f(*arrays, *other_args, **kwargs)
+/usr/local/lib/python3.13/dist-packages/scipy/_lib/_util.py:1233: LinAlgWarning: Ill-conditioned matrix (rcond=1.49721e-09): result may not be accurate.
+  return f(*arrays, *other_args, **kwargs)
+/usr/local/lib/python3.13/dist-packages/scipy/_lib/_util.py:1233: LinAlgWarning: Ill-conditioned matrix (rcond=3.22335e-09): result may not be accurate.
+  return f(*arrays, *other_args, **kwargs)
+/usr/local/lib/python3.13/dist-packages/scipy/_lib/_util.py:1233: LinAlgWarning: Ill-conditioned matrix (rcond=6.94533e-09): result may not be accurate.
+  return f(*arrays, *other_args, **kwargs)
+/usr/local/lib/python3.13/dist-packages/scipy/_lib/_util.py:1233: LinAlgWarning: Ill-conditioned matrix (rcond=1.49634e-08): result may not be accurate.
+  return f(*arrays, *other_args, **kwargs)
+/usr/local/lib/python3.13/dist-packages/scipy/_lib/_util.py:1233: LinAlgWarning: Ill-conditioned matrix (rcond=3.22417e-08): result may not be accurate.
+  return f(*arrays, *other_args, **kwargs)
+/usr/local/lib/python3.13/dist-packages/scipy/_lib/_util.py:1233: LinAlgWarning: Ill-conditioned matrix (rcond=3.22514e-11): result may not be accurate.
+  return f(*arrays, *other_args, **kwargs)
+/usr/local/lib/python3.13/dist-packages/scipy/_lib/_util.py:1233: LinAlgWarning: Ill-conditioned matrix (rcond=6.9486e-11): result may not be accurate.
+  return f(*arrays, *other_args, **kwargs)
+/usr/local/lib/python3.13/dist-packages/scipy/_lib/_util.py:1233: LinAlgWarning: Ill-conditioned matrix (rcond=1.49707e-10): result may not be accurate.
+  return f(*arrays, *other_args, **kwargs)
+/usr/local/lib/python3.13/dist-packages/scipy/_lib/_util.py:1233: LinAlgWarning: Ill-conditioned matrix (rcond=3.22544e-10): result may not be accurate.
+  return f(*arrays, *other_args, **kwargs)
+/usr/local/lib/python3.13/dist-packages/scipy/_lib/_util.py:1233: LinAlgWarning: Ill-conditioned matrix (rcond=6.94921e-10): result may not be accurate.
+  return f(*arrays, *other_args, **kwargs)
+/usr/local/lib/python3.13/dist-packages/scipy/_lib/_util.py:1233: LinAlgWarning: Ill-conditioned matrix (rcond=1.49721e-09): result may not be accurate.
+  return f(*arrays, *other_args, **kwargs)
+/usr/local/lib/python3.13/dist-packages/scipy/_lib/_util.py:1233: LinAlgWarning: Ill-conditioned matrix (rcond=3.22335e-09): result may not be accurate.
+  return f(*arrays, *other_args, **kwargs)
+/usr/local/lib/python3.13/dist-packages/scipy/_lib/_util.py:1233: LinAlgWarning: Ill-conditioned matrix (rcond=6.94533e-09): result may not be accurate.
+  return f(*arrays, *other_args, **kwargs)
+/usr/local/lib/python3.13/dist-packages/scipy/_lib/_util.py:1233: LinAlgWarning: Ill-conditioned matrix (rcond=1.49634e-08): result may not be accurate.
+  return f(*arrays, *other_args, **kwargs)
+/usr/local/lib/python3.13/dist-packages/scipy/_lib/_util.py:1233: LinAlgWarning: Ill-conditioned matrix (rcond=3.22417e-08): result may not be accurate.
+  return f(*arrays, *other_args, **kwargs)
+/usr/local/lib/python3.13/dist-packages/scipy/_lib/_util.py:1233: LinAlgWarning: Ill-conditioned matrix (rcond=3.22514e-11): result may not be accurate.
+  return f(*arrays, *other_args, **kwargs)
+/usr/local/lib/python3.13/dist-packages/scipy/_lib/_util.py:1233: LinAlgWarning: Ill-conditioned matrix (rcond=6.9486e-11): result may not be accurate.
+  return f(*arrays, *other_args, **kwargs)
+/usr/local/lib/python3.13/dist-packages/scipy/_lib/_util.py:1233: LinAlgWarning: Ill-conditioned matrix (rcond=1.49707e-10): result may not be accurate.
+  return f(*arrays, *other_args, **kwargs)
+/usr/local/lib/python3.13/dist-packages/scipy/_lib/_util.py:1233: LinAlgWarning: Ill-conditioned matrix (rcond=3.22544e-10): result may not be accurate.
+  return f(*arrays, *other_args, **kwargs)
+/usr/local/lib/python3.13/dist-packages/scipy/_lib/_util.py:1233: LinAlgWarning: Ill-conditioned matrix (rcond=6.94921e-10): result may not be accurate.
+  return f(*arrays, *other_args, **kwargs)
+/usr/local/lib/python3.13/dist-packages/scipy/_lib/_util.py:1233: LinAlgWarning: Ill-conditioned matrix (rcond=1.49721e-09): result may not be accurate.
+  return f(*arrays, *other_args, **kwargs)
+/usr/local/lib/python3.13/dist-packages/scipy/_lib/_util.py:1233: LinAlgWarning: Ill-conditioned matrix (rcond=3.22335e-09): result may not be accurate.
+  return f(*arrays, *other_args, **kwargs)
+/usr/local/lib/python3.13/dist-packages/scipy/_lib/_util.py:1233: LinAlgWarning: Ill-conditioned matrix (rcond=6.94533e-09): result may not be accurate.
+  return f(*arrays, *other_args, **kwargs)
+/usr/local/lib/python3.13/dist-packages/scipy/_lib/_util.py:1233: LinAlgWarning: Ill-conditioned matrix (rcond=1.49634e-08): result may not be accurate.
+  return f(*arrays, *other_args, **kwargs)
+/usr/local/lib/python3.13/dist-packages/scipy/_lib/_util.py:1233: LinAlgWarning: Ill-conditioned matrix (rcond=3.22417e-08): result may not be accurate.
+  return f(*arrays, *other_args, **kwargs)
+[21:55:11] command 0 ended with code 0 after 291 s
+[21:55:11] $ python scripts/experiments/probe_maps.py --features /kaggle/temp/feat/v2r --scan /kaggle/temp/prev/dd3d-analyze-scan-v2r/out/v2r/scan/scan.csv --runs sana,sana_random_init,sd15,sdxl --splits /kaggle/temp/data/v2r/splits --images /kaggle/temp/data/v2r/images --labels /kaggle/temp/data/v2r/labels.csv --title v2r --out /kaggle/working/out/v2r/maps
+[21:57:48] {'source': 'pixels 8x8', 'test_az_mae': 21.51959094981913, 'test_cubes_az_mae': 20.147633869460282, 'share_object': 0.19593814006960078, 'share_shadow': 0.05316209802596251, 'share_rest': 0.7508997619044367, 'area_object': 0.1445703125, 'area_shadow': 0.03654947916666667, 'area_rest': 0.8188802083333333}
+{'source': 'sana/block_10/t_100', 'test_az_mae': 6.33444448075189, 'test_cubes_az_mae': 7.958947865519488, 'share_object': 0.20034507891153472, 'share_shadow': 0.05351858466678095, 'share_rest': 0.7461363364216843, 'area_object': 0.1445703125, 'area_shadow': 0.03654947916666667, 'area_rest': 0.8188802083333333}
+{'source': 'sana_random_init/block_18/t_100', 'test_az_mae': 16.565069103211822, 'test_cubes_az_mae': 19.145622002608956, 'share_object': 0.2291830511689628, 'share_shadow': 0.06501620621897906, 'share_rest': 0.7058007426120583, 'area_object': 0.1445703125, 'area_shadow': 0.03654947916666667, 'area_rest': 0.8188802083333333}
+{'source': 'sd15/block_06/t_100', 'test_az_mae': 8.065276693289269, 'test_cubes_az_mae': 9.013096126196931, 'share_object': 0.2775808230252718, 'share_shadow': 0.07376764976409604, 'share_rest': 0.6486515272106322, 'area_object': 0.1445703125, 'area_shadow': 0.03654947916666667, 'area_rest': 0.8188802083333333}
+{'source': 'sdxl/block_03/t_100', 'test_az_mae': 7.148507935239386, 'test_cubes_az_mae': 6.982135118118655, 'share_object': 0.22511740055918245, 'share_shadow': 0.0967713610995427, 'share_rest': 0.678111238341275, 'area_object': 0.1445703125, 'area_shadow': 0.03654947916666667, 'area_rest': 0.8188802083333333}
+/usr/local/lib/python3.13/dist-packages/scipy/_lib/_util.py:1233: LinAlgWarning: Ill-conditioned matrix (rcond=3.22514e-11): result may not be accurate.
+  return f(*arrays, *other_args, **kwargs)
+/usr/local/lib/python3.13/dist-packages/scipy/_lib/_util.py:1233: LinAlgWarning: Ill-conditioned matrix (rcond=6.9486e-11): result may not be accurate.
+  return f(*arrays, *other_args, **kwargs)
+/usr/local/lib/python3.13/dist-packages/scipy/_lib/_util.py:1233: LinAlgWarning: Ill-conditioned matrix (rcond=1.49707e-10): result may not be accurate.
+  return f(*arrays, *other_args, **kwargs)
+/usr/local/lib/python3.13/dist-packages/scipy/_lib/_util.py:1233: LinAlgWarning: Ill-conditioned matrix (rcond=3.22544e-10): result may not be accurate.
+  return f(*arrays, *other_args, **kwargs)
+/usr/local/lib/python3.13/dist-packages/scipy/_lib/_util.py:1233: LinAlgWarning: Ill-conditioned matrix (rcond=6.94921e-10): result may not be accurate.
+  return f(*arrays, *other_args, **kwargs)
+/usr/local/lib/python3.13/dist-packages/scipy/_lib/_util.py:1233: LinAlgWarning: Ill-conditioned matrix (rcond=1.49721e-09): result may not be accurate.
+  return f(*arrays, *other_args, **kwargs)
+/usr/local/lib/python3.13/dist-packages/scipy/_lib/_util.py:1233: LinAlgWarning: Ill-conditioned matrix (rcond=3.22335e-09): result may not be accurate.
+  return f(*arrays, *other_args, **kwargs)
+/usr/local/lib/python3.13/dist-packages/scipy/_lib/_util.py:1233: LinAlgWarning: Ill-conditioned matrix (rcond=6.94533e-09): result may not be accurate.
+  return f(*arrays, *other_args, **kwargs)
+/usr/local/lib/python3.13/dist-packages/scipy/_lib/_util.py:1233: LinAlgWarning: Ill-conditioned matrix (rcond=1.49634e-08): result may not be accurate.
+  return f(*arrays, *other_args, **kwargs)
+/usr/local/lib/python3.13/dist-packages/scipy/_lib/_util.py:1233: LinAlgWarning: Ill-conditioned matrix (rcond=3.22417e-08): result may not be accurate.
+  return f(*arrays, *other_args, **kwargs)
+[21:57:48] command 1 ended with code 0 after 157 s
+[21:57:48] all commands ended with code 0
+[21:57:48] $ cd /kaggle/working/out && find . -type f | sort | head -300 && du -sh .
+[21:57:48] ./v2r/best/compare.csv
+./v2r/best/compare.md
+./v2r/best/config.json
+./v2r/best/control.csv
+./v2r/best/pixels_best.txt
+./v2r/best/predictions.csv
+./v2r/best/selected.csv
+./v2r/maps/config.json
+./v2r/maps/maps.npz
+./v2r/maps/maps.png
+./v2r/maps/regions.csv
+./v2r/maps/regions.md
+2.4M	.

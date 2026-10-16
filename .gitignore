@@ -32,3 +32,6 @@ reports/experiments/**/.failed_*
 reports/experiments/transfer/.pos_pixels
 reports/experiments/transfer/.cue_pixels
 reports/experiments/causal/.v2b10_queued
+
+# The built viewer (2.9 MB); make it with tools/viewer/build_viewer.py from reports/experiments/viewer.
+docs/viewer/

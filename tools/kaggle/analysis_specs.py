@@ -135,6 +135,23 @@ def causal_spec(blocks: list[int]) -> dict:
     return {"name": "causal-v2", **spec, "commands": cmds}
 
 
+def causal_sigma_spec(sigmas: list[int]) -> dict:
+    """The causal test of block 4 with more noise (sigma0 in hundredths)."""
+    spec = sources("v2")
+    spec["features"] = {}
+    spec["kernels"] = [RENDERS, f"{O}/dd3d-intervene-causal-sigma", f"{O}/dd3d-analyze-plans-v2"]
+    cmds = [unpack("dd3d-intervene-causal-sigma", "/kaggle/temp/causal")]
+    plan = "{PREV}/dd3d-analyze-plans-v2/out/plans/b04t400/plan.npz"
+    for sg in sigmas:
+        cmds.append(
+            "python scripts/experiments/analyze_interventions.py"
+            f" --outputs /kaggle/temp/causal/causal_b04_s{sg:03d} --plan {plan}"
+            " --splits {DATA}/v2/splits --images {DATA}/v2/images"
+            f" --out {{OUT}}/causal_sigma/b04_s{sg:03d}"
+        )
+    return {"name": "causal-sigma-v2", **spec, "commands": cmds}
+
+
 def patch_spec() -> dict:
     spec = sources("v2")
     spec["features"] = {}
@@ -208,6 +225,7 @@ def main() -> None:
     specs["plans_v2"] = plans_spec(["sana/block_10/t_400", "sana/block_04/t_400", "sana/block_18/t_400"])
     specs["causal_v2"] = causal_spec([10, 4, 18])
     specs["patch_v2"] = patch_spec()
+    specs["causal_sigma_v2"] = causal_sigma_spec([85, 95])
     specs["sweep_plans"] = sweep_plans_spec()
     specs["viewer_data"] = viewer_spec()
     for name, spec in specs.items():

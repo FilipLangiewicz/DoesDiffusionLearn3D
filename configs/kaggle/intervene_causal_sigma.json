@@ -1,0 +1,32 @@
+{
+ "plans": [
+  {
+   "name": "causal_b04_s085",
+   "plan": "b04t400/plan.npz",
+   "config": {
+    "block": 4,
+    "sigma0": 0.85,
+    "steps": 20
+   }
+  },
+  {
+   "name": "causal_b04_s095",
+   "plan": "b04t400/plan.npz",
+   "config": {
+    "block": 4,
+    "sigma0": 0.95,
+    "steps": 20
+   }
+  }
+ ],
+ "kernels": [
+  "jankombajn/dd3d-render-v2-0",
+  "jankombajn/dd3d-render-v2-1",
+  "jankombajn/dd3d-render-v2-2",
+  "jankombajn/dd3d-render-v2-3",
+  "jankombajn/dd3d-render-v2-4",
+  "jankombajn/dd3d-render-v2-5",
+  "jankombajn/dd3d-analyze-plans-v2"
+ ],
+ "datasets": []
+}

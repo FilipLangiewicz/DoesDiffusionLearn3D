@@ -1,14 +1,14 @@
-# Stan prac: czy SANA „wie”, skąd pada światło? (14.10.2026, 5:30)
+# Stan prac: czy SANA „wie”, skąd pada światło? (16.10.2026)
 
-Krótki przegląd dla prowadzącego: co sprawdzamy, co już wiemy, co się teraz liczy i co rozstrzygnie wynik. Pełne szczegóły są w `docs/PODSUMOWANIE.md`.
+Krótki przegląd dla prowadzącego: pytanie, co już wiemy, co pokazały eksperymenty i co dalej. Pełne szczegóły są w `docs/PODSUMOWANIE.md`, a artykuł w `docs/article/main.tex` (PDF: `docs/article/build/main.pdf`).
 
 ---
 
-## 1. Pytanie i metoda w jednym zdaniu
+## 1. Pytanie i metoda
 
-Czy aktywacje modelu tekst→obraz **SANA-1.6B** zawierają kierunek światła sceny 3D w formie, której **nie ma już wprost w pikselach**, i czy model tej informacji **używa**?
+Czy aktywacje modelu tekst→obraz **SANA-1.6B** zawierają kierunek światła sceny 3D w formie, której **nie ma wprost w pikselach**? Czy model tej informacji **używa** przy generowaniu obrazu?
 
-Narzędziem jest liniowa sonda (PCA, potem regresja Ridge) na uśrednionych aktywacjach bloku $b$ transformera, przy kroku szumu $t$:
+Narzędziem jest liniowa sonda (PCA, potem regresja Ridge) na uśrednionych aktywacjach bloku $b$ transformera przy kroku szumu $t$:
 
 $$
 \hat{\mathbf y} = W\,\mathrm{PCA}_{256}\big(h_b(x_t)\big) + c
@@ -18,174 +18,145 @@ $$
 \mathbf y = [\sin\varphi,\ \cos\varphi,\ \theta], \qquad \hat\varphi = \operatorname{atan2}(\hat y_1, \hat y_2)
 $$
 
-gdzie $\varphi$ to azymut, a $\theta$ elewacja światła. Błąd azymutu liczymy kołowo: $e = \min(|\hat\varphi-\varphi|,\ 360^\circ - |\hat\varphi-\varphi|)$.
-
-Model dostaje obraz zaszumiony regułą przepływu (*flow matching*), na której był trenowany:
-
-$$
-x_t = (1-\sigma)\,x_0 + \sigma\,\varepsilon,\qquad \sigma = t/1000,\qquad \varepsilon\sim\mathcal N(0, I)
-$$
+gdzie $\varphi$ to azymut, a $\theta$ elewacja światła. Błąd azymutu liczymy kołowo: $e = \min(|\hat\varphi-\varphi|,\ 360^\circ - |\hat\varphi-\varphi|)$. Model dostaje obraz zaszumiony regułą przepływu, na której był trenowany: $x_t = (1-\sigma)\,x_0 + \sigma\,\varepsilon$, $\sigma = t/1000$.
 
 ```mermaid
 flowchart LR
-    A[Render Blendera<br/>512×512] --> B[Enkoder DC-AE<br/>latent 32×32×32]
+    A["Render Blendera<br/>512×512"] --> B["Enkoder DC-AE<br/>latent 32×32×32"]
     B --> C["Szum: x_t = (1-σ)x0 + σε"]
-    C --> D[Transformer SANA<br/>20 bloków]
-    D --> E[Aktywacje bloku b<br/>1024 tokeny × 2240]
-    E --> F[Uśrednienie do siatki<br/>4×4 lub 8×8]
-    F --> G[PCA 256 + Ridge<br/>α wybrane na walidacji]
-    G --> H[Azymut, elewacja<br/>błąd MAE + 95% CI]
+    C --> D["Transformer SANA<br/>20 bloków"]
+    D --> E["Aktywacje bloku b<br/>1024 tokeny × 2240"]
+    E --> F["Średnie na siatce<br/>1×1, 2×2, 4×4, 8×8"]
+    F --> G["PCA 256 + Ridge<br/>wybór na walidacji"]
+    G --> H["Azymut, elewacja<br/>MAE + 95% CI"]
 ```
+
+Każdy wynik ma te same kontrole: piksele (najlepsza z siatek 8, 16, 32, 64), latent DC-AE, SANA z losowymi wagami, zadanie kontrolne z przetasowanymi etykietami oraz dwa inne modele (SD 1.5, SDXL). Blok, krok $t$ i siatkę wybiera wyłącznie zbiór walidacyjny.
 
 ---
 
-## 2. Co już wiemy
+## 2. Co ustalił audyt starego projektu (ZZSN)
 
 | Ustalenie | Liczby |
 |---|---|
-| Wynik z ZZSN (SANA, blok 10, t = 200) **nie bije pikseli** | sześciany: SANA 14,0°, ta sama sonda na pikselach 14,1° |
-| W starym kodzie **szum był błędny** (pułapka w bibliotece diffusers, zgłoszona jako issue #15021) | dla t = 200 model dostawał $-24{,}5\,x_0 + 25{,}5\,\varepsilon$ zamiast $0{,}8\,x_0 + 0{,}2\,\varepsilon$ |
-| Etykieta to **pozycja lampy wokół środka sceny**, a nie światło przy obiekcie | różnica średnio 35° w azymucie |
-| Sondę niosła **plama światła na podłodze**, nie obiekt | sama podłoga 9,4°, sam obiekt 44,3° (sześciany) |
-| Nowy pipeline **odtwarza stary** we wszystkim poza szumem | norma tokenu ze starym szumem: 11 147 (stare dane: ok. 11 100), z poprawnym: 718 |
+| Stary wynik **nie bił pikseli** | sześciany: SANA 14,0°, ta sama sonda na pikselach 14,1° |
+| W starym kodzie **szum był błędny** (pułapka w diffusers, zgłoszona jako issue #15021) | dla t = 200 model dostawał $-24{,}5\,x_0 + 25{,}5\,\varepsilon$ zamiast $0{,}8\,x_0 + 0{,}2\,\varepsilon$ |
+| Etykieta to **pozycja lampy**, a nie światło przy obiekcie | różnica średnio 35° w azymucie |
+| Sondę niosła **plama światła na podłodze** | sama podłoga 9,4°, sam obiekt 44,3° (sześciany) |
 
-Gdzie sonda pikselowa czyta kierunek (dokładny rozkład sondy liniowej na komórki obrazu; jaśniej = większy udział):
-
-![Mapy sondy pikselowej: v1 i v2](figures/probe_maps_pixels.png)
-
-Na starych danych (v1) waga leży na całej podłodze, gdzie wędruje plama od lampy.
+**Nowe (15.10):** na tych samych danych v1 poprawiony pipeline daje dla SANA **4,8°** na sześcianach, a najlepsze piksele 12,8°. Ze starym szumem wychodzi 14,5°, czyli stary wynik się odtwarza. **To błędny szum ukrył informację, którą model ma.**
 
 ---
 
-## 3. Dlaczego powstały nowe dane
+## 3. Dane
 
 ```mermaid
 flowchart TD
-    V1["<b>v1 (ZZSN)</b><br/>lampa krąży wokół środka, plama na podłodze"] -->|piksele = SANA| Q1{Czy to wiedza 3D?}
-    Q1 -->|nie: skrót przez podłogę| V2["<b>v2</b><br/>lampa SUN (sam kierunek), płaska podłoga,<br/>bez plamy, obiekt w środku"]
-    V2 -->|piksele: 2,5°| Q2{Czy to wystarczy?}
-    Q2 -->|nie: cień zawsze w tym samym miejscu kadru| V2R["<b>v2r</b><br/>to samo światło, obiekt w losowym miejscu"]
-    V2R --> T["Test rozstrzygający:<br/>czy SANA bije piksele, gdy położenie cienia<br/>zależy od położenia obiektu?"]
-    V2R --> V["Warianty v2rns / v2rso:<br/>ta sama scena bez cienia / sam cień"]
+    V1["<b>v1 (ZZSN)</b><br/>lampa wokół środka, plama na podłodze"] -->|"skrót przez podłogę"| V2["<b>v2</b><br/>jedno światło kierunkowe, płaska podłoga,<br/>obiekt w środku"]
+    V2 -->|"piksele wystarczą (2,5°)"| V2R["<b>v2r</b><br/>to samo światło, obiekt w losowym miejscu"]
+    V2R --> NS["<b>v2rns</b><br/>bez cienia rzucanego"]
+    V2R --> SO["<b>v2rso</b><br/>sam cień, obiekt niewidoczny"]
+    V2 --> ROT["<b>v2rot</b><br/>ta sama scena, światło +90°<br/>(pary do łatania)"]
 ```
 
-| Zbiór | Co zmienia | Liczba obrazów | Stan |
-|---|---|---:|---|
-| v2 | jedno światło kierunkowe, płaska podłoga, obiekt w środku | 3000 | gotowy |
-| v2pos | jak v2, obiekt w losowym miejscu (tylko test) | 300 | gotowy |
-| v2ns | jak v2, obiekt nie rzuca cienia | 3000 | 4 z 6 części |
-| **v2r** | jak v2 (to samo światło, obraz w obraz), obiekt w losowym miejscu | 3000 | renderuje się |
-| v2rns, v2rso | jak v2r: bez cienia / sam cień | 2 × 3000 | w kolejce |
+Wszystkie zbiory są gotowe (po 3000 obrazów, v2pos 300, v2rot 48 par). Dane leżą na Kaggle, a w repo są etykiety, splity i po 3 przykłady każdej wersji. Plansza poniżej pokazuje te same sceny w każdej wersji:
 
-![12 obrazów v2](figures/v2_grid.png)
-
-Ta sama scena i to samo światło: v2 (góra, obiekt w środku) i v2r (dół, obiekt w losowym miejscu):
-
-![Pary v2 i v2r](figures/v2_v2r_pairs.png)
-
-Pozycja w v2r jest losowana tylko tam, gdzie największy obiekt mieści się cały w kadrze. Ten obszar zależy wyłącznie od kamery, więc pozycja nie koreluje ze światłem ($|r| < 0{,}01$).
+![Te same sceny w każdej wersji danych](../data/examples/overview.jpg)
 
 ---
 
-## 4. Pierwsze wyniki na nowych danych (tylko piksele)
+## 4. Wyniki sond: kierunek światła jest w cechach, a nie w pikselach
 
-| Sonda na pikselach 64×64 | Kule i walce | Sześciany |
-|---|---:|---:|
-| v2: uczona i testowana na v2 | **2,5°** | 13,7° |
-| v2: test na obiektach w losowych miejscach (v2pos) | **69,0°** (losowo: 90°) | |
-| uczona na v2, test na **tych samych scenach bez cienia** | **77,4°** | |
-| uczona i testowana na v2ns (samo cieniowanie obiektu) | 4,2° | |
-| **v2r: uczona i testowana na v2r** (losowa pozycja) | **25,1°** | **25,8°** |
-| v2r: sam obiekt, wycięty i wyśrodkowany | 4,4° | 22,2° |
-| uczona na v2 (środek), test na v2r (3000 obrazów) | 71,2° | 70,4° |
+Błąd azymutu (°) na teście (kule i walce) i na sześcianach, których sonda nie widziała. Konfiguracja wybrana na walidacji, w nawiasie 95% CI na sześcianach.
 
-Ta sama scena z cieniem (góra) i bez cienia (dół):
+| Zbiór | Piksele (najlepsza siatka) | Latent DC-AE | SANA, losowe wagi | **SANA** | SD 1.5 | SDXL |
+|---|---:|---:|---:|---:|---:|---:|
+| v1 (stare dane) | 9,6 / 12,8 | 7,3 / 8,9 | 11,5 / 11,9 | **4,1 / 4,8** [4,6; 5,1] | 5,1 / 6,9 | 5,4 / 6,0 |
+| v2 (obiekt w środku) | 2,5 / 13,7 | 2,2 / 9,2 | — | **2,2 / 7,3** [7,0; 7,7] | 3,3 / 8,9 | — |
+| **v2r (losowa pozycja)** | 21,5 / 20,1 | 18,8 / 19,0 | 11,9 / 15,9 | **5,4 / 7,6** [7,3; 8,0] | 7,5 / 11,1 | 5,9 / 7,3 |
+| v2rns (bez cienia) | 24,6 / 23,3 | 29,0 / 30,7 | — | **6,9 / 9,9** [9,4; 10,4] | — | — |
+| v2rso (sam cień) | 24,6 / 16,9 | 15,7 / 17,8 | — | **5,9 / 7,9** [7,6; 8,3] | — | — |
 
-![Pary scen: z cieniem i bez](figures/v2_pairs_shadow.png)
+![Błąd SANA na każdym bloku i kroku szumu, z kontrolami](article/figures/scan.png)
 
 Wnioski:
-1. Przy obiekcie w środku **piksele wystarczają** do kierunku (2,5°). Na takim zbiorze nie da się pokazać przewagi modelu.
-2. Sonda pikselowa **opiera się na cieniu**: po jego usunięciu błąd rośnie z 2,5° do 77°.
-3. Piksele **nie przenoszą** kierunku na nowe pozycje (ok. 70°).
-4. Przy losowej pozycji (v2r) liniowa sonda na całym obrazie spada z 2,5° do **25°**. To jest próg, który SANA musi wyraźnie pobić. Wycięcie obiektu (ręczne wyrównanie pozycji) przywraca 4,4°: informacja jest w cieniowaniu, tylko liniowa sonda nie znajduje jej w dowolnym miejscu kadru.
-5. **Bez cienia podłoga dalej zdradza kierunek** (v2ns, obiekt usunięty: 4,6° / 10,2° na sześcianach). To światło odbite od fioletowego obiektu, czyli słaba poświata po oświetlonej stronie. Fizycznie poprawne, ale to kolejna wskazówka 2D. Samo cieniowanie obiektu nie przenosi się na sześciany (70°).
-6. **Elewację zdradza jasność podłogi** (1,7° z samej podłogi, ok. 2° także na v2r), więc główną miarą jest azymut.
+1. **Na v2r SANA jest lepsza od najlepszych pikseli o 12,5°** na sześcianach (CI [11,1; 13,8]). SDXL i SD 1.5 dają podobny efekt, więc to cecha modeli dyfuzyjnych, a nie jednego modelu.
+2. **Część efektu daje sama architektura:** SANA z losowymi wagami też bije piksele (15,9°). Trening zmniejsza ten błąd mniej więcej o połowę.
+3. **Najlepsze są wczesne i środkowe bloki (4–10) przy najmniejszym szumie** (t = 100).
+4. **Kod nie zależy od pozycji.** Średnia wszystkich tokenów (siatka 1×1) daje 5,9° na v2r. Sonda uczona tylko na obiektach w środku (v2) daje na obiektach w losowych miejscach 9,0° / 17,6°, a piksele 71°.
+5. **Model czyta obie wskazówki osobno:** samo cieniowanie obiektu (v2rns) i sam cień (v2rso). Sonda z pełnych scen przenosi się na sceny z jedną wskazówką częściowo (ok. 30–33°, piksele ok. 73–75°).
+6. Zadanie kontrolne (przetasowane etykiety) daje 83–93°, więc sondy nie dopasowują szumu.
 
 ---
 
-## 5. Kontrole: co każda wyklucza
-
-| Kontrola | Co wyklucza, jeśli SANA jest wyraźnie lepsza |
-|---|---|
-| ta sama sonda na **pikselach** | informacja jest w obrazie w prostej, liniowej formie |
-| ta sama sonda na **latencie DC-AE** | informację daje już enkoder obrazu, a nie transformer |
-| SANA z **losowymi wagami** | wynik daje sama architektura, a nie uczenie |
-| SANA ze **starym szumem** | wynik ZZSN był artefaktem złego szumu |
-| **SD 1.5 i SDXL** | wynik jest cechą jednego modelu |
-| wybór bloku i $t$ **tylko na walidacji**, 95% CI z bootstrapu | dopasowanie do zbioru testowego |
-
----
-
-## 6. Test przyczynowy: czy model *używa* kierunku
-
-Sonda pokazuje tylko, że informację da się odczytać. Żeby sprawdzić, czy model jej używa, zmieniamy aktywacje podczas generowania obrazu i patrzymy, czy przesuwa się cień.
-
-1. Render v2 kodujemy, zaszumiamy do $\sigma_0 = 0{,}7$ i odszumiamy w 20 krokach Eulera (SDEdit): $x_{\sigma'} = x_\sigma + (\sigma' - \sigma)\,v_\theta(x_\sigma, \sigma)$.
-2. W każdym kroku hook w bloku $b$ zmienia tokeny na jeden z trzech sposobów:
-   - **przesunięcie wzdłuż sondy** do azymutu $\varphi + 90^\circ$, najkrótszym wektorem: $\delta = W^\top (W W^\top)^{-1} \Delta\mathbf y$, przeskalowanym przez $s \in \{1, 4, 16\}$;
-   - **losowe przesunięcie** o tej samej normie (kontrola);
-   - **wymazanie LEACE**: $r(h) = h - A\,(h - \mu)$; po nim żadna funkcja liniowa nie koreluje z $(\sin\varphi, \cos\varphi)$.
-3. Azymut obrazu wyjściowego mierzy sonda pikselowa.
+## 5. Test przyczynowy: czy model **używa** kierunku
 
 ```mermaid
 flowchart LR
-    R[Render v2] --> N["Szum do σ0 = 0,7"]
+    R["Render v2"] --> N["Szum do σ0 = 0,7"]
     N --> S["20 kroków Eulera<br/>SANA"]
-    H["Hook w bloku b:<br/>+δ (sonda) / +losowy / LEACE"] -.-> S
-    S --> O[Obraz wyjściowy]
-    O --> P["Sonda pikselowa:<br/>o ile obrócił się cień?"]
+    H["Hook w bloku b:<br/>+δ wzorzec / +δ sonda /<br/>+losowy / LEACE"] -.-> S
+    S --> O["Obraz wyjściowy"]
+    O --> P1["Sonda pikselowa<br/>(głównie cieniowanie obiektu)"]
+    O --> P2["Geometria plamy cienia<br/>(cień rzucany)"]
 ```
 
-Jeśli kierunek jest przyczynowy, przesunięcie wzdłuż sondy obraca cień w stronę celu i bardziej niż przesunięcie losowe. Jeśli model go używa, wymazanie psuje zgodność cienia z etykietą.
+Obrót światła na wyjściu względem wersji bez zmiany, cel +90°, 60 obrazów, mediana lub średnia z obrazów:
+
+| Warunek (blok 4 / 10 / 18) | Sonda pikselowa | Cień rzucany |
+|---|---:|---:|
+| **wzorzec ×1** (zmiana 2% normy tokenu) | **+65° / +60° / +62°** | +7° / +7° / +5° |
+| wzorzec ×3 | +121° / +121° / +120° | +109° / +107° / +92° |
+| losowy wektor tej samej wielkości | ok. 0° | ok. 0° |
+| najkrótsza zmiana odczytu sondy | +41° / +23° / +40° | +4° / +1° / +2° |
+| wymazanie LEACE | 0° | 0° |
+
+![Przykłady: render, wyjście bez zmiany i każdy warunek (blok 4)](../reports/experiments/causal/b04/examples.png)
+
+Wnioski:
+1. **Kierunek „wzorca” jest przyczynowy:** mała zmiana wzdłuż niego zmienia światło na obrazie, a losowa zmiana tej samej wielkości nie robi nic.
+2. **Przy naturalnej dawce zmienia się głównie cieniowanie obiektu, a cień rzucany prawie stoi.** Cień obraca się dopiero przy dawce ×3, z artefaktami na podłodze.
+3. **Wagi sondy są słabym uchwytem**, zgodnie z Haufe i in. (2014).
+4. **Wymazanie w jednym bloku nic nie zmienia.** Zaszumione wejście (σ0 = 0,7) nadal pokazuje cień i cieniowanie, więc model może odczytać kierunek z nich ponownie.
 
 ---
 
-## 7. Co się teraz liczy
+## 6. Łatanie aktywacji: skąd model bierze cień
 
-Wszystko liczy się na Kaggle (klaster Athena wyczerpał przydział GPU). Kolejka sama wysyła joby i pobiera wyniki, a automat na laptopie sam liczy sondy, gdy zestaw jest kompletny.
+Dla 48 par scen (ta sama scena, światło +90°) podmieniamy w jednym bloku tokeny jednego obszaru wartościami ze sceny źródłowej. Mierzymy, jaką część zmiany światła przeniesie to na wyjście:
 
-**Noc 13/14.10:** od 0:20 do 5:05 kolejka stała. Wynik jednej części v1 ma 10,9 GB, a narzędzie Kaggle wczytuje cały plik do pamięci (laptop ma 5,4 GB RAM), więc pobieranie się zawieszało. Naprawione: pobieranie idzie teraz strumieniowo na dysk, z wznawianiem, w osobnym procesie. Od 5:21 każdy job liczy się na **dwóch kartach T4 naraz** (sesja „T4 x2”), czyli na 4 kartach w sumie.
+| Co podmieniamy | Sonda pikselowa | Cień rzucany (mediana) |
+|---|---:|---:|
+| pełny przebieg źródła | 1,01 | 0,91 |
+| wszystkie tokeny, blok 10 | 0,73 | 0,80 |
+| tokeny obiektu (ok. 10% obrazu), każdy blok 0–18 | 0,57–0,63 | **0,08–0,15** |
+| tokeny cienia źródła | 0,10–0,12 | 0,22–0,26 |
+| reszta podłogi | 0,01 | 0 |
 
-```mermaid
-gantt
-    title Obliczenia na Kaggle, 13-14.10 (od 5:30 szacunek)
-    dateFormat YYYY-MM-DD HH:mm
-    axisFormat %H:%M
-    section CPU – rendery
-    v2, v2pos              :done, 2026-10-13 21:07, 2026-10-13 22:54
-    v2ns, v2r              :done, 2026-10-13 22:25, 2026-10-14 05:20
-    v2rns, v2rso           :active, 2026-10-14 00:32, 2026-10-14 07:30
-    section GPU – cechy i testy
-    próby techniczne       :done, 2026-10-13 21:09, 2026-10-13 22:32
-    v1 części 0-1 (1 karta) :done, 2026-10-13 22:36, 2026-10-14 00:20
-    zator pobierania       :crit, done, 2026-10-14 00:20, 2026-10-14 05:05
-    testy na 2 kartach, test przyczynowy :done, 2026-10-14 05:05, 2026-10-14 05:21
-    v2r (2 x 2 karty)      :active, 2026-10-14 05:21, 2026-10-14 07:45
-    v2pos, v1 części 2-5   :2026-10-14 07:45, 2026-10-14 10:00
-    v2, test przyczynowy   :2026-10-14 10:00, 2026-10-14 11:30
-    v2rns, v2rso           :2026-10-14 11:00, 2026-10-14 12:45
-```
+![Część przeniesionej zmiany światła dla bloku i obszaru: obie miary](article/figures/patch.png)
 
-Zużycie GPU: ok. 6 h z tygodniowego limitu 30 h; cały plan mieści się w ok. 20 h.
+**Tokeny obiektu niosą cieniowanie obiektu, ale nie kierunek cienia rzucanego.** Suma pojedynczych obszarów (ok. 0,4) jest dużo mniejsza niż podmiana wszystkich tokenów (0,8). Model składa więc cień z informacji rozłożonej po całym obrazie.
 
 ---
 
-## 8. Co rozstrzygnie wynik
+## 7. Co z tego wynika
 
-| Wynik na v2r (sześciany i nowe pozycje) | Wniosek do artykułu |
+| Pytanie | Odpowiedź |
 |---|---|
-| SANA **wyraźnie lepsza** od pikseli, latentu i losowych wag, a przesunięcie wzdłuż sondy obraca cień | model ma **reprezentację kierunku światła niezależną od pozycji** i jej używa (wynik pozytywny, przyczynowy) |
-| SANA lepsza od kontroli, ale przesunięcie nic nie zmienia | informacja jest w modelu, ale ten kierunek nie steruje cieniem (reprezentacja „uboczna”) |
-| SANA **nie lepsza** od kontroli | brak dowodu na wiedzę 3D; wynik negatywny z pełnymi kontrolami (wartościowy dla TMLR) |
+| Czy stary wynik dowodził wiedzy o świetle? | Nie: piksele były równie dobre (skrót przez podłogę), a błędny szum ukrył informację w modelu. |
+| Czy SANA ma kierunek światła w cechach ponad to, co dają piksele? | **Tak**, wyraźnie, na scenach bez skrótów; podobnie SD 1.5 i SDXL. |
+| Czy ten kod zależy od pozycji obiektu w kadrze? | Nie. |
+| Czy model go używa? | **Tak, do cieniowania obiektu.** Cień rzucany reaguje tylko na duże zmiany i nie pochodzi z jednego obszaru obrazu. |
 
-W każdym z trzech przypadków powstaje artykuł z jasną tezą. Do tego dochodzą lista kontrolna dla badań sondami i poprawka do biblioteki diffusers.
+Do tego dochodzą lista kontrolna dla badań sondami i poprawka do biblioteki diffusers.
+
+---
+
+## 8. Co dalej
+
+- **W toku (16.10):** test przyczynowy przy większym szumie (σ0 = 0,85 i 0,95). Sprawdzi, czy cień rzucany nie obraca się, bo wejście go „trzyma”.
+- **Artykuł:** wszystkie wyniki są już wpisane (`docs/article/main.tex`, format TMLR, 15 stron z dodatkami). Do zrobienia: wynik przy większym szumie, przegląd językowy i decyzja o miejscu zgłoszenia (TMLR jest otwarty cały czas).
+- **Interaktywny podgląd** (obrót kierunku w cechach i przeszczep tokenów, obie miary): `tools/viewer/`, opublikowany jako strona.
+- **Pytania do prowadzącego:** zespół 2 osoby zamiast 3, kontynuacja projektu z ZZSN, zasady oceny.
+
+Obliczenia idą na Kaggle; lista wszystkich jobów i danych jest w `docs/KAGGLE_DATA.md`, a instrukcja w `docs/KAGGLE_RUNBOOK.md`. W tym tygodniu GPU: ok. 25 z 30 h.

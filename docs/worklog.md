@@ -45,6 +45,7 @@ This file is the weekly standup log of the team. Each week has one entry. We wri
 - F15: A shift along the activation pattern (2% of the token norm) turns the pixel probe reading by 60 to 65 deg towards a target of 90 deg. A random shift of the same size does nothing. The crisp cast shadow stays (68% to 80% of it is kept). With 3 times the shift, only 32% to 40% of the old shadow stays, and a diffuse dark region appears towards the target. The images show no new crisp shadow. More noise (sigma0 0.85, 0.95) does not change this.
 - F16: A patch of the object tokens moves the shading (0.59 of the change) and about a third of the crisp cast shadow (33% to 38% of the source shadow appears; the reference is 12%). Only a patch of all tokens moves the shadow fully (84%).
 - F17: The pixel probe on the outputs reads mostly the object. A claim about the shadow needs a measure of the shadow.
+- F18: A shift of the pattern in all 20 blocks together moves every measure strongly (+120 deg at a quarter of the natural size). The images show dark and bright blocks on the grid of the shift, not a new cast shadow. No shift drew a new crisp shadow.
 
 ### Next steps
 

@@ -119,9 +119,12 @@ Wyniki dla celu +90° i 60 obrazów (bloki 4 / 10 / 18):
 
 Dodatkowe przebiegi:
 - **Blok 5 z cechami z t = 100** (najlepiej odczytywalne): dawki ×1 / ×2 / ×3 dają w sondzie +30° / +79° / +105°. Ostry cień zostaje w 0,76 / 0,55 / 0,41.
+- **Wszystkie 20 bloków naraz** (każdy ze swoim wzorcem): już ×0,25 daje +120° w sondzie i zostawia tylko 37% starego cienia. Obraz pokazuje jednak ciemne i jasne prostokąty w siatce przesunięcia, a nie nowy cień rzucany (rysunek niżej). Żadne z naszych przesunięć nie narysowało nowego ostrego cienia.
 - **Większy szum** (σ0 = 0,85 i 0,95): cieniowanie nadal idzie za wzorcem (+63° przy 0,85), a ciemna plama się nie obraca (−9°). Słaba reakcja cienia nie wynika więc tylko z tego, że wejście „trzyma” stary cień.
 
 ![Przykłady: render, wyjście bez zmiany i każdy warunek (blok 5, t = 100)](../reports/experiments/causal_b05/b05t100/examples.png)
+
+![Przesunięcie we wszystkich 20 blokach naraz: cieniowanie się odwraca, a na podłodze pojawiają się prostokąty zamiast nowego cienia](../reports/experiments/causal_multi/all/examples.png)
 
 Wnioski:
 1. **Kierunek „wzorca” jest przyczynowy:** mała zmiana wzdłuż niego zmienia światło na obrazie, a losowa zmiana tej samej wielkości nie robi nic.

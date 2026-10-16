@@ -443,6 +443,22 @@ At $\sigma_0=0.85$ the pattern shift ($\times1$) still turns the pixel probe by 
 At $\sigma_0=0.95$ the effects are small and uncertain.
 So the weak response of the cast shadow is not an effect of the input alone.
 
+\paragraph{All blocks together.}
+Last, we added the pattern of each block to all 20 blocks in the same pass ($t=100$ features, $4\times4$ grid, 48 images).
+Already a quarter of the natural size turns the pixel probe by $+120\degr$ and the dark region by $+107\degr$, and only $37\%$ of the old crisp shadow stays.
+A random vector of the same size in each block has no effect.
+But the images change by 20 grey levels, and they show dark and bright blocks on the $4\times4$ grid of the shift, not a new cast shadow (Figure~\ref{fig:multi}).
+The shading of the object turns, and the old shadow often stays.
+So the linear code of the light changes the brightness of large image regions, and the model renders this change as patches.
+None of our shifts drew a new crisp shadow.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{figures/causal_multi_examples.png}
+\caption{Shift of the pattern in all 20 blocks at the same time ($t=100$ features, $4\times4$ grid). The shading of the object turns, but the floor shows dark and bright blocks on the grid of the shift, not a new cast shadow. A random shift of the same size (last column) has no effect.}
+\label{fig:multi}
+\end{figure}
+
 
 \begin{table}[t]
 \centering
@@ -525,7 +541,7 @@ The model reads the light from the shading of the object and from the cast shado
 A network with the same architecture and random weights also beats the pixels at a low noise level. Part of the effect thus comes from the architecture, and training halves the remaining error.
 The model also uses a direction of its activations. A small shift along the activation pattern of the light changes the light of the output, and a random shift does not.
 This change appears in the shading of the object.
-The cast shadow needs the 3D relation between light, object and floor. A shift along the pattern does not draw it again in the new direction. Small shifts keep it, and large shifts only remove it and darken the floor.
+The cast shadow needs the 3D relation between light, object and floor. A shift along the pattern does not draw it again in the new direction. Small shifts keep it. Large shifts, also in all blocks together, only remove it and add dark patches.
 A patch of the object tokens moves about a third of the shadow, and only a patch of all tokens moves it fully.
 We read this as a code of the light at the object that controls its shading directly and the cast shadow only in part. The rest of the shadow comes from information that is spread over the image.
 The data do not show if the model uses one code for both, or a second code for the shadow that our linear handles do not reach.

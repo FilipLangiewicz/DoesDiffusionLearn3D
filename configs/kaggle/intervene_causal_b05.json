@@ -1,0 +1,24 @@
+{
+ "plans": [
+  {
+   "name": "causal_b05t100",
+   "plan": "b05t100/plan.npz",
+   "config": {
+    "block": 5,
+    "grid": 4,
+    "sigma0": 0.7,
+    "steps": 20
+   }
+  }
+ ],
+ "kernels": [
+  "jankombajn/dd3d-render-v2-0",
+  "jankombajn/dd3d-render-v2-1",
+  "jankombajn/dd3d-render-v2-2",
+  "jankombajn/dd3d-render-v2-3",
+  "jankombajn/dd3d-render-v2-4",
+  "jankombajn/dd3d-render-v2-5",
+  "jankombajn/dd3d-analyze-plans-v2-b05"
+ ],
+ "datasets": []
+}

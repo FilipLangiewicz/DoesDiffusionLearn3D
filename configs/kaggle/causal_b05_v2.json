@@ -1,0 +1,18 @@
+{
+ "name": "causal-b05-v2",
+ "sets": [
+  "v2pos",
+  "v2"
+ ],
+ "features": {},
+ "kernels": [
+  "jankombajn/dd3d-renders",
+  "jankombajn/dd3d-intervene-causal-b05",
+  "jankombajn/dd3d-analyze-plans-v2-b05"
+ ],
+ "datasets": [],
+ "commands": [
+  "mkdir -p /kaggle/temp/causal && for f in {PREV}/dd3d-intervene-causal-b05/*.tar; do tar xf $f -C /kaggle/temp/causal; done",
+  "python scripts/experiments/analyze_interventions.py --outputs /kaggle/temp/causal/causal_b05t100 --plan {PREV}/dd3d-analyze-plans-v2-b05/out/plans/b05t100/plan.npz --splits {DATA}/v2/splits --images {DATA}/v2/images --out {OUT}/causal_b05/b05t100"
+ ]
+}

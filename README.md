@@ -22,8 +22,8 @@ The full table with 95% intervals is in [`reports/experiments/rq1.md`](reports/e
 
 1. **The first result was right for the wrong reasons.** The floor highlight made the pixels as good as the model, and a noise pitfall (`add_noise` before `set_timesteps`) hid the information in the model. With the flow noise, the same probe on the same data gives 4.8° instead of 14.5°.
 2. **The code does not depend on the position.** A probe on the mean of all tokens, fitted on centred objects, gives 9.0° (17.6° on cubes) on objects at random positions. The pixel probe gives 71°.
-3. **The model uses the code to light the object.** A shift along the activation pattern of the light (2% of the token norm) turns the shading by 60° to 65° towards a target of 90°. A random shift of the same size does nothing. The cast shadow turns only with a 3 times larger shift.
-4. **The cast shadow does not come from one region.** A patch of the object tokens from a scene with another light moves the shading but not the shadow.
+3. **The model uses the code to light the object.** A shift along the activation pattern of the light (2% of the token norm) turns the shading by 60° to 65° towards a target of 90°. A random shift of the same size does nothing.
+4. **The shift does not draw a new cast shadow.** With a small shift the crisp shadow stays in place. A large shift removes part of it and darkens the floor towards the target. A patch of the object tokens from a scene with another light moves the shading and about a third of the cast shadow.
 
 The images of each data set version are in [`data/examples/`](data/examples/README.md). An interactive viewer of the interventions is in [`tools/viewer/`](tools/viewer/).
 

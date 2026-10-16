@@ -42,14 +42,13 @@ This file is the weekly standup log of the team. Each week has one entry. We wri
 - F12: On v2r (random position), SANA gives 7.6 deg on cubes. The best pixel grid gives 20.1 deg, the latent 19.0 deg and random weights 15.9 deg. SDXL gives 7.3 deg and SD 1.5 gives 11.1 deg.
 - F13: A probe on the mean of all tokens, fitted on v2, gives 9.0 / 17.6 deg on v2r. The pixel probe gives 71 deg. The code does not depend on the position.
 - F14: SANA reads the light from the shading alone (9.9 deg) and from the shadow alone (7.9 deg).
-- F15: A shift along the activation pattern (2% of the token norm) turns the pixel probe reading by 60 to 65 deg towards a target of 90 deg. A random shift of the same size does nothing. The cast shadow turns only by 5 to 7 deg (median). With 3 times the shift, the shadow turns by 92 to 109 deg, with artefacts.
-- F16: A patch of the object tokens moves the shading (0.59 of the change) but not the cast shadow (0.08 to 0.15). Only a patch of all tokens moves the shadow (0.80).
+- F15: A shift along the activation pattern (2% of the token norm) turns the pixel probe reading by 60 to 65 deg towards a target of 90 deg. A random shift of the same size does nothing. The crisp cast shadow stays (68% to 80% of it is kept). With 3 times the shift, only 32% to 40% of the old shadow stays, and a diffuse dark region appears towards the target. The images show no new crisp shadow. More noise (sigma0 0.85, 0.95) does not change this.
+- F16: A patch of the object tokens moves the shading (0.59 of the change) and about a third of the crisp cast shadow (33% to 38% of the source shadow appears; the reference is 12%). Only a patch of all tokens moves the shadow fully (84%).
 - F17: The pixel probe on the outputs reads mostly the object. A claim about the shadow needs a measure of the shadow.
 
 ### Next steps
 
 - Week 2 (2026-10-19 to 2026-10-25): ask the coordinator about the team size and the old project.
-- Add the result of the causal test with more noise (sigma0 = 0.85 and 0.95) to the article.
 - Review the language of the article and select the venue.
 - Show the viewer and the status report at the next meeting.
 

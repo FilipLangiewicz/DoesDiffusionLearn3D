@@ -98,44 +98,55 @@ flowchart LR
     H["Hook w bloku b:<br/>+δ wzorzec / +δ sonda /<br/>+losowy / LEACE"] -.-> S
     S --> O["Obraz wyjściowy"]
     O --> P1["Sonda pikselowa<br/>(głównie cieniowanie obiektu)"]
-    O --> P2["Geometria plamy cienia<br/>(cień rzucany)"]
+    O --> P2["Kierunek ciemnej plamy<br/>(geometria)"]
+    O --> P3["Ile ostrego cienia<br/>zostaje na miejscu"]
 ```
 
-Obrót światła na wyjściu względem wersji bez zmiany, cel +90°, 60 obrazów, mediana lub średnia z obrazów:
+Wynik mierzą trzy miary:
+- **sonda pikselowa**: czyta kierunek z całego obrazu, w praktyce głównie z cieniowania obiektu;
+- **kierunek ciemnej plamy** na podłodze (geometria, bez uczenia);
+- **ile ostrego cienia zostaje**: jaka część pikseli ostrego cienia z wyjścia bez zmiany jest dalej cieniem. 1 oznacza, że cień stoi; przy cieniu obróconym o 90° wychodzi ok. 0.
 
-| Warunek (blok 4 / 10 / 18) | Sonda pikselowa | Cień rzucany |
-|---|---:|---:|
-| **wzorzec ×1** (zmiana 2% normy tokenu) | **+65° / +60° / +62°** | +7° / +7° / +5° |
-| wzorzec ×3 | +121° / +121° / +120° | +109° / +107° / +92° |
-| losowy wektor tej samej wielkości | ok. 0° | ok. 0° |
-| najkrótsza zmiana odczytu sondy | +41° / +23° / +40° | +4° / +1° / +2° |
-| wymazanie LEACE | 0° | 0° |
+Wyniki dla celu +90° i 60 obrazów (bloki 4 / 10 / 18):
 
-![Przykłady: render, wyjście bez zmiany i każdy warunek (blok 4)](../reports/experiments/causal/b04/examples.png)
+| Warunek | Sonda pikselowa | Kierunek ciemnej plamy | Ostry cień zostaje |
+|---|---:|---:|---:|
+| **wzorzec ×1** (zmiana 2% normy tokenu) | **+65° / +60° / +62°** | +7° / +7° / +5° | 0,68 / 0,73 / 0,80 |
+| wzorzec ×3 | +121° / +121° / +120° | +109° / +107° / +92° | 0,32 / 0,34 / 0,40 |
+| losowy wektor tej samej wielkości | ok. 0° | ok. 0° | 0,82–0,88 (poziom „bez efektu”) |
+| najkrótsza zmiana odczytu sondy | +41° / +23° / +40° | +1° do +4° | 0,74–0,89 |
+| wymazanie LEACE | 0° | 0° | 0,93–0,99 |
+
+Dodatkowe przebiegi:
+- **Blok 5 z cechami z t = 100** (najlepiej odczytywalne): dawki ×1 / ×2 / ×3 dają w sondzie +30° / +79° / +105°. Ostry cień zostaje w 0,76 / 0,55 / 0,41.
+- **Większy szum** (σ0 = 0,85 i 0,95): cieniowanie nadal idzie za wzorcem (+63° przy 0,85), a ciemna plama się nie obraca (−9°). Słaba reakcja cienia nie wynika więc tylko z tego, że wejście „trzyma” stary cień.
+
+![Przykłady: render, wyjście bez zmiany i każdy warunek (blok 5, t = 100)](../reports/experiments/causal_b05/b05t100/examples.png)
 
 Wnioski:
 1. **Kierunek „wzorca” jest przyczynowy:** mała zmiana wzdłuż niego zmienia światło na obrazie, a losowa zmiana tej samej wielkości nie robi nic.
-2. **Przy naturalnej dawce zmienia się głównie cieniowanie obiektu, a cień rzucany prawie stoi.** Cień obraca się dopiero przy dawce ×3, z artefaktami na podłodze.
-3. **Wagi sondy są słabym uchwytem**, zgodnie z Haufe i in. (2014).
-4. **Wymazanie w jednym bloku nic nie zmienia.** Zaszumione wejście (σ0 = 0,7) nadal pokazuje cień i cieniowanie, więc model może odczytać kierunek z nich ponownie.
+2. **Przy naturalnej dawce zmienia się cieniowanie obiektu, a ostry cień rzucany zostaje na miejscu.**
+3. **Duża dawka nie rysuje nowego cienia.** Usuwa część starego i przyciemnia podłogę w stronę celu, co widać na przykładach.
+4. **Wagi sondy są słabym uchwytem**, zgodnie z Haufe i in. (2014).
+5. **Wymazanie w jednym bloku nic nie zmienia.** Zaszumione wejście nadal pokazuje cień i cieniowanie, więc model może odczytać kierunek z nich ponownie.
 
 ---
 
 ## 6. Łatanie aktywacji: skąd model bierze cień
 
-Dla 48 par scen (ta sama scena, światło +90°) podmieniamy w jednym bloku tokeny jednego obszaru wartościami ze sceny źródłowej. Mierzymy, jaką część zmiany światła przeniesie to na wyjście:
+Dla 48 par scen (ta sama scena, światło +90°) podmieniamy w jednym bloku tokeny jednego obszaru wartościami ze sceny źródłowej:
 
-| Co podmieniamy | Sonda pikselowa | Cień rzucany (mediana) |
-|---|---:|---:|
-| pełny przebieg źródła | 1,01 | 0,91 |
-| wszystkie tokeny, blok 10 | 0,73 | 0,80 |
-| tokeny obiektu (ok. 10% obrazu), każdy blok 0–18 | 0,57–0,63 | **0,08–0,15** |
-| tokeny cienia źródła | 0,10–0,12 | 0,22–0,26 |
-| reszta podłogi | 0,01 | 0 |
+| Co podmieniamy | Sonda pikselowa (część obrotu) | Ostry cień celu zostaje | Ostry cień źródła się pojawia |
+|---|---:|---:|---:|
+| pełny przebieg źródła | 1,01 | 0,14 | 1,00 |
+| wszystkie tokeny, blok 10 | 0,73 | 0,16 | 0,84 |
+| tokeny obiektu (ok. 10% obrazu), każdy blok 0–18 | 0,57–0,63 | 0,60–0,67 | **0,33–0,38** |
+| tokeny cienia źródła | 0,10–0,12 | 0,92 | 0,59 (podwójny cień) |
+| reszta podłogi (poziom odniesienia) | 0,01 | 0,96 | 0,12 |
 
-![Część przeniesionej zmiany światła dla bloku i obszaru: obie miary](article/figures/patch.png)
+![Łatanie: część obrotu wg sondy pikselowej i część cienia źródła, która się pojawia](article/figures/patch.png)
 
-**Tokeny obiektu niosą cieniowanie obiektu, ale nie kierunek cienia rzucanego.** Suma pojedynczych obszarów (ok. 0,4) jest dużo mniejsza niż podmiana wszystkich tokenów (0,8). Model składa więc cień z informacji rozłożonej po całym obrazie.
+**Tokeny obiektu niosą cieniowanie obiektu i część cienia rzucanego:** z ich podmiany pojawia się ok. jedna trzecia cienia źródła, a jedna trzecia starego cienia znika. Cały cień przenosi dopiero podmiana wszystkich tokenów. Model składa więc cień częściowo z informacji przy obiekcie, a częściowo z reszty obrazu. Wynik jest taki sam w każdym bloku, bo podmiana tokenu zastępuje cały jego stan.
 
 ---
 
@@ -146,7 +157,7 @@ Dla 48 par scen (ta sama scena, światło +90°) podmieniamy w jednym bloku toke
 | Czy stary wynik dowodził wiedzy o świetle? | Nie: piksele były równie dobre (skrót przez podłogę), a błędny szum ukrył informację w modelu. |
 | Czy SANA ma kierunek światła w cechach ponad to, co dają piksele? | **Tak**, wyraźnie, na scenach bez skrótów; podobnie SD 1.5 i SDXL. |
 | Czy ten kod zależy od pozycji obiektu w kadrze? | Nie. |
-| Czy model go używa? | **Tak, do cieniowania obiektu.** Cień rzucany reaguje tylko na duże zmiany i nie pochodzi z jednego obszaru obrazu. |
+| Czy model go używa? | **Tak, do cieniowania obiektu.** Przesunięcie wzdłuż kodu nie rysuje nowego cienia rzucanego; tokeny przy obiekcie niosą tylko część cienia. |
 
 Do tego dochodzą lista kontrolna dla badań sondami i poprawka do biblioteki diffusers.
 
@@ -154,9 +165,8 @@ Do tego dochodzą lista kontrolna dla badań sondami i poprawka do biblioteki di
 
 ## 8. Co dalej
 
-- **W toku (16.10):** test przyczynowy przy większym szumie (σ0 = 0,85 i 0,95). Sprawdzi, czy cień rzucany nie obraca się, bo wejście go „trzyma”.
-- **Artykuł:** wszystkie wyniki są już wpisane (`docs/article/main.tex`, format TMLR, 15 stron z dodatkami). Do zrobienia: wynik przy większym szumie, przegląd językowy i decyzja o miejscu zgłoszenia (TMLR jest otwarty cały czas).
-- **Interaktywny podgląd** (obrót kierunku w cechach i przeszczep tokenów, obie miary): `tools/viewer/`, opublikowany jako strona.
+- **Artykuł:** wszystkie wyniki są wpisane (`docs/article/main.tex`, format TMLR, 16 stron z dodatkami). Do zrobienia: końcowy przegląd i decyzja o miejscu zgłoszenia (TMLR jest otwarty cały czas).
+- **Interaktywny podgląd** (obrót kierunku w cechach i przeszczep tokenów, trzy miary): `tools/viewer/`, opublikowany jako strona.
 - **Pytania do prowadzącego:** zespół 2 osoby zamiast 3, kontynuacja projektu z ZZSN, zasady oceny.
 
-Obliczenia idą na Kaggle; lista wszystkich jobów i danych jest w `docs/KAGGLE_DATA.md`, a instrukcja w `docs/KAGGLE_RUNBOOK.md`. W tym tygodniu GPU: ok. 25 z 30 h.
+Obliczenia idą na Kaggle; lista wszystkich jobów i danych jest w `docs/KAGGLE_DATA.md`, a instrukcja w `docs/KAGGLE_RUNBOOK.md`. W tym tygodniu GPU: ok. 27 z 30 h.

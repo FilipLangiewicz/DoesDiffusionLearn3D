@@ -15,7 +15,7 @@ Bieżąca praca jest na gałęzi `feat/kaggle-pipeline` (wypchniętej na GitHub)
 3. **Kod kierunku nie zależy od pozycji:** sonda na średniej wszystkich tokenów, uczona na obiektach w środku, daje 9,0° / 17,6° na obiektach w losowych miejscach (piksele: 71°).
 4. **Model czyta osobno cieniowanie i cień:** bez cienia 9,9°, sam cień 7,9° (piksele 23,3° i 16,9°).
 5. **Model używa tego kierunku do cieniowania obiektu:** mała zmiana wzdłuż „wzorca” (2% normy tokenu) obraca odczyt światła o 60–65° w stronę celu +90°, a losowa zmiana tej samej wielkości nic nie robi.
-6. **Cień rzucany reaguje dopiero na dużą zmianę** (×3) i nie pochodzi z jednego obszaru obrazu. Przeszczep tokenów obiektu przenosi cieniowanie, ale nie cień.
+6. **Cienia rzucanego to przesunięcie nie rysuje na nowo.** Przy małej dawce ostry cień zostaje na miejscu, a duża dawka tylko usuwa część starego cienia i przyciemnia podłogę w stronę celu. Przeszczep tokenów obiektu przenosi cieniowanie i ok. jedną trzecią cienia; cały cień przenosi dopiero przeszczep wszystkich tokenów.
 7. Szczegóły i tabele: `docs/STAN_PRAC.md`, `reports/experiments/`, interaktywny podgląd w `tools/viewer/`.
 
 ### Audyt (12–13.10)

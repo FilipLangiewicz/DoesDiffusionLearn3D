@@ -1,0 +1,225 @@
+[13:56:35] params: {"name": "vis-v2r", "ref": "e8f6e2eaad97cd65eba66ba342cc7b52c7f9575f", "sets": ["v2r"], "features": {"v2r": ["dd3d-features-v2r-", "dd3d-extract-vis-v2r-"]}, "split_md5": {"v2r": "60dbed752369c6ed9b577a2138f9b33b"}, "commands": ["mkdir -p {OUT}/v2r/scan && cp {PREV}/dd3d-analyze-scan-v2r/out/v2r/scan/scan.csv {OUT}/v2r/scan/scan.csv", "python scripts/experiments/feature_scan.py --features {FEAT}/v2r --runs dinov2,clip --splits {DATA}/v2r/splits --images {DATA}/v2r/images --out {OUT}/v2r/scan", "python scripts/experiments/plot_scan.py --scan {OUT}/v2r/scan/scan.csv --title v2r --out {OUT}/v2r/scan_summary", "python scripts/experiments/best_probes.py --scan {OUT}/v2r/scan/scan.csv --features {FEAT}/v2r --splits {DATA}/v2r/splits --images {DATA}/v2r/images --out {OUT}/v2r/best"]}
+[13:56:35] $ nproc; free -g | head -2; df -h /kaggle/temp /kaggle/working | tail -2
+[13:56:35] 4
+               total        used        free      shared  buff/cache   available
+Mem:              31           0          26           0           4          30
+overlay         8.0T  7.0T  1.1T  87% /
+/dev/loop2       20G  176K   20G   1% /kaggle/working
+[13:56:35] $ ls /kaggle/input /kaggle/input/* | head -60
+[13:56:35] /kaggle/input:
+datasets
+notebooks
+
+/kaggle/input/datasets:
+jankombajn
+
+/kaggle/input/notebooks:
+jankombajn
+[13:56:35] $ pip install -q tabulate
+[13:56:42] $ git clone -q https://github.com/FilipLangiewicz/DoesDiffusionLearn3D /kaggle/temp/repo && cd /kaggle/temp/repo && git checkout -q e8f6e2eaad97cd65eba66ba342cc7b52c7f9575f && git log -1 --format=%h
+[13:57:10] e8f6e2e
+[13:57:10] $ tar xf '/kaggle/input/notebooks/jankombajn/dd3d-renders/v2r/v2r_00000_00500.tar' -C /kaggle/temp/img_v2r/0
+[13:57:12] $ tar xf '/kaggle/input/notebooks/jankombajn/dd3d-renders/v2r/v2r_00500_01000.tar' -C /kaggle/temp/img_v2r/1
+[13:57:14] $ tar xf '/kaggle/input/notebooks/jankombajn/dd3d-renders/v2r/v2r_01000_01500.tar' -C /kaggle/temp/img_v2r/2
+[13:57:16] $ tar xf '/kaggle/input/notebooks/jankombajn/dd3d-renders/v2r/v2r_01500_02000.tar' -C /kaggle/temp/img_v2r/3
+[13:57:17] $ tar xf '/kaggle/input/notebooks/jankombajn/dd3d-renders/v2r/v2r_02000_02500.tar' -C /kaggle/temp/img_v2r/4
+[13:57:19] $ tar xf '/kaggle/input/notebooks/jankombajn/dd3d-renders/v2r/v2r_02500_03000.tar' -C /kaggle/temp/img_v2r/5
+[13:57:20] v2r: 6 shards, 3000 labels, images {'Sphere': 1000, 'SmoothCylinder': 1000, 'SmoothCube_v2': 1000}
+[13:57:20] $ python scripts/data/make_v2_splits.py --labels /kaggle/temp/data/v2r/labels.csv --pos-labels none --out /kaggle/temp/data/v2r/splits
+[13:57:23] /kaggle/temp/data/v2r/splits/test.csv 200
+/kaggle/temp/data/v2r/splits/test_cubes.csv 1000
+/kaggle/temp/data/v2r/splits/train.csv 1600
+/kaggle/temp/data/v2r/splits/val.csv 200
+[13:57:23] v2r: splits md5 60dbed752369c6ed9b577a2138f9b33b (expected 60dbed752369c6ed9b577a2138f9b33b)
+[13:57:23] features v2r: /kaggle/input/datasets/jankombajn/dd3d-features-v2r-0
+[13:57:23] features v2r: /kaggle/input/datasets/jankombajn/dd3d-features-v2r-1
+[13:57:23] features v2r: /kaggle/input/datasets/jankombajn/dd3d-features-v2r-2
+[13:57:23] features v2r: /kaggle/input/datasets/jankombajn/dd3d-features-v2r-3
+[13:57:23] features v2r: /kaggle/input/datasets/jankombajn/dd3d-features-v2r-4
+[13:57:23] features v2r: /kaggle/input/datasets/jankombajn/dd3d-features-v2r-5
+[13:57:23] features v2r: /kaggle/input/notebooks/jankombajn/dd3d-extract-vis-v2r-0
+[13:57:23] earlier output: /kaggle/input/notebooks/jankombajn/dd3d-analyze-scan-v2r
+[13:57:23] $ mkdir -p /kaggle/working/out/v2r/scan && cp /kaggle/temp/prev/dd3d-analyze-scan-v2r/out/v2r/scan/scan.csv /kaggle/working/out/v2r/scan/scan.csv
+[13:57:23] command 0 ended with code 0 after 0 s
+[13:57:23] $ python scripts/experiments/feature_scan.py --features /kaggle/temp/feat/v2r --runs dinov2,clip --splits /kaggle/temp/data/v2r/splits --images /kaggle/temp/data/v2r/images --out /kaggle/working/out/v2r/scan
+[14:04:30]  cubes az   9.90 el  4.61 (13 s)
+{'run': 'dinov2', 'block': 18, 't': 0, 'grid': 1} cubes az  13.63 el  3.64 (2 s)
+{'run': 'dinov2', 'block': 18, 't': 0, 'grid': 2} cubes az  10.01 el  4.30 (3 s)
+{'run': 'dinov2', 'block': 18, 't': 0, 'grid': 4} cubes az  11.71 el  5.19 (5 s)
+{'run': 'dinov2', 'block': 20, 't': 0, 'grid': 1} cubes az  27.84 el  4.36 (2 s)
+{'run': 'dinov2', 'block': 20, 't': 0, 'grid': 2} cubes az  12.00 el  4.86 (3 s)
+{'run': 'dinov2', 'block': 20, 't': 0, 'grid': 4} cubes az   9.06 el  4.80 (4 s)
+{'run': 'dinov2', 'block': 22, 't': 0, 'grid': 1} cubes az  62.81 el  7.14 (2 s)
+{'run': 'dinov2', 'block': 22, 't': 0, 'grid': 2} cubes az  14.82 el  9.06 (3 s)
+{'run': 'dinov2', 'block': 22, 't': 0, 'grid': 4} cubes az   9.16 el  6.64 (5 s)
+{'run': 'dinov2', 'block': 24, 't': 0, 'grid': 1} cubes az  52.24 el  6.57 (2 s)
+{'run': 'dinov2', 'block': 24, 't': 0, 'grid': 2} cubes az  13.11 el  9.99 (2 s)
+{'run': 'dinov2', 'block': 24, 't': 0, 'grid': 4} cubes az  11.95 el 12.01 (5 s)
+{'run': 'dinov2', 'block': 24, 't': 0, 'grid': 8} cubes az  10.67 el  4.59 (12 s)
+{'run': 'clip', 'block': 0, 't': 0, 'grid': 1} cubes az  36.41 el  3.42 (2 s)
+{'run': 'clip', 'block': 0, 't': 0, 'grid': 2} cubes az  26.15 el  3.29 (3 s)
+{'run': 'clip', 'block': 0, 't': 0, 'grid': 4} cubes az  22.73 el  3.32 (5 s)
+{'run': 'clip', 'block': 2, 't': 0, 'grid': 1} cubes az  14.84 el  0.35 (2 s)
+{'run': 'clip', 'block': 2, 't': 0, 'grid': 2} cubes az  13.27 el  0.37 (3 s)
+{'run': 'clip', 'block': 2, 't': 0, 'grid': 4} cubes az  13.20 el  0.42 (5 s)
+{'run': 'clip', 'block': 4, 't': 0, 'grid': 1} cubes az  15.50 el  0.28 (2 s)
+{'run': 'clip', 'block': 4, 't': 0, 'grid': 2} cubes az  11.88 el  0.34 (3 s)
+{'run': 'clip', 'block': 4, 't': 0, 'grid': 4} cubes az  11.43 el  0.35 (5 s)
+{'run': 'clip', 'block': 6, 't': 0, 'grid': 1} cubes az  13.16 el  0.33 (2 s)
+{'run': 'clip', 'block': 6, 't': 0, 'grid': 2} cubes az  10.19 el  0.42 (3 s)
+{'run': 'clip', 'block': 6, 't': 0, 'grid': 4} cubes az  10.50 el  0.51 (5 s)
+{'run': 'clip', 'block': 8, 't': 0, 'grid': 1} cubes az  11.59 el  0.49 (2 s)
+{'run': 'clip', 'block': 8, 't': 0, 'grid': 2} cubes az   9.21 el  0.59 (3 s)
+{'run': 'clip', 'block': 8, 't': 0, 'grid': 4} cubes az   8.63 el  0.61 (6 s)
+{'run': 'clip', 'block': 8, 't': 0, 'grid': 8} cubes az   9.14 el  0.71 (19 s)
+{'run': 'clip', 'block': 10, 't': 0, 'grid': 1} cubes az  12.69 el  0.74 (2 s)
+{'run': 'clip', 'block': 10, 't': 0, 'grid': 2} cubes az  10.47 el  0.87 (3 s)
+{'run': 'clip', 'block': 10, 't': 0, 'grid': 4} cubes az  10.66 el  1.02 (5 s)
+{'run': 'clip', 'block': 12, 't': 0, 'grid': 1} cubes az  22.68 el  1.45 (2 s)
+{'run': 'clip', 'block': 12, 't': 0, 'grid': 2} cubes az  16.68 el  1.41 (2 s)
+{'run': 'clip', 'block': 12, 't': 0, 'grid': 4} cubes az  19.85 el  1.62 (5 s)
+{'run': 'clip', 'block': 14, 't': 0, 'grid': 1} cubes az  30.74 el  1.38 (2 s)
+{'run': 'clip', 'block': 14, 't': 0, 'grid': 2} cubes az  16.04 el  1.44 (2 s)
+{'run': 'clip', 'block': 14, 't': 0, 'grid': 4} cubes az  18.16 el  1.38 (5 s)
+{'run': 'clip', 'block': 16, 't': 0, 'grid': 1} cubes az  22.62 el  2.80 (2 s)
+{'run': 'clip', 'block': 16, 't': 0, 'grid': 2} cubes az  14.19 el  2.21 (3 s)
+{'run': 'clip', 'block': 16, 't': 0, 'grid': 4} cubes az  17.01 el  1.59 (5 s)
+{'run': 'clip', 'block': 16, 't': 0, 'grid': 8} cubes az  16.51 el  1.72 (12 s)
+{'run': 'clip', 'block': 18, 't': 0, 'grid': 1} cubes az  26.34 el  1.58 (2 s)
+{'run': 'clip', 'block': 18, 't': 0, 'grid': 2} cubes az  19.06 el  1.87 (3 s)
+{'run': 'clip', 'block': 18, 't': 0, 'grid': 4} cubes az  23.25 el  1.75 (5 s)
+{'run': 'clip', 'block': 20, 't': 0, 'grid': 1} cubes az  74.95 el  2.67 (2 s)
+{'run': 'clip', 'block': 20, 't': 0, 'grid': 2} cubes az  23.40 el  2.49 (3 s)
+{'run': 'clip', 'block': 20, 't': 0, 'grid': 4} cubes az  18.93 el  1.89 (4 s)
+{'run': 'clip', 'block': 22, 't': 0, 'grid': 1} cubes az  27.68 el  2.19 (2 s)
+{'run': 'clip', 'block': 22, 't': 0, 'grid': 2} cubes az  16.68 el  2.52 (2 s)
+{'run': 'clip', 'block': 22, 't': 0, 'grid': 4} cubes az  15.01 el  2.41 (4 s)
+{'run': 'clip', 'block': 24, 't': 0, 'grid': 1} cubes az  31.16 el  2.46 (2 s)
+{'run': 'clip', 'block': 24, 't': 0, 'grid': 2} cubes az  16.49 el  2.47 (3 s)
+{'run': 'clip', 'block': 24, 't': 0, 'grid': 4} cubes az  17.70 el  2.57 (4 s)
+{'run': 'clip', 'block': 24, 't': 0, 'grid': 8} cubes az  19.34 el  2.53 (12 s)
+-> /kaggle/working/out/v2r/scan/scan.csv
+/usr/local/lib/python3.13/dist-packages/scipy/_lib/_util.py:1233: LinAlgWarning: Ill-conditioned matrix (rcond=4.98626e-08): result may not be accurate.
+  return f(*arrays, *other_args, **kwargs)
+/usr/local/lib/python3.13/dist-packages/scipy/_lib/_util.py:1233: LinAlgWarning: Ill-conditioned matrix (rcond=4.99366e-08): result may not be accurate.
+  return f(*arrays, *other_args, **kwargs)
+/usr/local/lib/python3.13/dist-packages/scipy/_lib/_util.py:1233: LinAlgWarning: Ill-conditioned matrix (rcond=5.00958e-08): result may not be accurate.
+  return f(*arrays, *other_args, **kwargs)
+/usr/local/lib/python3.13/dist-packages/scipy/_lib/_util.py:1233: LinAlgWarning: Ill-conditioned matrix (rcond=5.04389e-08): result may not be accurate.
+  return f(*arrays, *other_args, **kwargs)
+/usr/local/lib/python3.13/dist-packages/scipy/_lib/_util.py:1233: LinAlgWarning: Ill-conditioned matrix (rcond=5.11781e-08): result may not be accurate.
+  return f(*arrays, *other_args, **kwargs)
+/usr/local/lib/python3.13/dist-packages/scipy/_lib/_util.py:1233: LinAlgWarning: Ill-conditioned matrix (rcond=5.27707e-08): result may not be accurate.
+  return f(*arrays, *other_args, **kwargs)
+/usr/local/lib/python3.13/dist-packages/scipy/_lib/_util.py:1233: LinAlgWarning: Ill-conditioned matrix (rcond=5.62019e-08): result may not be accurate.
+  return f(*arrays, *other_args, **kwargs)
+/usr/local/lib/python3.13/dist-packages/scipy/_lib/_util.py:1233: LinAlgWarning: Ill-conditioned matrix (rcond=4.98626e-08): result may not be accurate.
+  return f(*arrays, *other_args, **kwargs)
+[14:04:30] command 1 ended with code 0 after 426 s
+[14:04:30] $ python scripts/experiments/plot_scan.py --scan /kaggle/working/out/v2r/scan/scan.csv --title v2r --out /kaggle/working/out/v2r/scan_summary
+[14:04:33] run  grid  block    t     val_az            test_az  test_el      test_cubes_az  test_cubes_el
+0               clip     1     10    0   4.624750     4.5 [4.0, 5.0]      0.4  12.7 [12.1, 13.3]            0.7
+1               clip     2     14    0   3.449694     3.9 [3.4, 4.3]      0.7  16.0 [15.4, 16.7]            1.4
+2               clip     4     14    0   3.688303     4.1 [3.6, 4.5]      0.8  18.2 [17.4, 18.9]            1.4
+3               clip     8     16    0   5.004649     5.1 [4.5, 5.6]      1.1  16.5 [15.6, 17.4]            1.7
+4             dinov2     1     16    0   3.795710     3.9 [3.5, 4.4]      0.8  14.6 [14.0, 15.3]            3.2
+5             dinov2     2     18    0   3.329781     3.3 [2.9, 3.6]      0.9   10.0 [9.5, 10.5]            4.3
+6             dinov2     4     20    0   3.353316     3.6 [3.2, 4.0]      1.4     9.1 [8.6, 9.5]            4.8
+7             dinov2     8     16    0   3.925662     4.0 [3.6, 4.4]      1.8    9.9 [9.5, 10.4]            4.6
+8             pixels    64     -1   -1  23.728853  25.1 [21.6, 28.7]      1.8  25.8 [24.4, 27.3]            2.0
+9               sana     1      5  100   5.679715     5.9 [5.1, 6.5]      0.2  13.2 [12.6, 13.9]            0.3
+10              sana     2      5  100   4.594401     5.4 [4.8, 5.9]      0.3     7.6 [7.3, 8.0]            0.4
+11              sana     4      5  100   4.660106     5.4 [4.9, 6.0]      0.3     7.9 [7.5, 8.3]            0.4
+12              sana     8     10  100   5.445910     6.3 [5.6, 7.0]      0.6     8.0 [7.6, 8.4]            0.7
+13  sana_random_init     1      4  100  13.407177  13.8 [11.9, 15.9]      0.2  17.1 [16.1, 18.1]            0.2
+14  sana_random_init     2      4  100  11.817433  11.9 [10.4, 13.5]      0.2  15.9 [14.9, 16.8]            0.2
+15  sana_random_init     4     10  100  14.211281  15.9 [13.9, 18.1]      0.8  18.7 [17.7, 19.8]            0.8
+16  sana_random_init     8     18  100  14.833656  16.6 [14.2, 19.4]      0.9  19.1 [18.0, 20.4]            0.9
+17              sd15     1      2  100   7.225429     8.1 [7.4, 9.0]      0.9  13.7 [13.1, 14.4]            1.7
+18              sd15     2      3  100   6.325186     7.5 [6.8, 8.2]      1.0  11.1 [10.6, 11.6]            1.8
+19              sd15     4      3  100   6.539339     8.0 [7.1, 8.9]      1.1  11.7 [11.2, 12.3]            1.5
+20              sd15     8      6  100   7.282337     8.1 [7.1, 9.1]      1.2     9.0 [8.6, 9.5]            1.6
+21              sdxl     1      3  100   6.500043     6.9 [6.0, 7.7]      0.6     8.7 [8.2, 9.1]            0.9
+22              sdxl     2      3  100   5.983755     6.4 [5.6, 7.1]      0.8     7.2 [6.9, 7.6]            1.0
+23              sdxl     4      3  100   5.774633     5.9 [5.2, 6.6]      0.9     7.3 [6.9, 7.6]            1.1
+24              sdxl     8      3  100   6.318100     7.1 [6.3, 8.0]      1.3     7.0 [6.6, 7.3]            1.5
+25        vae_latent    32     -1   -1  18.646036  18.8 [16.5, 21.4]      1.1  19.0 [18.0, 20.1]            1.1
+[14:04:33] command 2 ended with code 0 after 3 s
+[14:04:33] $ python scripts/experiments/best_probes.py --scan /kaggle/working/out/v2r/scan/scan.csv --features /kaggle/temp/feat/v2r --splits /kaggle/temp/data/v2r/splits --images /kaggle/temp/data/v2r/images --out /kaggle/working/out/v2r/best
+[14:09:19] Warning: Ill-conditioned matrix (rcond=3.22417e-08): result may not be accurate.
+  return f(*arrays, *other_args, **kwargs)
+/usr/local/lib/python3.13/dist-packages/scipy/_lib/_util.py:1233: LinAlgWarning: Ill-conditioned matrix (rcond=3.22514e-11): result may not be accurate.
+  return f(*arrays, *other_args, **kwargs)
+/usr/local/lib/python3.13/dist-packages/scipy/_lib/_util.py:1233: LinAlgWarning: Ill-conditioned matrix (rcond=6.9486e-11): result may not be accurate.
+  return f(*arrays, *other_args, **kwargs)
+/usr/local/lib/python3.13/dist-packages/scipy/_lib/_util.py:1233: LinAlgWarning: Ill-conditioned matrix (rcond=1.49707e-10): result may not be accurate.
+  return f(*arrays, *other_args, **kwargs)
+/usr/local/lib/python3.13/dist-packages/scipy/_lib/_util.py:1233: LinAlgWarning: Ill-conditioned matrix (rcond=3.22544e-10): result may not be accurate.
+  return f(*arrays, *other_args, **kwargs)
+/usr/local/lib/python3.13/dist-packages/scipy/_lib/_util.py:1233: LinAlgWarning: Ill-conditioned matrix (rcond=6.94921e-10): result may not be accurate.
+  return f(*arrays, *other_args, **kwargs)
+/usr/local/lib/python3.13/dist-packages/scipy/_lib/_util.py:1233: LinAlgWarning: Ill-conditioned matrix (rcond=1.49721e-09): result may not be accurate.
+  return f(*arrays, *other_args, **kwargs)
+/usr/local/lib/python3.13/dist-packages/scipy/_lib/_util.py:1233: LinAlgWarning: Ill-conditioned matrix (rcond=3.22335e-09): result may not be accurate.
+  return f(*arrays, *other_args, **kwargs)
+/usr/local/lib/python3.13/dist-packages/scipy/_lib/_util.py:1233: LinAlgWarning: Ill-conditioned matrix (rcond=6.94533e-09): result may not be accurate.
+  return f(*arrays, *other_args, **kwargs)
+/usr/local/lib/python3.13/dist-packages/scipy/_lib/_util.py:1233: LinAlgWarning: Ill-conditioned matrix (rcond=1.49634e-08): result may not be accurate.
+  return f(*arrays, *other_args, **kwargs)
+/usr/local/lib/python3.13/dist-packages/scipy/_lib/_util.py:1233: LinAlgWarning: Ill-conditioned matrix (rcond=3.22417e-08): result may not be accurate.
+  return f(*arrays, *other_args, **kwargs)
+/usr/local/lib/python3.13/dist-packages/scipy/_lib/_util.py:1233: LinAlgWarning: Ill-conditioned matrix (rcond=3.22514e-11): result may not be accurate.
+  return f(*arrays, *other_args, **kwargs)
+/usr/local/lib/python3.13/dist-packages/scipy/_lib/_util.py:1233: LinAlgWarning: Ill-conditioned matrix (rcond=6.9486e-11): result may not be accurate.
+  return f(*arrays, *other_args, **kwargs)
+/usr/local/lib/python3.13/dist-packages/scipy/_lib/_util.py:1233: LinAlgWarning: Ill-conditioned matrix (rcond=1.49707e-10): result may not be accurate.
+  return f(*arrays, *other_args, **kwargs)
+/usr/local/lib/python3.13/dist-packages/scipy/_lib/_util.py:1233: LinAlgWarning: Ill-conditioned matrix (rcond=3.22544e-10): result may not be accurate.
+  return f(*arrays, *other_args, **kwargs)
+/usr/local/lib/python3.13/dist-packages/scipy/_lib/_util.py:1233: LinAlgWarning: Ill-conditioned matrix (rcond=6.94921e-10): result may not be accurate.
+  return f(*arrays, *other_args, **kwargs)
+/usr/local/lib/python3.13/dist-packages/scipy/_lib/_util.py:1233: LinAlgWarning: Ill-conditioned matrix (rcond=1.49721e-09): result may not be accurate.
+  return f(*arrays, *other_args, **kwargs)
+/usr/local/lib/python3.13/dist-packages/scipy/_lib/_util.py:1233: LinAlgWarning: Ill-conditioned matrix (rcond=3.22335e-09): result may not be accurate.
+  return f(*arrays, *other_args, **kwargs)
+/usr/local/lib/python3.13/dist-packages/scipy/_lib/_util.py:1233: LinAlgWarning: Ill-conditioned matrix (rcond=6.94533e-09): result may not be accurate.
+  return f(*arrays, *other_args, **kwargs)
+/usr/local/lib/python3.13/dist-packages/scipy/_lib/_util.py:1233: LinAlgWarning: Ill-conditioned matrix (rcond=1.49634e-08): result may not be accurate.
+  return f(*arrays, *other_args, **kwargs)
+/usr/local/lib/python3.13/dist-packages/scipy/_lib/_util.py:1233: LinAlgWarning: Ill-conditioned matrix (rcond=3.22417e-08): result may not be accurate.
+  return f(*arrays, *other_args, **kwargs)
+/usr/local/lib/python3.13/dist-packages/scipy/_lib/_util.py:1233: LinAlgWarning: Ill-conditioned matrix (rcond=3.22514e-11): result may not be accurate.
+  return f(*arrays, *other_args, **kwargs)
+/usr/local/lib/python3.13/dist-packages/scipy/_lib/_util.py:1233: LinAlgWarning: Ill-conditioned matrix (rcond=6.9486e-11): result may not be accurate.
+  return f(*arrays, *other_args, **kwargs)
+/usr/local/lib/python3.13/dist-packages/scipy/_lib/_util.py:1233: LinAlgWarning: Ill-conditioned matrix (rcond=1.49707e-10): result may not be accurate.
+  return f(*arrays, *other_args, **kwargs)
+/usr/local/lib/python3.13/dist-packages/scipy/_lib/_util.py:1233: LinAlgWarning: Ill-conditioned matrix (rcond=3.22544e-10): result may not be accurate.
+  return f(*arrays, *other_args, **kwargs)
+/usr/local/lib/python3.13/dist-packages/scipy/_lib/_util.py:1233: LinAlgWarning: Ill-conditioned matrix (rcond=6.94921e-10): result may not be accurate.
+  return f(*arrays, *other_args, **kwargs)
+/usr/local/lib/python3.13/dist-packages/scipy/_lib/_util.py:1233: LinAlgWarning: Ill-conditioned matrix (rcond=1.49721e-09): result may not be accurate.
+  return f(*arrays, *other_args, **kwargs)
+/usr/local/lib/python3.13/dist-packages/scipy/_lib/_util.py:1233: LinAlgWarning: Ill-conditioned matrix (rcond=3.22335e-09): result may not be accurate.
+  return f(*arrays, *other_args, **kwargs)
+/usr/local/lib/python3.13/dist-packages/scipy/_lib/_util.py:1233: LinAlgWarning: Ill-conditioned matrix (rcond=6.94533e-09): result may not be accurate.
+  return f(*arrays, *other_args, **kwargs)
+/usr/local/lib/python3.13/dist-packages/scipy/_lib/_util.py:1233: LinAlgWarning: Ill-conditioned matrix (rcond=1.49634e-08): result may not be accurate.
+  return f(*arrays, *other_args, **kwargs)
+/usr/local/lib/python3.13/dist-packages/scipy/_lib/_util.py:1233: LinAlgWarning: Ill-conditioned matrix (rcond=3.22417e-08): result may not be accurate.
+  return f(*arrays, *other_args, **kwargs)
+[14:09:19] command 3 ended with code 0 after 287 s
+[14:09:19] all commands ended with code 0
+[14:09:19] $ cd /kaggle/working/out && find . -type f | sort | head -300 && du -sh .
+[14:09:19] ./v2r/best/compare.csv
+./v2r/best/compare.md
+./v2r/best/config.json
+./v2r/best/control.csv
+./v2r/best/pixels_best.txt
+./v2r/best/predictions.csv
+./v2r/best/selected.csv
+./v2r/scan/scan.csv
+./v2r/scan_summary.csv
+./v2r/scan_summary.md
+./v2r/scan_summary.png
+3.2M	.

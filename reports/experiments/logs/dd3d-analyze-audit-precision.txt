@@ -1,0 +1,116 @@
+[15:08:53] params: {"name": "audit-precision", "ref": "a7bcb4d6218f703d1029ba01d7051fa5866177e6", "sets": ["v2pos", "v2", "v2r", "v2rns", "v2rso"], "features": {}, "split_md5": {"v2": "067ad25419c8b1beb3b2a0f4f9b20167", "v2r": "60dbed752369c6ed9b577a2138f9b33b", "v2rns": "219791904f9e47fbf048a1d012e5a9a6", "v2rso": "681a036cabca7db69f5cb7deceff3b7d"}, "commands": ["python scripts/audit/validation/precision_check.py --data-root {DATA} --out {OUT}/precision"]}
+[15:08:53] $ nproc; free -g | head -2; df -h /kaggle/temp /kaggle/working | tail -2
+[15:08:53] 4
+               total        used        free      shared  buff/cache   available
+Mem:              31           0          26           0           4          30
+overlay         8.0T  7.0T  1.1T  87% /
+/dev/loop2       20G  132K   20G   1% /kaggle/working
+[15:08:53] $ ls /kaggle/input /kaggle/input/* | head -60
+[15:08:53] /kaggle/input:
+notebooks
+
+/kaggle/input/notebooks:
+jankombajn
+[15:08:53] $ pip install -q tabulate
+[15:08:58] $ git clone -q https://github.com/FilipLangiewicz/DoesDiffusionLearn3D /kaggle/temp/repo && cd /kaggle/temp/repo && git checkout -q a7bcb4d6218f703d1029ba01d7051fa5866177e6 && git log -1 --format=%h
+[15:09:29] a7bcb4d
+[15:09:29] $ tar xf '/kaggle/input/notebooks/jankombajn/dd3d-renders/v2pos/v2pos_00000_00300.tar' -C /kaggle/temp/img_v2pos/0
+[15:09:30] v2pos: 1 shards, 300 labels, images {'Sphere': 100, 'SmoothCylinder': 100, 'SmoothCube_v2': 100}
+[15:09:30] $ tar xf '/kaggle/input/notebooks/jankombajn/dd3d-renders/v2/v2_00000_00500.tar' -C /kaggle/temp/img_v2/0
+[15:09:32] $ tar xf '/kaggle/input/notebooks/jankombajn/dd3d-renders/v2/v2_00500_01000.tar' -C /kaggle/temp/img_v2/1
+[15:09:33] $ tar xf '/kaggle/input/notebooks/jankombajn/dd3d-renders/v2/v2_01000_01500.tar' -C /kaggle/temp/img_v2/2
+[15:09:35] $ tar xf '/kaggle/input/notebooks/jankombajn/dd3d-renders/v2/v2_01500_02000.tar' -C /kaggle/temp/img_v2/3
+[15:09:36] $ tar xf '/kaggle/input/notebooks/jankombajn/dd3d-renders/v2/v2_02000_02500.tar' -C /kaggle/temp/img_v2/4
+[15:09:38] $ tar xf '/kaggle/input/notebooks/jankombajn/dd3d-renders/v2/v2_02500_03000.tar' -C /kaggle/temp/img_v2/5
+[15:09:40] v2: 6 shards, 3000 labels, images {'Sphere': 1000, 'SmoothCylinder': 1000, 'SmoothCube_v2': 1000}
+[15:09:40] $ tar xf '/kaggle/input/notebooks/jankombajn/dd3d-renders/v2r/v2r_00000_00500.tar' -C /kaggle/temp/img_v2r/0
+[15:09:41] $ tar xf '/kaggle/input/notebooks/jankombajn/dd3d-renders/v2r/v2r_00500_01000.tar' -C /kaggle/temp/img_v2r/1
+[15:09:43] $ tar xf '/kaggle/input/notebooks/jankombajn/dd3d-renders/v2r/v2r_01000_01500.tar' -C /kaggle/temp/img_v2r/2
+[15:09:46] $ tar xf '/kaggle/input/notebooks/jankombajn/dd3d-renders/v2r/v2r_01500_02000.tar' -C /kaggle/temp/img_v2r/3
+[15:09:47] $ tar xf '/kaggle/input/notebooks/jankombajn/dd3d-renders/v2r/v2r_02000_02500.tar' -C /kaggle/temp/img_v2r/4
+[15:09:52] $ tar xf '/kaggle/input/notebooks/jankombajn/dd3d-renders/v2r/v2r_02500_03000.tar' -C /kaggle/temp/img_v2r/5
+[15:09:54] v2r: 6 shards, 3000 labels, images {'Sphere': 1000, 'SmoothCylinder': 1000, 'SmoothCube_v2': 1000}
+[15:09:54] $ tar xf '/kaggle/input/notebooks/jankombajn/dd3d-renders/v2rns/v2rns_00000_00500.tar' -C /kaggle/temp/img_v2rns/0
+[15:09:55] $ tar xf '/kaggle/input/notebooks/jankombajn/dd3d-renders/v2rns/v2rns_00500_01000.tar' -C /kaggle/temp/img_v2rns/1
+[15:09:57] $ tar xf '/kaggle/input/notebooks/jankombajn/dd3d-renders/v2rns/v2rns_01000_01500.tar' -C /kaggle/temp/img_v2rns/2
+[15:09:58] $ tar xf '/kaggle/input/notebooks/jankombajn/dd3d-renders/v2rns/v2rns_01500_02000.tar' -C /kaggle/temp/img_v2rns/3
+[15:09:59] $ tar xf '/kaggle/input/notebooks/jankombajn/dd3d-renders/v2rns/v2rns_02000_02500.tar' -C /kaggle/temp/img_v2rns/4
+[15:10:01] $ tar xf '/kaggle/input/notebooks/jankombajn/dd3d-renders/v2rns/v2rns_02500_03000.tar' -C /kaggle/temp/img_v2rns/5
+[15:10:03] v2rns: 6 shards, 3000 labels, images {'Sphere': 1000, 'SmoothCylinder': 1000, 'SmoothCube_v2': 1000}
+[15:10:03] $ tar xf '/kaggle/input/notebooks/jankombajn/dd3d-renders/v2rso/v2rso_00000_00500.tar' -C /kaggle/temp/img_v2rso/0
+[15:10:05] $ tar xf '/kaggle/input/notebooks/jankombajn/dd3d-renders/v2rso/v2rso_00500_01000.tar' -C /kaggle/temp/img_v2rso/1
+[15:10:07] $ tar xf '/kaggle/input/notebooks/jankombajn/dd3d-renders/v2rso/v2rso_01000_01500.tar' -C /kaggle/temp/img_v2rso/2
+[15:10:09] $ tar xf '/kaggle/input/notebooks/jankombajn/dd3d-renders/v2rso/v2rso_01500_02000.tar' -C /kaggle/temp/img_v2rso/3
+[15:10:13] $ tar xf '/kaggle/input/notebooks/jankombajn/dd3d-renders/v2rso/v2rso_02000_02500.tar' -C /kaggle/temp/img_v2rso/4
+[15:10:15] $ tar xf '/kaggle/input/notebooks/jankombajn/dd3d-renders/v2rso/v2rso_02500_03000.tar' -C /kaggle/temp/img_v2rso/5
+[15:10:18] v2rso: 6 shards, 3000 labels, images {'Sphere': 1000, 'SmoothCylinder': 1000, 'SmoothCube_v2': 1000}
+[15:10:18] $ python scripts/data/make_v2_splits.py --labels /kaggle/temp/data/v2pos/labels.csv --pos-labels none --out /kaggle/temp/data/v2pos/splits
+[15:10:20] /kaggle/temp/data/v2pos/splits/test.csv 20
+/kaggle/temp/data/v2pos/splits/test_cubes.csv 100
+/kaggle/temp/data/v2pos/splits/train.csv 160
+/kaggle/temp/data/v2pos/splits/val.csv 20
+[15:10:20] v2pos: splits md5 f206d018c01e6de7076d1d9ae9259893 (expected None)
+[15:10:20] $ python scripts/data/make_v2_splits.py --labels /kaggle/temp/data/v2/labels.csv --pos-labels /kaggle/temp/data/v2pos/labels.csv --out /kaggle/temp/data/v2/splits
+[15:10:21] /kaggle/temp/data/v2/splits/test.csv 200
+/kaggle/temp/data/v2/splits/test_cubes.csv 1000
+/kaggle/temp/data/v2/splits/test_pos.csv 300
+/kaggle/temp/data/v2/splits/train.csv 1600
+/kaggle/temp/data/v2/splits/val.csv 200
+[15:10:21] v2: splits md5 067ad25419c8b1beb3b2a0f4f9b20167 (expected 067ad25419c8b1beb3b2a0f4f9b20167)
+[15:10:21] $ python scripts/data/make_v2_splits.py --labels /kaggle/temp/data/v2r/labels.csv --pos-labels none --out /kaggle/temp/data/v2r/splits
+[15:10:21] /kaggle/temp/data/v2r/splits/test.csv 200
+/kaggle/temp/data/v2r/splits/test_cubes.csv 1000
+/kaggle/temp/data/v2r/splits/train.csv 1600
+/kaggle/temp/data/v2r/splits/val.csv 200
+[15:10:21] v2r: splits md5 60dbed752369c6ed9b577a2138f9b33b (expected 60dbed752369c6ed9b577a2138f9b33b)
+[15:10:21] $ python scripts/data/make_v2_splits.py --labels /kaggle/temp/data/v2rns/labels.csv --pos-labels none --out /kaggle/temp/data/v2rns/splits
+[15:10:22] /kaggle/temp/data/v2rns/splits/test.csv 200
+/kaggle/temp/data/v2rns/splits/test_cubes.csv 1000
+/kaggle/temp/data/v2rns/splits/train.csv 1600
+/kaggle/temp/data/v2rns/splits/val.csv 200
+[15:10:22] v2rns: splits md5 219791904f9e47fbf048a1d012e5a9a6 (expected 219791904f9e47fbf048a1d012e5a9a6)
+[15:10:22] $ python scripts/data/make_v2_splits.py --labels /kaggle/temp/data/v2rso/labels.csv --pos-labels none --out /kaggle/temp/data/v2rso/splits
+[15:10:22] /kaggle/temp/data/v2rso/splits/test.csv 200
+/kaggle/temp/data/v2rso/splits/test_cubes.csv 1000
+/kaggle/temp/data/v2rso/splits/train.csv 1600
+/kaggle/temp/data/v2rso/splits/val.csv 200
+[15:10:22] v2rso: splits md5 681a036cabca7db69f5cb7deceff3b7d (expected 681a036cabca7db69f5cb7deceff3b7d)
+[15:10:22] $ python scripts/audit/validation/precision_check.py --data-root /kaggle/temp/data --out /kaggle/working/out/precision
+[15:16:04] {'set': 'v2', 'grid': 8, 'dtype': 'float32', 'alpha': 0.005184586135252941, 'warnings': 12, 'val_az': 4.875567215678622, 'test_az': 5.259082020789241, 'cubes_az': 26.95033203204353}
+{'set': 'v2', 'grid': 8, 'dtype': 'float64', 'alpha': 0.005184617335638897, 'warnings': 0, 'val_az': 4.875564279455079, 'test_az': 5.259098831750503, 'cubes_az': 26.950261857606918}
+{'set': 'v2', 'grid': 16, 'dtype': 'float32', 'alpha': 0.0033365409821271897, 'warnings': 0, 'val_az': 2.8967944915469555, 'test_az': 3.832397785024934, 'cubes_az': 40.170089475333754}
+{'set': 'v2', 'grid': 16, 'dtype': 'float64', 'alpha': 0.0033365449382393463, 'warnings': 0, 'val_az': 2.896607144320799, 'test_az': 3.8315720445766797, 'cubes_az': 40.17530024782986}
+{'set': 'v2', 'grid': 32, 'dtype': 'float32', 'alpha': 0.25235786437988283, 'warnings': 0, 'val_az': 2.3176127127252655, 'test_az': 2.444551206291726, 'cubes_az': 15.02025117119518}
+{'set': 'v2', 'grid': 32, 'dtype': 'float64', 'alpha': 0.2523579448936629, 'warnings': 0, 'val_az': 2.317652769365144, 'test_az': 2.4445814941807087, 'cubes_az': 15.020215241069035}
+{'set': 'v2', 'grid': 64, 'dtype': 'float32', 'alpha': 8.38995635629273, 'warnings': 0, 'val_az': 2.272004323889718, 'test_az': 2.5066651566181886, 'cubes_az': 13.669666809912716}
+{'set': 'v2', 'grid': 64, 'dtype': 'float64', 'alpha': 8.389959173805066, 'warnings': 0, 'val_az': 2.271998691445924, 'test_az': 2.506665793249886, 'cubes_az': 13.669691409513486}
+{'set': 'v2r', 'grid': 8, 'dtype': 'float32', 'alpha': 0.001471708916712399, 'warnings': 10, 'val_az': 19.260589890709795, 'test_az': 21.51959094981913, 'cubes_az': 20.147633869460282}
+{'set': 'v2r', 'grid': 8, 'dtype': 'float64', 'alpha': 0.0014717045296536193, 'warnings': 0, 'val_az': 19.260420952900198, 'test_az': 21.519650964699817, 'cubes_az': 20.147766164977853}
+{'set': 'v2r', 'grid': 16, 'dtype': 'float32', 'alpha': 0.6452653332737851, 'warnings': 0, 'val_az': 22.70075877665573, 'test_az': 24.115443951655763, 'cubes_az': 24.54656064829007}
+{'set': 'v2r', 'grid': 16, 'dtype': 'float64', 'alpha': 0.6452650377102861, 'warnings': 0, 'val_az': 22.700779142188097, 'test_az': 24.115449492281105, 'cubes_az': 24.54654817196686}
+{'set': 'v2r', 'grid': 32, 'dtype': 'float32', 'alpha': 13.003703117370605, 'warnings': 0, 'val_az': 23.131571552525838, 'test_az': 24.90389946095638, 'cubes_az': 25.57108056597763}
+{'set': 'v2r', 'grid': 32, 'dtype': 'float64', 'alpha': 13.0037014363952, 'warnings': 0, 'val_az': 23.131528498647985, 'test_az': 24.90383814292128, 'cubes_az': 25.57113150794304}
+{'set': 'v2r', 'grid': 64, 'dtype': 'float32', 'alpha': 30.348367366144394, 'warnings': 0, 'val_az': 23.72885293532423, 'test_az': 25.0590911410633, 'cubes_az': 25.810224456425747}
+{'set': 'v2r', 'grid': 64, 'dtype': 'float64', 'alpha': 30.348369022525993, 'warnings': 0, 'val_az': 23.72883177855104, 'test_az': 25.059051938765602, 'cubes_az': 25.810237661432648}
+{'set': 'v2rns', 'grid': 8, 'dtype': 'float32', 'alpha': 0.0008074673165835024, 'warnings': 11, 'val_az': 23.40852797160147, 'test_az': 24.204124982266457, 'cubes_az': 19.915113645056866}
+{'set': 'v2rns', 'grid': 8, 'dtype': 'float64', 'alpha': 0.0008074669441054215, 'warnings': 0, 'val_az': 23.408654324474426, 'test_az': 24.204162826269094, 'cubes_az': 19.91505593215412}
+{'set': 'v2rns', 'grid': 16, 'dtype': 'float32', 'alpha': 2.945511341094971e-06, 'warnings': 0, 'val_az': 20.80357972715747, 'test_az': 24.631891069344057, 'cubes_az': 23.278936176947827}
+{'set': 'v2rns', 'grid': 16, 'dtype': 'float64', 'alpha': 2.9455107881387272e-06, 'warnings': 0, 'val_az': 20.803969240899146, 'test_az': 24.63116781052317, 'cubes_az': 23.278626988315562}
+{'set': 'v2rns', 'grid': 32, 'dtype': 'float32', 'alpha': 1.292555206086974, 'warnings': 0, 'val_az': 41.29422042970529, 'test_az': 41.96933510880853, 'cubes_az': 41.407945156328815}
+{'set': 'v2rns', 'grid': 32, 'dtype': 'float64', 'alpha': 1.2925537003989949, 'warnings': 0, 'val_az': 41.29422262826398, 'test_az': 41.969780639846306, 'cubes_az': 41.407954975071306}
+{'set': 'v2rns', 'grid': 64, 'dtype': 'float32', 'alpha': 3.1922130584716797, 'warnings': 0, 'val_az': 41.612695326804875, 'test_az': 43.91264155280829, 'cubes_az': 42.52621139336996}
+{'set': 'v2rns', 'grid': 64, 'dtype': 'float64', 'alpha': 3.1922148242445774, 'warnings': 0, 'val_az': 41.61259644888252, 'test_az': 43.91269772347369, 'cubes_az': 42.5262059791785}
+{'set': 'v2rso', 'grid': 8, 'dtype': 'float32', 'alpha': 0.0037269668909092864, 'warnings': 11, 'val_az': 21.456647813022993, 'test_az': 24.6162039278388, 'cubes_az': 16.855144357941096}
+{'set': 'v2rso', 'grid': 8, 'dtype': 'float64', 'alpha': 0.0037269535920989184, 'warnings': 0, 'val_az': 21.456551022236344, 'test_az': 24.616261228885676, 'cubes_az': 16.855132325025114}
+{'set': 'v2rso', 'grid': 16, 'dtype': 'float32', 'alpha': 0.03814794421195984, 'warnings': 0, 'val_az': 21.505566729837177, 'test_az': 26.038985283969087, 'cubes_az': 18.324953219637415}
+{'set': 'v2rso', 'grid': 16, 'dtype': 'float64', 'alpha': 0.03814797979806888, 'warnings': 0, 'val_az': 21.505543353344102, 'test_az': 26.039268142229666, 'cubes_az': 18.32489013845065}
+{'set': 'v2rso', 'grid': 32, 'dtype': 'float32', 'alpha': 0.5091452571005362, 'warnings': 0, 'val_az': 51.3103049251278, 'test_az': 54.253724302982235, 'cubes_az': 49.251388901678126}
+{'set': 'v2rso', 'grid': 32, 'dtype': 'float64', 'alpha': 0.509145066954841, 'warnings': 0, 'val_az': 51.31050315819223, 'test_az': 54.25391220618266, 'cubes_az': 49.25133221131544}
+{'set': 'v2rso', 'grid': 64, 'dtype': 'float32', 'alpha': 140.47833995332138, 'warnings': 0, 'val_az': 54.042442871120365, 'test_az': 62.62817555137708, 'cubes_az': 56.00265940161758}
+{'set': 'v2rso', 'grid': 64, 'dtype': 'float64', 'alpha': 140.47836483502806, 'warnings': 0, 'val_az': 54.042479333149494, 'test_az': 62.6281503838103, 'cubes_az': 56.002634759913406}
+[15:16:04] command 0 ended with code 0 after 341 s
+[15:16:04] all commands ended with code 0
+[15:16:04] $ cd /kaggle/working/out && find . -type f | sort | head -300 && du -sh .
+[15:16:04] ./precision/precision.csv
+./precision/precision.md
+16K	.

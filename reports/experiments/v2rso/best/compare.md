@@ -1,5 +1,17 @@
 | source      | reference   | split      |   source_az_mae |   reference_az_mae |   diff |   ci_low |   ci_high | better   |
 |:------------|:------------|:-----------|----------------:|-------------------:|-------:|---------:|----------:|:---------|
+| clip        | pixels_best | test       |            4.36 |              24.62 | -20.26 |   -24.47 |    -16.41 | True     |
+| clip        | pixels_best | test_cubes |            7.24 |              16.86 |  -9.62 |   -10.89 |     -8.33 | True     |
+| clip        | pixels      | test       |            4.36 |              62.63 | -58.27 |   -64.64 |    -51.99 | True     |
+| clip        | pixels      | test_cubes |            7.24 |              56.00 | -48.76 |   -51.70 |    -45.89 | True     |
+| clip        | vae_latent  | test       |            4.36 |              15.68 | -11.32 |   -13.77 |     -9.16 | True     |
+| clip        | vae_latent  | test_cubes |            7.24 |              17.83 | -10.59 |   -11.93 |     -9.29 | True     |
+| dinov2      | pixels_best | test       |            3.42 |              24.62 | -21.20 |   -25.57 |    -17.20 | True     |
+| dinov2      | pixels_best | test_cubes |            7.80 |              16.86 |  -9.05 |   -10.38 |     -7.84 | True     |
+| dinov2      | pixels      | test       |            3.42 |              62.63 | -59.21 |   -65.66 |    -52.89 | True     |
+| dinov2      | pixels      | test_cubes |            7.80 |              56.00 | -48.20 |   -51.16 |    -45.38 | True     |
+| dinov2      | vae_latent  | test       |            3.42 |              15.68 | -12.26 |   -14.76 |     -9.94 | True     |
+| dinov2      | vae_latent  | test_cubes |            7.80 |              17.83 | -10.03 |   -11.33 |     -8.75 | True     |
 | pixels      | pixels_best | test       |           62.63 |              24.62 |  38.01 |    31.04 |     44.91 | False    |
 | pixels      | pixels_best | test_cubes |           56.00 |              16.86 |  39.15 |    36.32 |     42.02 | False    |
 | pixels      | vae_latent  | test       |           62.63 |              15.68 |  46.95 |    40.30 |     53.55 | False    |

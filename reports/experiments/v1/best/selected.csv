@@ -1,4 +1,6 @@
 run,block,t,grid
+clip,10,0,4
+dinov2,12,0,4
 pixels,-1,-1,64
 sana,7,100,4
 sana_legacy_noise,18,200,4

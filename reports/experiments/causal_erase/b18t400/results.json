@@ -1,0 +1,104 @@
+[
+ {
+  "condition": "base",
+  "rotation_mean": 0.0,
+  "rotation_ci": [
+   0.0,
+   0.0
+  ],
+  "toward_target_share": 0.0,
+  "label_az_error": 7.603105870882668,
+  "label_az_error_ci": [
+   5.946015077845255,
+   9.26825874706109
+  ],
+  "pixel_change": 0.0,
+  "shadow_rotation_median": 0.0,
+  "shadow_rotation_mean": 0.0,
+  "shadow_rotation_ci": [
+   0.0,
+   0.0
+  ],
+  "shadow_n": 59,
+  "shadow_kept": 1.0,
+  "shadow_kept_ci": [
+   1.0,
+   1.0
+  ],
+  "crop_rotation_mean": 0.0,
+  "crop_rotation_median": 0.0,
+  "crop_rotation_ci": [
+   0.0,
+   0.0
+  ],
+  "crop_toward_target_share": 0.0
+ },
+ {
+  "condition": "erase",
+  "rotation_mean": 0.1952262818813324,
+  "rotation_ci": [
+   -0.9133899243672688,
+   1.2426742553710908
+  ],
+  "toward_target_share": 0.0,
+  "label_az_error": 7.822554215033845,
+  "label_az_error_ci": [
+   6.1954694931566685,
+   9.580200982777276
+  ],
+  "pixel_change": 2.120216131210327,
+  "shadow_rotation_median": 0.0,
+  "shadow_rotation_mean": 0.2543103448275862,
+  "shadow_rotation_ci": [
+   -0.22855603448275844,
+   0.8103448275862069
+  ],
+  "shadow_n": 58,
+  "shadow_kept": 0.9328725913321266,
+  "shadow_kept_ci": [
+   0.8898871913465635,
+   0.9631048823248026
+  ],
+  "crop_rotation_mean": -5.565683841705322,
+  "crop_rotation_median": 0.8909454345703125,
+  "crop_rotation_ci": [
+   -14.022638228734333,
+   1.2145619837443007
+  ],
+  "crop_toward_target_share": 0.016666666666666666
+ },
+ {
+  "condition": "erase_cell",
+  "rotation_mean": -5.0363969802856445,
+  "rotation_ci": [
+   -20.169324127833043,
+   10.225883878072104
+  ],
+  "toward_target_share": 0.16666666666666666,
+  "label_az_error": 44.17034022851785,
+  "label_az_error_ci": [
+   34.57209498356282,
+   55.88550594221452
+  ],
+  "pixel_change": 2.8533668518066406,
+  "shadow_rotation_median": -0.75,
+  "shadow_rotation_mean": -3.2457627118644066,
+  "shadow_rotation_ci": [
+   -10.221822033898302,
+   1.771610169491523
+  ],
+  "shadow_n": 59,
+  "shadow_kept": 0.6536961879125035,
+  "shadow_kept_ci": [
+   0.5784656903608224,
+   0.7287350720425491
+  ],
+  "crop_rotation_mean": 5.65656852722168,
+  "crop_rotation_median": 6.382049560546875,
+  "crop_rotation_ci": [
+   -12.240105021794635,
+   22.823165912628166
+  ],
+  "crop_toward_target_share": 0.18333333333333332
+ }
+]

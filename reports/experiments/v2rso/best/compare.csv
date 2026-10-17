@@ -1,4 +1,16 @@
 source,reference,split,source_az_mae,reference_az_mae,diff,ci_low,ci_high,better
+clip,pixels_best,test,4.357,24.616,-20.260,-24.473,-16.411,True
+clip,pixels_best,test_cubes,7.238,16.855,-9.617,-10.888,-8.329,True
+clip,pixels,test,4.357,62.628,-58.272,-64.639,-51.991,True
+clip,pixels,test_cubes,7.238,56.003,-48.765,-51.698,-45.885,True
+clip,vae_latent,test,4.357,15.675,-11.318,-13.768,-9.155,True
+clip,vae_latent,test_cubes,7.238,17.831,-10.593,-11.931,-9.286,True
+dinov2,pixels_best,test,3.417,24.616,-21.200,-25.574,-17.197,True
+dinov2,pixels_best,test_cubes,7.804,16.855,-9.051,-10.381,-7.837,True
+dinov2,pixels,test,3.417,62.628,-59.212,-65.656,-52.889,True
+dinov2,pixels,test_cubes,7.804,56.003,-48.199,-51.155,-45.378,True
+dinov2,vae_latent,test,3.417,15.675,-12.258,-14.764,-9.940,True
+dinov2,vae_latent,test_cubes,7.804,17.831,-10.027,-11.335,-8.751,True
 pixels,pixels_best,test,62.628,24.616,38.012,31.038,44.907,False
 pixels,pixels_best,test_cubes,56.003,16.855,39.148,36.324,42.021,False
 pixels,vae_latent,test,62.628,15.675,46.953,40.301,53.552,False

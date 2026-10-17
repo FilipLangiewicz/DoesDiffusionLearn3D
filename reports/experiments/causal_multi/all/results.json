@@ -24,7 +24,14 @@
   "shadow_kept_ci": [
    1.0,
    1.0
-  ]
+  ],
+  "crop_rotation_mean": 0.0,
+  "crop_rotation_median": 0.0,
+  "crop_rotation_ci": [
+   0.0,
+   0.0
+  ],
+  "crop_toward_target_share": 0.0
  },
  {
   "condition": "shift:pattern_all_x0.25",
@@ -51,7 +58,14 @@
   "shadow_kept_ci": [
    0.26745882938537346,
    0.49529563619004485
-  ]
+  ],
+  "crop_rotation_mean": 80.99552154541016,
+  "crop_rotation_median": 106.92149353027344,
+  "crop_rotation_ci": [
+   54.49946444034577,
+   105.08625036080677
+  ],
+  "crop_toward_target_share": 0.5208333333333334
  },
  {
   "condition": "shift:pattern_all_x0.5",
@@ -78,7 +92,14 @@
   "shadow_kept_ci": [
    0.20541182416472717,
    0.431902503609873
-  ]
+  ],
+  "crop_rotation_mean": 71.4205551147461,
+  "crop_rotation_median": 101.50199890136719,
+  "crop_rotation_ci": [
+   42.69746355215709,
+   97.83004768689472
+  ],
+  "crop_toward_target_share": 0.4583333333333333
  },
  {
   "condition": "shift:pattern_all_x1",
@@ -105,7 +126,14 @@
   "shadow_kept_ci": [
    0.15913324648661714,
    0.37636025761654024
-  ]
+  ],
+  "crop_rotation_mean": 40.35103225708008,
+  "crop_rotation_median": 73.31327819824219,
+  "crop_rotation_ci": [
+   9.315713429450996,
+   71.19862437248229
+  ],
+  "crop_toward_target_share": 0.3333333333333333
  },
  {
   "condition": "shift:random_all",
@@ -132,6 +160,13 @@
   "shadow_kept_ci": [
    0.7844208384395153,
    0.9178404805948323
-  ]
+  ],
+  "crop_rotation_mean": 0.7537329792976379,
+  "crop_rotation_median": 1.3829116821289062,
+  "crop_rotation_ci": [
+   -11.968284189701079,
+   14.231783088048294
+  ],
+  "crop_toward_target_share": 0.08333333333333333
  }
 ]

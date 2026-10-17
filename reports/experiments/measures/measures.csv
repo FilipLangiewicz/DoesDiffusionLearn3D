@@ -1,0 +1,12 @@
+measure,n,nan_share,median,mean
+"dark region: azimuth error, v2 test",200,0.0050,6.3800,12.7270
+"pixel probe: azimuth error, v2 test",200,0.0000,1.6695,2.5067
+"crop probe: azimuth error, v2 test",200,0.0000,2.5655,3.1884
+"dark region: azimuth error, v2 test_cubes",1000,0.0460,8.6800,13.8707
+"pixel probe: azimuth error, v2 test_cubes",1000,0.0000,10.6965,13.6697
+"crop probe: azimuth error, v2 test_cubes",1000,0.0000,20.6374,24.7527
+kept share: same render,48,0.0208,1.0000,1.0000
+kept share: render with the light turned by 90 deg,48,0.0208,0.0706,0.0909
+dark region: rotation for a light turned by 90 deg,48,0.0625,83.5000,96.6278
+pixel probe: rotation for a light turned by 90 deg,48,0.0000,90.7070,90.8604
+crop probe: rotation for a light turned by 90 deg,48,0.0000,89.1394,89.3334

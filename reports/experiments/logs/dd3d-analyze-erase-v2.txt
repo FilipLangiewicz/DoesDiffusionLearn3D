@@ -1,0 +1,85 @@
+[14:48:41] params: {"name": "erase-v2", "ref": "e8f6e2eaad97cd65eba66ba342cc7b52c7f9575f", "sets": ["v2pos", "v2"], "features": {}, "split_md5": {"v2": "067ad25419c8b1beb3b2a0f4f9b20167"}, "commands": ["mkdir -p /kaggle/temp/erase && for f in {PREV}/dd3d-intervene-erase/*.tar; do tar xf $f -C /kaggle/temp/erase; done", "python scripts/experiments/analyze_interventions.py --outputs /kaggle/temp/erase/erase_b04t400 --plan {PREV}/dd3d-analyze-plans-erase-v2/out/plans/b04t400e/plan.npz --splits {DATA}/v2/splits --images {DATA}/v2/images --out {OUT}/causal_erase/b04t400", "python scripts/experiments/analyze_interventions.py --outputs /kaggle/temp/erase/erase_b10t400 --plan {PREV}/dd3d-analyze-plans-erase-v2/out/plans/b10t400e/plan.npz --splits {DATA}/v2/splits --images {DATA}/v2/images --out {OUT}/causal_erase/b10t400", "python scripts/experiments/analyze_interventions.py --outputs /kaggle/temp/erase/erase_b18t400 --plan {PREV}/dd3d-analyze-plans-erase-v2/out/plans/b18t400e/plan.npz --splits {DATA}/v2/splits --images {DATA}/v2/images --out {OUT}/causal_erase/b18t400", "python scripts/experiments/analyze_interventions.py --outputs /kaggle/temp/erase/erase_b05t100 --plan {PREV}/dd3d-analyze-plans-erase-v2/out/plans/b05t100e/plan.npz --splits {DATA}/v2/splits --images {DATA}/v2/images --out {OUT}/causal_erase/b05t100"]}
+[14:48:41] $ nproc; free -g | head -2; df -h /kaggle/temp /kaggle/working | tail -2
+[14:48:41] 4
+               total        used        free      shared  buff/cache   available
+Mem:              31           0          26           0           4          30
+overlay         8.0T  7.0T  1.1T  87% /
+/dev/loop2       20G  144K   20G   1% /kaggle/working
+[14:48:41] $ ls /kaggle/input /kaggle/input/* | head -60
+[14:48:41] /kaggle/input:
+notebooks
+
+/kaggle/input/notebooks:
+jankombajn
+[14:48:41] $ pip install -q tabulate
+[14:48:48] $ git clone -q https://github.com/FilipLangiewicz/DoesDiffusionLearn3D /kaggle/temp/repo && cd /kaggle/temp/repo && git checkout -q e8f6e2eaad97cd65eba66ba342cc7b52c7f9575f && git log -1 --format=%h
+[14:49:16] e8f6e2e
+[14:49:16] $ tar xf '/kaggle/input/notebooks/jankombajn/dd3d-renders/v2pos/v2pos_00000_00300.tar' -C /kaggle/temp/img_v2pos/0
+[14:49:19] v2pos: 1 shards, 300 labels, images {'Sphere': 100, 'SmoothCylinder': 100, 'SmoothCube_v2': 100}
+[14:49:19] $ tar xf '/kaggle/input/notebooks/jankombajn/dd3d-renders/v2/v2_00000_00500.tar' -C /kaggle/temp/img_v2/0
+[14:49:21] $ tar xf '/kaggle/input/notebooks/jankombajn/dd3d-renders/v2/v2_00500_01000.tar' -C /kaggle/temp/img_v2/1
+[14:49:24] $ tar xf '/kaggle/input/notebooks/jankombajn/dd3d-renders/v2/v2_01000_01500.tar' -C /kaggle/temp/img_v2/2
+[14:49:27] $ tar xf '/kaggle/input/notebooks/jankombajn/dd3d-renders/v2/v2_01500_02000.tar' -C /kaggle/temp/img_v2/3
+[14:49:29] $ tar xf '/kaggle/input/notebooks/jankombajn/dd3d-renders/v2/v2_02000_02500.tar' -C /kaggle/temp/img_v2/4
+[14:49:31] $ tar xf '/kaggle/input/notebooks/jankombajn/dd3d-renders/v2/v2_02500_03000.tar' -C /kaggle/temp/img_v2/5
+[14:49:34] v2: 6 shards, 3000 labels, images {'Sphere': 1000, 'SmoothCylinder': 1000, 'SmoothCube_v2': 1000}
+[14:49:34] $ python scripts/data/make_v2_splits.py --labels /kaggle/temp/data/v2pos/labels.csv --pos-labels none --out /kaggle/temp/data/v2pos/splits
+[14:49:36] /kaggle/temp/data/v2pos/splits/test.csv 20
+/kaggle/temp/data/v2pos/splits/test_cubes.csv 100
+/kaggle/temp/data/v2pos/splits/train.csv 160
+/kaggle/temp/data/v2pos/splits/val.csv 20
+[14:49:36] v2pos: splits md5 f206d018c01e6de7076d1d9ae9259893 (expected None)
+[14:49:36] $ python scripts/data/make_v2_splits.py --labels /kaggle/temp/data/v2/labels.csv --pos-labels /kaggle/temp/data/v2pos/labels.csv --out /kaggle/temp/data/v2/splits
+[14:49:37] /kaggle/temp/data/v2/splits/test.csv 200
+/kaggle/temp/data/v2/splits/test_cubes.csv 1000
+/kaggle/temp/data/v2/splits/test_pos.csv 300
+/kaggle/temp/data/v2/splits/train.csv 1600
+/kaggle/temp/data/v2/splits/val.csv 200
+[14:49:37] v2: splits md5 067ad25419c8b1beb3b2a0f4f9b20167 (expected 067ad25419c8b1beb3b2a0f4f9b20167)
+[14:49:37] earlier output: /kaggle/input/notebooks/jankombajn/dd3d-analyze-plans-erase-v2
+[14:49:37] earlier output: /kaggle/input/notebooks/jankombajn/dd3d-intervene-erase
+[14:49:37] $ mkdir -p /kaggle/temp/erase && for f in /kaggle/temp/prev/dd3d-intervene-erase/*.tar; do tar xf $f -C /kaggle/temp/erase; done
+[14:49:40] command 0 ended with code 0 after 3 s
+[14:49:40] $ python scripts/experiments/analyze_interventions.py --outputs /kaggle/temp/erase/erase_b04t400 --plan /kaggle/temp/prev/dd3d-analyze-plans-erase-v2/out/plans/b04t400e/plan.npz --splits /kaggle/temp/data/v2/splits --images /kaggle/temp/data/v2/images --out /kaggle/working/out/causal_erase/b04t400
+[14:52:17] condition  rotation_mean                                rotation_ci  toward_target_share  label_az_error                        label_az_error_ci  pixel_change  shadow_rotation_median  shadow_rotation_mean                          shadow_rotation_ci  shadow_n  shadow_kept                            shadow_kept_ci  crop_rotation_mean  crop_rotation_median                          crop_rotation_ci  crop_toward_target_share
+0        base           0.00                                 (0.0, 0.0)                 0.00            7.60    (5.946015077845255, 9.26825874706109)          0.00                    0.00                  0.00                                  (0.0, 0.0)        59         1.00                                (1.0, 1.0)                0.00                  0.00                                (0.0, 0.0)                      0.00
+1       erase          -0.18  (-0.7780715052286784, 0.3693370183308916)                 0.00            7.66   (6.079182136615115, 9.261054189999895)          1.79                    0.00                 -0.14  (-0.4745762711864407, 0.16536016949152485)        59         0.98  (0.9727643366001717, 0.9875089476362537)                2.84                 -0.89  (-1.2154325103759767, 8.452185408274332)                      0.02
+2  erase_cell          -7.35  (-16.630460777282714, 0.2669387499491251)                 0.03           21.93  (15.817898764928184, 29.88846889017025)          2.92                    0.25                  0.02   (-11.229449152542372, 12.338771186440656)        59         0.79  (0.7277637636449412, 0.8451300291027934)                4.60                 -1.95  (-9.841973552703857, 20.779661655426015)                      0.12
+[14:52:17] command 1 ended with code 0 after 157 s
+[14:52:17] $ python scripts/experiments/analyze_interventions.py --outputs /kaggle/temp/erase/erase_b10t400 --plan /kaggle/temp/prev/dd3d-analyze-plans-erase-v2/out/plans/b10t400e/plan.npz --splits /kaggle/temp/data/v2/splits --images /kaggle/temp/data/v2/images --out /kaggle/working/out/causal_erase/b10t400
+[14:54:47] condition  rotation_mean                                rotation_ci  toward_target_share  label_az_error                        label_az_error_ci  pixel_change  shadow_rotation_median  shadow_rotation_mean                         shadow_rotation_ci  shadow_n  shadow_kept                            shadow_kept_ci  crop_rotation_mean  crop_rotation_median                           crop_rotation_ci  crop_toward_target_share
+0        base           0.00                                 (0.0, 0.0)                 0.00            7.60    (5.946015077845255, 9.26825874706109)          0.00                    0.00                  0.00                                 (0.0, 0.0)        59         1.00                                (1.0, 1.0)                0.00                  0.00                                 (0.0, 0.0)                      0.00
+1       erase          -0.17  (-0.6306241734822592, 0.3111872609456375)                 0.00            7.89   (6.299624758168063, 9.525509843242165)          1.55                    0.00                  0.09  (-0.1694915254237288, 0.3686440677966102)        59         0.99  (0.9795656333176663, 0.9926386986930189)                1.40                  0.28   (-1.044143498738606, 5.2093628629048645)                      0.02
+2  erase_cell           0.95  (-10.859430891672766, 12.792918939590452)                 0.03           30.41  (21.25105139290492, 40.930404011515776)          2.59                   -0.25                 -0.24     (-10.86864406779661, 9.60730932203389)        59         0.73  (0.6557118285891773, 0.7920838039808488)               -1.53                 -3.07  (-17.721549126307163, 14.829101435343407)                      0.18
+[14:54:47] command 2 ended with code 0 after 150 s
+[14:54:47] $ python scripts/experiments/analyze_interventions.py --outputs /kaggle/temp/erase/erase_b18t400 --plan /kaggle/temp/prev/dd3d-analyze-plans-erase-v2/out/plans/b18t400e/plan.npz --splits /kaggle/temp/data/v2/splits --images /kaggle/temp/data/v2/images --out /kaggle/working/out/causal_erase/b18t400
+[14:57:16] condition  rotation_mean                                rotation_ci  toward_target_share  label_az_error                        label_az_error_ci  pixel_change  shadow_rotation_median  shadow_rotation_mean                          shadow_rotation_ci  shadow_n  shadow_kept                            shadow_kept_ci  crop_rotation_mean  crop_rotation_median                           crop_rotation_ci  crop_toward_target_share
+0        base           0.00                                 (0.0, 0.0)                 0.00            7.60    (5.946015077845255, 9.26825874706109)          0.00                    0.00                  0.00                                  (0.0, 0.0)        59         1.00                                (1.0, 1.0)                0.00                  0.00                                 (0.0, 0.0)                      0.00
+1       erase           0.20  (-0.9133899243672688, 1.2426742553710908)                 0.00            7.82  (6.1954694931566685, 9.580200982777276)          2.12                    0.00                  0.25  (-0.22855603448275844, 0.8103448275862069)        58         0.93  (0.8898871913465635, 0.9631048823248026)               -5.57                  0.89  (-14.022638228734333, 1.2145619837443007)                      0.02
+2  erase_cell          -5.04  (-20.169324127833043, 10.225883878072104)                 0.17           44.17   (34.57209498356282, 55.88550594221452)          2.85                   -0.75                 -3.25    (-10.221822033898302, 1.771610169491523)        59         0.65  (0.5784656903608224, 0.7287350720425491)                5.66                  6.38  (-12.240105021794635, 22.823165912628166)                      0.18
+[14:57:16] command 3 ended with code 0 after 149 s
+[14:57:16] $ python scripts/experiments/analyze_interventions.py --outputs /kaggle/temp/erase/erase_b05t100 --plan /kaggle/temp/prev/dd3d-analyze-plans-erase-v2/out/plans/b05t100e/plan.npz --splits /kaggle/temp/data/v2/splits --images /kaggle/temp/data/v2/images --out /kaggle/working/out/causal_erase/b05t100
+[14:59:45] condition  rotation_mean                              rotation_ci  toward_target_share  label_az_error                         label_az_error_ci  pixel_change  shadow_rotation_median  shadow_rotation_mean                         shadow_rotation_ci  shadow_n  shadow_kept                            shadow_kept_ci  crop_rotation_mean  crop_rotation_median                          crop_rotation_ci  crop_toward_target_share
+0        base           0.00                               (0.0, 0.0)                 0.00            7.60     (5.946015077845255, 9.26825874706109)          0.00                     0.0                  0.00                                 (0.0, 0.0)        59         1.00                                (1.0, 1.0)                0.00                  0.00                                (0.0, 0.0)                      0.00
+1       erase          -0.50  (-2.466186644236246, 1.405415916442868)                 0.00           11.09    (9.07001464841366, 13.163613454103466)          4.01                     0.0                 -0.08  (-0.9110169491525424, 0.7034957627118639)        59         0.99  (0.9895365132402166, 0.9976418351468725)                2.24                 -0.99  (-5.868335698445637, 10.992806669871008)                      0.07
+2  erase_cell           3.66  (-11.59397409756978, 18.81731145858764)                 0.22           42.46  (32.531614580345156, 52.858536906337726)          5.12                     0.5                  5.09   (-9.085169491525424, 19.520762711864386)        59         0.60   (0.520124785920519, 0.6834942949715233)               -7.19                  1.43  (-23.920787007013953, 9.822777121861774)                      0.13
+[14:59:45] command 4 ended with code 0 after 150 s
+[14:59:45] all commands ended with code 0
+[14:59:45] $ cd /kaggle/working/out && find . -type f | sort | head -300 && du -sh .
+[14:59:45] ./causal_erase/b04t400/examples.png
+./causal_erase/b04t400/per_image.csv
+./causal_erase/b04t400/results.csv
+./causal_erase/b04t400/results.json
+./causal_erase/b05t100/examples.png
+./causal_erase/b05t100/per_image.csv
+./causal_erase/b05t100/results.csv
+./causal_erase/b05t100/results.json
+./causal_erase/b10t400/examples.png
+./causal_erase/b10t400/per_image.csv
+./causal_erase/b10t400/results.csv
+./causal_erase/b10t400/results.json
+./causal_erase/b18t400/examples.png
+./causal_erase/b18t400/per_image.csv
+./causal_erase/b18t400/results.csv
+./causal_erase/b18t400/results.json
+868K	.

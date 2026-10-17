@@ -1,5 +1,21 @@
 | source            | reference        | split      |   source_az_mae |   reference_az_mae |   diff |   ci_low |   ci_high | better   |
 |:------------------|:-----------------|:-----------|----------------:|-------------------:|-------:|---------:|----------:|:---------|
+| clip              | pixels_best      | test       |            3.02 |               9.61 |  -6.59 |    -8.02 |     -5.27 | True     |
+| clip              | pixels_best      | test_cubes |            4.43 |              12.81 |  -8.38 |    -9.26 |     -7.53 | True     |
+| clip              | pixels           | test       |            3.02 |              11.84 |  -8.82 |   -10.99 |     -6.93 | True     |
+| clip              | pixels           | test_cubes |            4.43 |              14.32 |  -9.89 |   -11.04 |     -8.72 | True     |
+| clip              | vae_latent       | test       |            3.02 |               7.28 |  -4.26 |    -5.59 |     -3.16 | True     |
+| clip              | vae_latent       | test_cubes |            4.43 |               8.92 |  -4.49 |    -5.33 |     -3.73 | True     |
+| clip              | sana_random_init | test       |            3.02 |              11.54 |  -8.51 |    -9.98 |     -7.15 | True     |
+| clip              | sana_random_init | test_cubes |            4.43 |              11.87 |  -7.44 |    -8.11 |     -6.82 | True     |
+| dinov2            | pixels_best      | test       |            3.00 |               9.61 |  -6.61 |    -8.00 |     -5.37 | True     |
+| dinov2            | pixels_best      | test_cubes |            4.09 |              12.81 |  -8.72 |    -9.62 |     -7.86 | True     |
+| dinov2            | pixels           | test       |            3.00 |              11.84 |  -8.85 |   -11.03 |     -6.91 | True     |
+| dinov2            | pixels           | test_cubes |            4.09 |              14.32 | -10.23 |   -11.36 |     -9.09 | True     |
+| dinov2            | vae_latent       | test       |            3.00 |               7.28 |  -4.28 |    -5.60 |     -3.15 | True     |
+| dinov2            | vae_latent       | test_cubes |            4.09 |               8.92 |  -4.82 |    -5.67 |     -4.11 | True     |
+| dinov2            | sana_random_init | test       |            3.00 |              11.54 |  -8.54 |    -9.90 |     -7.16 | True     |
+| dinov2            | sana_random_init | test_cubes |            4.09 |              11.87 |  -7.77 |    -8.42 |     -7.18 | True     |
 | pixels            | pixels_best      | test       |           11.84 |               9.61 |   2.23 |     0.24 |      4.43 | False    |
 | pixels            | pixels_best      | test_cubes |           14.32 |              12.81 |   1.51 |     0.59 |      2.49 | False    |
 | pixels            | vae_latent       | test       |           11.84 |               7.28 |   4.56 |     3.15 |      6.03 | False    |

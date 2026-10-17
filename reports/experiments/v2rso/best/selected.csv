@@ -1,4 +1,6 @@
 run,block,t,grid
+clip,12,0,2
+dinov2,16,0,2
 pixels,-1,-1,64
 sana,7,100,4
 vae_latent,-1,-1,32

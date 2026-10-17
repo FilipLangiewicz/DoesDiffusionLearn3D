@@ -1,5 +1,5 @@
 {
- "scan": "/kaggle/temp/prev/dd3d-analyze-scan-v2rso/out/v2rso/scan/scan.csv",
+ "scan": "/kaggle/working/out/v2rso/scan/scan.csv",
  "features": "/kaggle/temp/feat/v2rso",
  "splits": "/kaggle/temp/data/v2rso/splits",
  "images": "/kaggle/temp/data/v2rso/images",

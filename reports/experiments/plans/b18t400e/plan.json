@@ -1,0 +1,50 @@
+{
+ "key": "sana/block_18/t_400",
+ "split": "test",
+ "n_images": 60,
+ "rotate": 90.0,
+ "probe": {
+  "train": {
+   "az_mae": 4.423799282272849,
+   "el_mae": 0.5290670330047608
+  },
+  "val": {
+   "az_mae": 4.9614775965481845,
+   "el_mae": 0.6319932025909424
+  },
+  "test": {
+   "az_mae": 4.504475381165701,
+   "el_mae": 0.6219843143463131
+  }
+ },
+ "probe_after_erasure": {
+  "erase": {
+   "train": 4.344237001086429,
+   "val": 4.747497555740191,
+   "test": 4.2698105955459225
+  },
+  "erase_cell": {
+   "train": 87.31690286497515,
+   "val": 89.60147074415688,
+   "test": 88.30710437673395
+  }
+ },
+ "probe_rotation_deg": {
+  "base": 1.573630178578848e-06,
+  "erase": 1.573630178578848e-06,
+  "erase_cell": 1.573630178578848e-06
+ },
+ "mean_token_norm": 4580.5116273082385,
+ "cell_norm": {
+  "base": 0.0,
+  "erase": 0.0,
+  "erase_cell": 0.0
+ },
+ "relative_shifts": [],
+ "pattern_scales": [],
+ "conditions": [
+  "base",
+  "erase",
+  "erase_cell"
+ ]
+}

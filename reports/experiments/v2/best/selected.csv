@@ -1,4 +1,6 @@
 run,block,t,grid
+clip,8,0,8
+dinov2,8,0,8
 pixels,-1,-1,64
 sana,4,100,8
 sd15,4,100,8

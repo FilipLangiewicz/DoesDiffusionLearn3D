@@ -2,10 +2,11 @@
 
 - scan.png: the azimuth MAE of the SANA probe on each block, for each data set.
   Each timestep has one line, and the controls are horizontal lines.
-- causal.png: the rotation of the output light for each condition of the shift
-  and erase test, for each block;
+- causal.tex: the four measures of the output light for each condition of the
+  shift test, for each block;
+- erase.tex: the probe on the erased features and the output light for each eraser;
 - patch.png: the share of the light change that a patch of one region in one
-  block moves into the output.
+  block moves into the output, and the source shadow outside the patched cells.
 
 If the input files of a figure do not exist, the script skips the figure.
 """
@@ -21,16 +22,16 @@ import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
-import numpy as np  # noqa: E402
 import pandas as pd  # noqa: E402
 
 from dd3d.select import selected  # noqa: E402
 
+# The models without generation get a colour, so their lines differ from the black input controls.
 CONTROLS = {
-    "vae_latent": ("DC-AE latent", ":"),
-    "sana_random_init": ("SANA, random weights", "-."),
-    "dinov2": ("DINOv2-L (no generation)", (0, (5, 1, 1, 1))),
-    "clip": ("CLIP ViT-L/14 (no generation)", (0, (1, 1))),
+    "vae_latent": ("DC-AE latent", ":", "k"),
+    "sana_random_init": ("SANA, random weights", "-.", "k"),
+    "dinov2": ("DINOv2-L (no generation)", "--", "tab:red"),
+    "clip": ("CLIP ViT-L/14 (no generation)", ":", "tab:red"),
 }
 
 
@@ -82,7 +83,7 @@ def scan_figure(reports: Path, sets: list[str], split: str, grid: int, out: Path
         line = best_pixel_line(reports, name, split)
         if line is not None:
             ax.axhline(line[0], color="k", ls="--", lw=1, label=line[1])
-        for run, (label, style) in CONTROLS.items():
+        for run, (label, style, colour) in CONTROLS.items():
             row = sel[sel["run"] == run]
             if row.empty:
                 continue
@@ -94,7 +95,7 @@ def scan_figure(reports: Path, sets: list[str], split: str, grid: int, out: Path
                 & (df["grid"] == r["grid"])
             ]
             if len(v):
-                ax.axhline(v["az_mae"].iloc[0], color="k", ls=style, lw=1, label=label)
+                ax.axhline(v["az_mae"].iloc[0], color=colour, ls=style, lw=1.2, label=label)
         ax.set_title(TITLES.get(name, name), fontsize=9)
         ax.set_xlabel("block")
         ax.grid(alpha=0.3)
@@ -110,41 +111,6 @@ def scan_figure(reports: Path, sets: list[str], split: str, grid: int, out: Path
     print(f"-> {out}")
 
 
-def causal_figure(reports: Path, out: Path) -> None:
-    folders = sorted((reports / "causal").glob("b*/results.csv"))
-    if not folders:
-        print("causal figure: no results")
-        return
-    frames = []
-    for f in folders:
-        d = pd.read_csv(f)
-        d["block"] = int(f.parent.name[1:])
-        frames.append(d)
-    df = pd.concat(frames)
-    df = df[df["condition"] != "base"]
-    conds = list(dict.fromkeys(df["condition"]))
-    blocks = sorted(df["block"].unique())
-    fig, ax = plt.subplots(figsize=(7.5, 3.0))
-    width = 0.8 / len(blocks)
-    for j, b in enumerate(blocks):
-        g = df[df["block"] == b].set_index("condition").reindex(conds)
-        ci = np.array([json.loads(str(c).replace("(", "[").replace(")", "]")) for c in g["rotation_ci"]])
-        x = np.arange(len(conds)) + (j - (len(blocks) - 1) / 2) * width
-        err = np.abs(ci.T - g["rotation_mean"].to_numpy())
-        ax.bar(x, g["rotation_mean"], width, yerr=err, capsize=2, label=f"block {b}")
-    ax.axhline(90, color="k", ls=":", lw=1)
-    ax.axhline(0, color="k", lw=0.8)
-    ax.set_xticks(
-        range(len(conds)), [c.replace("shift:", "") for c in conds], rotation=25, ha="right", fontsize=8
-    )
-    ax.set_ylabel("rotation of the output (deg)")
-    ax.legend(fontsize=7)
-    ax.grid(axis="y", alpha=0.3)
-    fig.tight_layout()
-    fig.savefig(out, dpi=180)
-    print(f"-> {out}")
-
-
 def signed(v: float) -> str:
     """Format a rotation with its sign; a value that rounds to zero is 0."""
     r = round(float(v))
@@ -152,10 +118,10 @@ def signed(v: float) -> str:
 
 
 def causal_table(reports: Path, out: Path, folder: str = "causal") -> None:
-    """Write a LaTeX table: one row for each condition, two measures for each block.
+    """Write a LaTeX table: one row for each condition, one column for each measure.
 
-    The first measure is the pixel probe (mean rotation with a 95% interval). The
-    second is the dark shadow region (median rotation over the images).
+    Each cell gives the values of the blocks in the order of their numbers. The
+    rotations are the mean for the two probes and the median for the dark region.
     """
     files = sorted((reports / folder).glob("b*/results.csv"))
     if not files:
@@ -164,25 +130,88 @@ def causal_table(reports: Path, out: Path, folder: str = "causal") -> None:
     frames = {b: pd.read_csv(f).set_index("condition") for b, f in zip(blocks, files, strict=True)}
     order = sorted(blocks)
     conds = [c for c in frames[order[0]].index if c != "base"]
+    columns = (
+        ("rotation_mean", signed),
+        ("crop_rotation_mean", signed),
+        ("shadow_rotation_median", signed),
+        ("shadow_kept", lambda v: f"{v:.2f}"),
+        ("pixel_change", lambda v: f"{v:.0f}"),
+    )
     lines = [
-        "\\begin{tabular}{l" + "rr" * len(order) + "r}",
+        "\\begin{tabular}{lccccc}",
         "\\toprule",
-        " & " + " & ".join(f"\\multicolumn{{2}}{{c}}{{Block {b}}}" for b in order) + " & \\\\",
-        "Condition" + " & probe & shadow" * len(order) + " & pixels \\\\",
+        "Condition & Pixel probe & Object probe & Dark region & Kept share & Pixels \\\\",
         "\\midrule",
     ]
     for c in conds:
         cells = []
-        for b in order:
-            r = frames[b].loc[c]
-            lo, hi = (float(v) for v in str(r["rotation_ci"]).strip("()").split(","))
-            cells.append(f"${signed(r['rotation_mean'])}$ \\scriptsize{{[{signed(lo)}, {signed(hi)}]}}")
-            sm = r.get("shadow_rotation_median", float("nan"))
-            cells.append("--" if pd.isna(sm) else f"${signed(sm)}$")
-        change = np.mean([frames[b].loc[c, "pixel_change"] for b in order])
+        for col, fmt in columns:
+            vals = [frames[b].loc[c].get(col, float("nan")) for b in order]
+            cells.append(" / ".join("--" if pd.isna(v) else f"${fmt(v)}$" for v in vals))
         name = c.replace("shift:", "").replace("_", "\\_")
-        lines.append(f"{name} & " + " & ".join(cells) + f" & {change:.0f} \\\\")
+        lines.append(f"{name} & " + " & ".join(cells) + " \\\\")
     lines += ["\\bottomrule", "\\end{tabular}"]
+    out.write_text("\n".join(lines) + "\n")
+    print(f"-> {out}")
+
+
+def abs_turn_median(per_image: pd.DataFrame, condition: str) -> float:
+    """Return the median absolute change of the pixel-probe azimuth against the base output."""
+    base = per_image[per_image["condition"] == "base"].set_index("image_id")["pred_az"]
+    cond = per_image[per_image["condition"] == condition].set_index("image_id")["pred_az"]
+    turn = (cond - base.reindex(cond.index) + 180.0) % 360.0 - 180.0
+    return float(turn.abs().median())
+
+
+def erase_table(reports: Path, out: Path) -> None:
+    """Write a LaTeX table of the erasure test: one block of rows for each plan.
+
+    The pooled eraser comes from the first run. The cell eraser and its control
+    come from the second run, which has both, with the same images and noise.
+    """
+    names = {"erase": "pooled", "erase_cell": "cell", "erase_cell_random": "cell, control"}
+    rows = []
+    for tag in ("b04t400", "b10t400", "b18t400", "b05t100"):
+        runs = {
+            "erase": (reports / "causal_erase" / tag, reports / "plans" / f"{tag}e" / "plan.json"),
+            "erase_cell": (reports / "causal_erase_ctrl" / tag, reports / "plans" / f"{tag}c" / "plan.json"),
+        }
+        runs["erase_cell_random"] = runs["erase_cell"]
+        if not all((d / "results.csv").exists() and j.exists() for d, j in runs.values()):
+            print(f"erase table: no results for {tag}")
+            return
+        first = True
+        for cond, (folder, plan_file) in runs.items():
+            res = pd.read_csv(folder / "results.csv").set_index("condition")
+            plan = json.loads(plan_file.read_text())
+            if first:
+                base_err = res.loc["base", "label_az_error"]
+                probe = plan["probe"]["test"]["az_mae"]
+                block = f"{int(tag[1:3])}, $t={int(tag[4:])}$"
+                rows.append(
+                    f"{block} & none & ${probe:.1f}$ & -- & ${base_err:.1f}$ & $0$ & $1.00$ & $0$ \\\\"
+                )
+                first = False
+            after = plan["probe_after_erasure"][cond]["test"]
+            change = plan.get("erasure_change_norm", {}).get(cond)
+            change_txt = "--" if change is None else f"${100 * change / plan['mean_token_norm']:.1f}$"
+            r = res.loc[cond]
+            turn = abs_turn_median(pd.read_csv(folder / "per_image.csv"), cond)
+            rows.append(
+                f" & {names[cond]} & ${after:.1f}$ & {change_txt} & ${r['label_az_error']:.1f}$"
+                f" & ${turn:.0f}$ & ${r['shadow_kept']:.2f}$ & ${r['pixel_change']:.1f}$ \\\\"
+            )
+        rows.append("\\midrule")
+    lines = [
+        "\\begin{tabular}{llrrrrrr}",
+        "\\toprule",
+        " & & \\multicolumn{2}{c}{Features} & \\multicolumn{4}{c}{Output} \\\\",
+        "Block & Eraser & Probe & Change (\\%) & Error & $|$Turn$|$ & Kept & Pixels \\\\",
+        "\\midrule",
+        *rows[:-1],
+        "\\bottomrule",
+        "\\end{tabular}",
+    ]
     out.write_text("\n".join(lines) + "\n")
     print(f"-> {out}")
 
@@ -197,11 +226,14 @@ def patch_figure(reports: Path, out: Path) -> None:
     p["block"] = p["condition"].str.extract(r"b(\d+)_")[0].astype(int)
     p["region"] = p["condition"].str.extract(r"b\d+_(\w+)$")[0]
     names = {"object": "object tokens", "shadow_src": "source shadow tokens", "floor": "other floor tokens"}
+    # The source shadow outside the patched cells, minus its value without a patch.
+    p["outside_gain"] = p["source_shadow_outside"] - p["source_shadow_outside_base"]
     measures = (
         ("fraction_mean", "pixel probe: share of the rotation"),
-        ("source_shadow_shown", "crisp source shadow that appears"),
+        ("crop_fraction_mean", "object probe: share of the rotation"),
+        ("outside_gain", "source shadow outside the patched cells\n(gain against no patch)"),
     )
-    fig, axes = plt.subplots(1, 2, figsize=(9.0, 3.0), sharey=True)
+    fig, axes = plt.subplots(1, 3, figsize=(10.5, 3.2), sharey=True)
     for ax, (col, title) in zip(axes, measures, strict=True):
         for region, label in names.items():
             g = p[p["region"] == region].sort_values("block")
@@ -211,7 +243,7 @@ def patch_figure(reports: Path, out: Path) -> None:
             ("patch:b10_all", ":", "all tokens, block 10"),
         ):
             v = df[df["condition"] == cond]
-            if len(v):
+            if len(v) and col in v and pd.notna(v[col].iloc[0]):
                 ax.axhline(v[col].iloc[0], color="k", ls=style, lw=1, label=label)
         ax.axhline(0, color="k", lw=0.8)
         ax.set_title(title, fontsize=9)
@@ -219,7 +251,7 @@ def patch_figure(reports: Path, out: Path) -> None:
         ax.set_xticks(range(0, 19, 2))
         ax.grid(alpha=0.3)
     axes[0].set_ylabel("share")
-    axes[1].legend(fontsize=7)
+    axes[0].legend(fontsize=7)
     fig.tight_layout()
     fig.savefig(out, dpi=180)
     print(f"-> {out}")
@@ -235,10 +267,10 @@ def main() -> None:
     args = parser.parse_args()
     args.out.mkdir(parents=True, exist_ok=True)
     scan_figure(args.reports, args.sets.split(","), args.split, args.grid, args.out / "scan.png")
-    causal_figure(args.reports, args.out / "causal.png")
     tables = args.out.parent / "tables"
     tables.mkdir(parents=True, exist_ok=True)
     causal_table(args.reports, tables / "causal.tex")
+    erase_table(args.reports, tables / "erase.tex")
     patch_figure(args.reports, args.out / "patch.png")
     examples = args.reports / "causal_b05" / "b05t100" / "examples.png"
     if examples.exists():

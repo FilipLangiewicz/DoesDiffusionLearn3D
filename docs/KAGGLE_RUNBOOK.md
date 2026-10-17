@@ -15,7 +15,7 @@ This file tells how the project runs work on Kaggle. Read it before you start or
 - Account `jankombajn`. The API token is in `~/.kaggle/`; never print it.
 - The tools call the Kaggle CLI of the virtual environment. If you want a log of the calls, set `KAGGLE_CLI` to a wrapper.
 - At most 5 CPU jobs and 2 GPU jobs at the same time. GPU quota: 30 hours each week.
-- Accelerator `NvidiaTeslaT4` = one T4. Accelerator `NvidiaTeslaT4Highmem` = two T4 and 31 GB RAM.
+- Kaggle has no machine with one T4. Accelerator `NvidiaTeslaT4` gives two T4 GPUs; the queue for it can take hours. The P100 is not offered any more (2026-10-17).
 - A job stops after 12 hours. Its output folder can have at most 20 GB and at most 500 files; pack many files into tar files.
 
 ## Tools (`tools/kaggle/`)

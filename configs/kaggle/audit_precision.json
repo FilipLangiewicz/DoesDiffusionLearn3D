@@ -1,0 +1,10 @@
+{
+ "name": "audit-precision",
+ "sets": ["v2pos", "v2", "v2r", "v2rns", "v2rso"],
+ "features": {},
+ "kernels": ["jankombajn/dd3d-renders"],
+ "datasets": [],
+ "commands": [
+  "python scripts/audit/validation/precision_check.py --data-root {DATA} --out {OUT}/precision"
+ ]
+}

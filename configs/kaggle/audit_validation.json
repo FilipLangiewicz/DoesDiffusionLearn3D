@@ -1,0 +1,27 @@
+{
+ "name": "audit-validation",
+ "sets": [
+  "v2pos",
+  "v2"
+ ],
+ "features": {},
+ "kernels": [
+  "jankombajn/dd3d-renders",
+  "jankombajn/dd3d-intervene-patch",
+  "jankombajn/dd3d-intervene-causal",
+  "jankombajn/dd3d-intervene-causal-b05",
+  "jankombajn/dd3d-intervene-multi",
+  "jankombajn/dd3d-analyze-plans-v2",
+  "jankombajn/dd3d-analyze-plans-v2-b05",
+  "jankombajn/dd3d-analyze-plans-multi"
+ ],
+ "datasets": [
+  "jankombajn/dd3d-plans"
+ ],
+ "commands": [
+  "mkdir -p /kaggle/temp/patch && for f in {PREV}/dd3d-intervene-patch/*.tar; do tar xf $f -C /kaggle/temp/patch; done",
+  "mkdir -p /kaggle/temp/causal && for f in {PREV}/dd3d-intervene-causal/*.tar {PREV}/dd3d-intervene-causal-b05/*.tar {PREV}/dd3d-intervene-multi/*.tar; do tar xf $f -C /kaggle/temp/causal; done && ls /kaggle/temp/causal /kaggle/temp/patch",
+  "python scripts/audit/validation/patch_copy_check.py --outputs /kaggle/temp/patch/patch_part0 /kaggle/temp/patch/patch_part1 --plans {PREV}/dd3d-plans/plan_patch_part0.dat {PREV}/dd3d-plans/plan_patch_part1.dat --out {OUT}/patch_copy",
+  "python scripts/audit/validation/shading_measure.py --set b04=/kaggle/temp/causal/causal_b04={PREV}/dd3d-analyze-plans-v2/out/plans/b04t400/plan.npz --set b10=/kaggle/temp/causal/causal_b10={PREV}/dd3d-analyze-plans-v2/out/plans/b10t400/plan.npz --set b18=/kaggle/temp/causal/causal_b18={PREV}/dd3d-analyze-plans-v2/out/plans/b18t400/plan.npz --set b05t100=/kaggle/temp/causal/causal_b05t100={PREV}/dd3d-analyze-plans-v2-b05/out/plans/b05t100/plan.npz --set multi=/kaggle/temp/causal/causal_multi={PREV}/dd3d-analyze-plans-multi/out/plans/multi_all/plan.npz --set patch0=/kaggle/temp/patch/patch_part0={PREV}/dd3d-plans/plan_patch_part0.dat --set patch1=/kaggle/temp/patch/patch_part1={PREV}/dd3d-plans/plan_patch_part1.dat --splits {DATA}/v2/splits --images {DATA}/v2/images --out {OUT}/shading"
+ ]
+}

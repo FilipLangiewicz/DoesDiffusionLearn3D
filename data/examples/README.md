@@ -2,7 +2,7 @@
 
 This folder has three images of each data set version (256 px JPEG) and one overview sheet, `overview.jpg`. The full data sets are on Kaggle only. `docs/KAGGLE_DATA.md` gives the links.
 
-The new versions use the same scene numbers. Thus the rows of the sheet for v2, v2ns, v2r, v2rns, v2rso and v2rot differ from the v2 row in one property only.
+The new versions use the same scene numbers. Thus the rows of the sheet for v2ns, v2r and v2rot differ from the v2 row in one property only. The rows for v2rns and v2rso differ from the v2r row in one property only.
 
 | Version | What changes | Images | Labels and splits |
 |---|---|---:|---|

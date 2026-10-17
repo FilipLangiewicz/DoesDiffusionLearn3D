@@ -52,3 +52,25 @@ def test_sin_cos_match_azimuth(splits, master):
         az = np.radians(df["light_azimuth_deg"].to_numpy())
         np.testing.assert_allclose(df["sin_azimuth"], np.sin(az), atol=1e-6, err_msg=name)
         np.testing.assert_allclose(df["cos_azimuth"], np.cos(az), atol=1e-6, err_msg=name)
+
+
+@pytest.mark.parametrize("name", ["v2", "v2r", "v2rns", "v2rso"])
+def test_new_data_set_splits(repo_root, name):
+    folder = repo_root / "data" / name / "splits"
+    parts = {s: pd.read_csv(folder / f"{s}.csv") for s in SPLITS}
+    for s, rows in ROWS.items():
+        assert len(parts[s]) == rows, (name, s)
+    for i, a in enumerate(SPLITS):
+        for b in SPLITS[i + 1 :]:
+            assert not set(parts[a]["image_id"]) & set(parts[b]["image_id"]), (name, a, b)
+    assert set(parts["test_cubes"]["shape"]) == {"SmoothCube_v2"}
+    for s in ("train", "val", "test"):
+        assert "SmoothCube_v2" not in set(parts[s]["shape"]), (name, s)
+
+
+def test_cue_variants_have_the_same_scenes_as_v2r(repo_root):
+    base = pd.read_csv(repo_root / "data" / "v2r" / "labels.csv")
+    for name in ("v2rns", "v2rso"):
+        other = pd.read_csv(repo_root / "data" / name / "labels.csv")
+        cols = ["light_azimuth_deg", "light_elevation_deg", "size", "x", "y"]
+        assert np.allclose(base[cols].to_numpy(), other[cols].to_numpy()), name

@@ -40,8 +40,8 @@ A job clones this repository at a commit. Thus, push the commit first.
 | Table 2: noise rule | GPU test of the noise rule | `tools/diffusers_upstream/functional/repro_sana.py` | `tools/diffusers_upstream/functional/kaggle_sana1600m_result.txt`; unit test `tests/unit/test_noise.py` |
 | Table 3: pixel probes on image regions | local, with the v1 images | `scripts/experiments/pixel_cues.py` (`make cues`) | `reports/experiments/pixel_cues/results.md` |
 | Label and arrow audit | local | `scripts/audit/arrow_audit.py` (`make audit`) | `reports/audit/`, `docs/audit/labels_and_arrows.md` |
-| Table 4: probes on all data sets | `scan_<set>`, `deep_<set>`, then `vis_<set>` (DINOv2, CLIP) | `feature_scan.py`, `best_probes.py`, then local `rq1_table.py` | `reports/experiments/<set>/best/`, `reports/experiments/rq1.md`, `docs/article/tables/rq1.tex` |
-| Figure 4: probe scan | as Table 4 | local `result_figures.py` | `docs/article/figures/scan.png` |
+| Table 5: probes on all data sets | `scan_<set>`, `deep_<set>`, then `vis_<set>` (DINOv2, CLIP) | `feature_scan.py`, `best_probes.py`, then local `rq1_table.py` | `reports/experiments/<set>/best/`, `reports/experiments/rq1.md`, `docs/article/tables/rq1.tex` |
+| Figure 2: probe scan | as Table 5 | local `result_figures.py` | `docs/article/figures/scan.png` |
 | Position transfer (v2 to v2r) | `transfer_pos`, `transfer_pos_vision` | `transfer.py` | `reports/experiments/transfer/pos*/transfer.md` |
 | Cue transfer (v2r to v2rns, v2rso) | `transfer_cue_pooled` | `transfer.py` | `reports/experiments/transfer/cue_pooled/transfer.md` |
 | Probe maps (object and shadow cells) | `deep_<set>` | `probe_maps.py` | `reports/experiments/<set>/maps/regions.md` |
@@ -50,9 +50,10 @@ A job clones this repository at a commit. Thus, push the commit first.
 | Shift test with more noise | `intervene_causal_sigma`, `reanalyze_v2` | as above | `reports/experiments/causal_sigma/` |
 | Shift in all blocks | `plans_multi`, `intervene_multi`, `reanalyze_v2` | `make_multiblock_plan.py`, as above | `reports/experiments/causal_multi/` |
 | Erasure with one eraser for each cell | `plans_erase_v2`, `intervene_erase`, `erase_v2` | `make_intervention_plan.py --cell-eraser --only-erase`, as above | `reports/experiments/plans/b*e/plan.json` (probe after erasure), `reports/experiments/causal_erase/` |
+| Control of the cell eraser (labels in a random order) | `plans_erase_ctrl_v2`, `intervene_erase_ctrl`, `erase_ctrl_v2` | `make_intervention_plan.py --cell-eraser --cell-eraser-control --no-erase --only-erase`, as above | `reports/experiments/plans/b*c/plan.json`, `reports/experiments/causal_erase_ctrl/` |
 | Patch test | local plan, `intervene_patch`, `reanalyze_v2` | `make_patch_plan.py`, `dd3d.intervene.run_patch`, `analyze_patching.py` | `reports/experiments/patch/summary.csv` |
 | Calibration of the output measures | `reanalyze_v2` | `calibrate_measures.py` | `reports/experiments/measures/measures.md` |
-| Other figures and tables | the result files above | local `result_figures.py` (scan, causal and patch figures, Table 5), `make_article_figures.py` (conventions, image regions, examples) | `docs/article/figures/`, `docs/article/tables/` |
+| Other figures and tables | the result files above | local `result_figures.py` (scan and patch figures, the tables of the shift and the erasure), `make_article_figures.py` (conventions, image regions, examples) | `docs/article/figures/`, `docs/article/tables/` |
 | Article PDF | — | `make article` (tectonic) | `docs/article/build/main.pdf` |
 
 The plan of the patch test comes from `python scripts/experiments/make_patch_plan.py --only <pairs> --out <folder>` with the pairs of `configs/kaggle/patch_pairs.txt`. Upload its two plan files to the Kaggle data set `dd3d-plans` with the extension `.dat`. Kaggle unpacks `.npz` files of a data set, because they are zip files.

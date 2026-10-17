@@ -63,6 +63,12 @@ This file is the weekly standup log of the team. Each week has one entry. We wri
   - a calibration of the output measures;
   - tests of the probe and of the measures;
   - `docs/REPRODUCE.md`.
+- The new runs gave these findings (all values in `docs/RESULTS.md`):
+  - F19: DINOv2 and CLIP do not generate images, but they read the light direction equally well or better on the known shapes (v2r: 3.3 and 3.9 deg, SANA 5.4 deg). On cubes, SANA is better only when the object moves and its shading is visible (v2r: 7.6 deg, DINOv2 10.0 deg, CLIP 16.0 deg). A readable light direction is thus not specific to a generative model.
+  - F20: The probe on the object crop confirms F15 for the shading: the pattern shift (x1) turns the object by 50 to 52 deg.
+  - F21: A patch of the object tokens turns the shading of the object (0.36 to 0.45 of the turn by the object probe, against 0.56 for the full source pass). Outside the patched cells, 3% to 9% of the source shadow appears, against 3% without a patch. This replaces F16.
+  - F22: After the cell eraser, a new probe on the grid is at chance (88 deg). TODO_F22
+- `docs/RESULTS.md` (Polish) is now the only summary of the results. It replaces `docs/STAN_PRAC.md` and `docs/PODSUMOWANIE.md`. The explanation of the library error is now in `tools/diffusers_upstream/WYJASNIENIE.md`.
 
 ### Deviations from the plan
 
@@ -76,7 +82,7 @@ This file is the weekly standup log of the team. Each week has one entry. We wri
 - Week 2 (2026-10-19 to 2026-10-25): finish the fixes of the audit and change the article to the new results.
 - Ask the coordinator about the team size and the old project.
 - Review the language of the article and select the venue.
-- Show the viewer and the status report at the next meeting.
+- Show the viewer and `docs/RESULTS.md` at the next meeting.
 
 ### Blockers
 

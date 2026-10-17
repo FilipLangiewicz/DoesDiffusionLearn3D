@@ -3,7 +3,7 @@
 The script also reports the mermaid blocks that do not parse and the images that do
 not load. It loads marked and mermaid 11 from a CDN, so it needs a network.
 
-Usage: python tools/render_md.py docs/STAN_PRAC.md runs/tmp/stan  (writes runs/tmp/stan.png)
+Usage: python tools/render_md.py docs/RESULTS.md runs/tmp/results  (writes runs/tmp/results.png)
 """
 
 import json

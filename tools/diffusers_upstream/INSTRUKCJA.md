@@ -70,7 +70,7 @@ Pliki w tym folderze:
 
    Wszystko musi przejść. Jeśli liczby różnią się od tych w `PR.md`, popraw je w opisie.
 
-5. Przeczytaj zmiany: `git diff`. W każdym z 4 schedulerów jest jedna zmiana w `__init__` (przypisanie `self.sigmas`), plus testy. Musisz umieć ją wyjaśnić recenzentowi. Wyjaśnienie jest w `docs/PODSUMOWANIE.md`, rozdział 9.
+5. Przeczytaj zmiany: `git diff`. W każdym z 4 schedulerów jest jedna zmiana w `__init__` (przypisanie `self.sigmas`), plus testy. Musisz umieć ją wyjaśnić recenzentowi. Wyjaśnienie jest w [`WYJASNIENIE.md`](WYJASNIENIE.md).
 
 6. Commit i wysłanie do swojego forka:
 

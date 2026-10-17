@@ -76,6 +76,12 @@ Our contributions are:
     \item A checklist for probe studies of generative models (Section~\ref{sec:discussion}). We also release an exact model of the render geometry and a fix with tests for a pitfall in a popular diffusion library.
 \end{enumerate}
 
+\paragraph{Terms.}
+The \emph{shading} is the light and dark sides of the object; the \emph{cast shadow} is the shadow of the object on the floor.
+A \emph{code} of the light is a set of directions in the activations from which a linear probe reads the light azimuth.
+The \emph{activation pattern} is the mean change of the features when the light turns (Section~\ref{sec:causal}). Its \emph{natural size} is the mean change for a turn of $90\degr$.
+Appendix~\ref{app:details} gives all settings of the experiments.
+
 \section{Related work}
 \label{sec:related}
 
@@ -633,9 +639,9 @@ A claim that a model ``moves the shadow'' needs a measure of the shadow.
 \section{Limitations}
 The study uses one property, simple synthetic scenes with one object, and the empty prompt.
 All interventions start from a render (SDEdit); at $\sigma_0=0.7$ the noisy input still shows the original shadow, which can resist a change.
-The shifts act in one block at a time and use directions from the features at $t=400$, while the probes read best at $t=100$.
-The pixel probe on the outputs mostly reads the shading of the object. The shadow measure is a heuristic with large errors on short shadows, so we report medians and both measures.
-The causal test uses 60 images and the patch test 48 pairs.
+Most shifts act in one block at a time, and all shifts are constant in each grid cell.
+The pixel probe reads the whole image. The object probe reads the object alone, but it has larger errors on generated images than on renders. The dark-region measure has large errors on short shadows, so we report medians and all measures.
+The causal tests use 60 images (48 for the shift in all blocks), and the patch test uses 48 pairs.
 The features are average-pooled, so the probes cannot see fine structure inside a cell.
 All runs use float16 on T4 GPUs; float32 gives the same features on a test set (relative difference $0.1\%$).
 
@@ -661,5 +667,35 @@ The view direction is $f=-c/\lVert c\rVert$, the right axis is $r=f\times e_z/\l
 For a point $p$, let $d=p-c$; the pixel position is $x=W\,(0.5+\tfrac{35}{32}\,\tfrac{d\cdot r}{d\cdot f})$ and $y=H-H\,(0.5+\tfrac{35}{32}\,\tfrac{d\cdot u}{d\cdot f})$ with $W=H=512$.
 The key lamp is at $L=5(\cos\theta\cos\phi,\cos\theta\sin\phi,\sin\theta)$.
 The shadow of the object centre $p$ on the floor is $L+\tfrac{L_z}{L_z-p_z}(p-L)$.
+For the sun lamp of the new data sets with the light direction $u$ (unit vector to the light), the shadow of a point $p$ is $p-\tfrac{p_z}{u_z}\,u$.
+
+\section{Experimental details}
+\label{app:details}
+
+\paragraph{Renders.}
+Blender 2.78c with Cycles renders each image with 64 samples at $512\times512$ px.
+The sets v2 to v2rot have a sun lamp with strength $3.0$ and a soft size of $0.02$, a white world light of strength $0.2$, a flat floor and no camera jitter. The extra lamp of the CLEVR scene is off.
+The object size $r$ is uniform in $[0.8,1.4]$ and its rotation is uniform in $[0,2\pi)$.
+In v2rns the object casts no shadow (Cycles shadow visibility off); in v2rso the camera does not see the object (camera visibility off). In both sets the object still reflects light.
+
+\paragraph{Features.}
+SANA-1.6B runs in float16 on a T4 GPU with a $1024\times1024$ input (bilinear scale), the empty prompt with its attention mask, and the flow noise with a fixed seed for each image.
+SANA with random weights uses the default initialization of the architecture.
+Stable Diffusion 1.5 uses $512$ px and SDXL $1024$ px; their VAE runs in float32 and their UNet in float16, with the DDPM noise of each model. The blocks are the outputs of the down, mid and up blocks.
+DINOv2-L and CLIP ViT-L/14 get the image at $224$ px without a crop, with the normalization of each model. Their features are the patch tokens of every second layer, without the class token.
+
+\paragraph{Probe.}
+A randomized PCA (at most 256 components) and the Ridge regression are fitted on the train split. The grid of $\alpha$ has 19 values from $10^{-5}$ to $10$ times the median sum of squares of the scores. The validation split selects $\alpha$ by the sum of the azimuth and elevation MAE.
+The intervals are percentile intervals of 2000 bootstrap samples over the images; a paired comparison uses the same samples for both sources.
+
+\paragraph{Causal tests.}
+The tests use 60 test images of v2 (a random sample with a fixed seed), $\sigma_0=0.7$ unless stated, and 20 Euler steps; the transformer gets the timestep $1000\,\sigma$.
+A hook changes the output of one block at every step. The decoder output ($1024$ px) is scaled to $512$ px for the measures.
+The pooled eraser is one LEACE eraser, fitted on 30{,}000 cells of the train images. The cell eraser has one LEACE eraser for each grid cell, fitted on all train images.
+
+\paragraph{Patch test.}
+The regions come from the scene geometry on a $16\times16$ grid. A cylinder with radius $r$ and height $2r$ stands for the object, and its shadow comes from the sun direction.
+The object region has the cells that contain the object; the shadow region has the cells that contain the shadow but not the object.
+The analysis also measures outside the patched cells, grown by 16 px (one token), because the decoder spreads the change of a token to its neighbours.
 
 \end{document}

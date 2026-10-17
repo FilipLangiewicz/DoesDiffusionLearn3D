@@ -27,10 +27,24 @@ import pandas as pd  # noqa: E402
 from dd3d.select import selected  # noqa: E402
 
 CONTROLS = {
-    "pixels": ("pixels", "--"),
     "vae_latent": ("DC-AE latent", ":"),
     "sana_random_init": ("SANA, random weights", "-."),
+    "dinov2": ("DINOv2-L (no generation)", (0, (5, 1, 1, 1))),
+    "clip": ("CLIP ViT-L/14 (no generation)", (0, (1, 1))),
 }
+
+
+def best_pixel_line(reports: Path, name: str, split: str) -> tuple[float, str] | None:
+    """Return the MAE and the label of the pixel grid that the val split selects (as in Table 4)."""
+    best = reports / name / "best"
+    if not (best / "pixels_best.txt").exists():
+        return None
+    source = (best / "pixels_best.txt").read_text().strip()
+    pred = pd.read_csv(best / "predictions.csv")
+    err = pred[(pred["source"] == source) & (pred["split"] == split)]["az_err"]
+    return float(err.mean()), "pixels, grid selected on val"
+
+
 TITLES = {
     "v1": "v1 (original data)",
     "v2": "v2 (object at the centre)",
@@ -65,6 +79,9 @@ def scan_figure(reports: Path, sets: list[str], split: str, grid: int, out: Path
                 label=f"SANA t={t}",
             )
         sel = selected(pd.read_csv(path))
+        line = best_pixel_line(reports, name, split)
+        if line is not None:
+            ax.axhline(line[0], color="k", ls="--", lw=1, label=line[1])
         for run, (label, style) in CONTROLS.items():
             row = sel[sel["run"] == run]
             if row.empty:
@@ -83,8 +100,12 @@ def scan_figure(reports: Path, sets: list[str], split: str, grid: int, out: Path
         ax.grid(alpha=0.3)
         ax.set_ylim(bottom=0)
     axes[0][0].set_ylabel(f"azimuth MAE on {split} (deg)")
-    axes[0][-1].legend(fontsize=6, loc="upper right")
-    fig.tight_layout()
+    handles = {}
+    for ax in axes[0]:
+        for h, lab in zip(*ax.get_legend_handles_labels(), strict=True):
+            handles.setdefault(lab, h)
+    fig.legend(handles.values(), handles.keys(), loc="lower center", ncol=5, fontsize=7, frameon=False)
+    fig.tight_layout(rect=(0, 0.14, 1, 1))
     fig.savefig(out, dpi=180)
     print(f"-> {out}")
 

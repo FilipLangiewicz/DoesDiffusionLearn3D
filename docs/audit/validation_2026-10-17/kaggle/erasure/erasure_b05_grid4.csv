@@ -1,0 +1,9 @@
+key,features,split,az_mae,az_ci_low,az_ci_high
+sana/block_05/t_100,"original, 8x8",test,2.613,2.348,2.894
+sana/block_05/t_100,"original, 8x8",test_cubes,5.055,4.815,5.322
+sana/block_05/t_100,"erased, 8x8",test,2.886,2.597,3.188
+sana/block_05/t_100,"erased, 8x8",test_cubes,4.721,4.485,4.972
+sana/block_05/t_100,"original, 1x1",test,4.121,3.660,4.574
+sana/block_05/t_100,"original, 1x1",test_cubes,13.599,12.959,14.265
+sana/block_05/t_100,"erased, 1x1",test,88.326,81.005,95.746
+sana/block_05/t_100,"erased, 1x1",test_cubes,86.005,82.910,89.260

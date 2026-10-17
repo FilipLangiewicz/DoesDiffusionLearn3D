@@ -1,0 +1,58 @@
+[09:42:40] params: {"name": "audit-measures", "ref": "9c4c4a88fd302cbce6e2875caff2e57ca4936ce7", "sets": ["v2pos", "v2", "v2rot"], "features": {}, "split_md5": {"v2": "067ad25419c8b1beb3b2a0f4f9b20167"}, "commands": ["python scripts/audit/validation/measure_check.py --splits {DATA}/v2/splits --images {DATA}/v2/images --rot-images {DATA}/v2rot/images --pairs configs/kaggle/patch_pairs.txt --out {OUT}/measures"]}
+[09:42:40] $ nproc; free -g | head -2; df -h /kaggle/temp /kaggle/working | tail -2
+[09:42:41] 4
+               total        used        free      shared  buff/cache   available
+Mem:              31           0          26           0           4          30
+overlay         8.0T  7.0T  1.1T  87% /
+/dev/loop2       20G  136K   20G   1% /kaggle/working
+[09:42:41] $ ls /kaggle/input /kaggle/input/* | head -60
+[09:42:41] /kaggle/input:
+notebooks
+
+/kaggle/input/notebooks:
+jankombajn
+[09:42:41] $ pip install -q tabulate
+[09:42:47] $ git clone -q https://github.com/FilipLangiewicz/DoesDiffusionLearn3D /kaggle/temp/repo && cd /kaggle/temp/repo && git checkout -q 9c4c4a88fd302cbce6e2875caff2e57ca4936ce7 && git log -1 --format=%h
+[09:43:09] 9c4c4a8
+[09:43:09] $ tar xf '/kaggle/input/notebooks/jankombajn/dd3d-renders/v2pos/v2pos_00000_00300.tar' -C /kaggle/temp/img_v2pos/0
+[09:43:11] v2pos: 1 shards, 300 labels, images {'Sphere': 100, 'SmoothCylinder': 100, 'SmoothCube_v2': 100}
+[09:43:11] $ tar xf '/kaggle/input/notebooks/jankombajn/dd3d-renders/v2/v2_00000_00500.tar' -C /kaggle/temp/img_v2/0
+[09:43:13] $ tar xf '/kaggle/input/notebooks/jankombajn/dd3d-renders/v2/v2_00500_01000.tar' -C /kaggle/temp/img_v2/1
+[09:43:16] $ tar xf '/kaggle/input/notebooks/jankombajn/dd3d-renders/v2/v2_01000_01500.tar' -C /kaggle/temp/img_v2/2
+[09:43:18] $ tar xf '/kaggle/input/notebooks/jankombajn/dd3d-renders/v2/v2_01500_02000.tar' -C /kaggle/temp/img_v2/3
+[09:43:20] $ tar xf '/kaggle/input/notebooks/jankombajn/dd3d-renders/v2/v2_02000_02500.tar' -C /kaggle/temp/img_v2/4
+[09:43:22] $ tar xf '/kaggle/input/notebooks/jankombajn/dd3d-renders/v2/v2_02500_03000.tar' -C /kaggle/temp/img_v2/5
+[09:43:25] v2: 6 shards, 3000 labels, images {'Sphere': 1000, 'SmoothCylinder': 1000, 'SmoothCube_v2': 1000}
+[09:43:25] $ tar xf '/kaggle/input/notebooks/jankombajn/dd3d-render-v2rot-0/v2rot_00000_00048.tar' -C /kaggle/temp/img_v2rot/0
+[09:43:25] v2rot: 1 shards, 48 labels, images {'Sphere': 24, 'SmoothCylinder': 24, 'SmoothCube_v2': 0}
+[09:43:25] $ python scripts/data/make_v2_splits.py --labels /kaggle/temp/data/v2pos/labels.csv --pos-labels none --out /kaggle/temp/data/v2pos/splits
+[09:43:27] /kaggle/temp/data/v2pos/splits/test.csv 20
+/kaggle/temp/data/v2pos/splits/test_cubes.csv 100
+/kaggle/temp/data/v2pos/splits/train.csv 160
+/kaggle/temp/data/v2pos/splits/val.csv 20
+[09:43:27] v2pos: splits md5 f206d018c01e6de7076d1d9ae9259893 (expected None)
+[09:43:27] $ python scripts/data/make_v2_splits.py --labels /kaggle/temp/data/v2/labels.csv --pos-labels /kaggle/temp/data/v2pos/labels.csv --out /kaggle/temp/data/v2/splits
+[09:43:28] /kaggle/temp/data/v2/splits/test.csv 200
+/kaggle/temp/data/v2/splits/test_cubes.csv 1000
+/kaggle/temp/data/v2/splits/test_pos.csv 300
+/kaggle/temp/data/v2/splits/train.csv 1600
+/kaggle/temp/data/v2/splits/val.csv 200
+[09:43:28] v2: splits md5 067ad25419c8b1beb3b2a0f4f9b20167 (expected 067ad25419c8b1beb3b2a0f4f9b20167)
+[09:43:28] $ python scripts/data/make_v2_splits.py --labels /kaggle/temp/data/v2rot/labels.csv --pos-labels none --out /kaggle/temp/data/v2rot/splits
+[09:43:29] /kaggle/temp/data/v2rot/splits/test.csv 6
+/kaggle/temp/data/v2rot/splits/test_cubes.csv 0
+/kaggle/temp/data/v2rot/splits/train.csv 38
+/kaggle/temp/data/v2rot/splits/val.csv 4
+[09:43:29] v2rot: splits md5 57e24918d10b3cf779fc572e1a762495 (expected None)
+[09:43:29] $ python scripts/audit/validation/measure_check.py --splits /kaggle/temp/data/v2/splits --images /kaggle/temp/data/v2/images --rot-images /kaggle/temp/data/v2rot/images --pairs configs/kaggle/patch_pairs.txt --out /kaggle/working/out/measures
+[09:45:12] check     n  nan_share  median    mean
+0        dark-region azimuth error, v2 test   200      0.005   6.380  12.727
+1  dark-region azimuth error, v2 test_cubes  1000      0.046   8.680  13.871
+2                   kept share, same render    48      0.021   1.000   1.000
+3              kept share, v2 against v2rot    48      0.021   0.071   0.091
+[09:45:12] command 0 ended with code 0 after 103 s
+[09:45:12] all commands ended with code 0
+[09:45:12] $ cd /kaggle/working/out && find . -type f | sort | head -300 && du -sh .
+[09:45:12] ./measures/measures.csv
+./measures/measures.md
+16K	.

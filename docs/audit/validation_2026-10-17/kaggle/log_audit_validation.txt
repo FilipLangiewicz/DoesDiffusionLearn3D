@@ -1,0 +1,145 @@
+[09:30:58] params: {"name": "audit-validation", "ref": "4567113527b4a936b47002721ff836488258868f", "sets": ["v2pos", "v2"], "features": {}, "split_md5": {"v2": "067ad25419c8b1beb3b2a0f4f9b20167"}, "commands": ["mkdir -p /kaggle/temp/patch && for f in {PREV}/dd3d-intervene-patch/*.tar; do tar xf $f -C /kaggle/temp/patch; done", "mkdir -p /kaggle/temp/causal && for f in {PREV}/dd3d-intervene-causal/*.tar {PREV}/dd3d-intervene-causal-b05/*.tar {PREV}/dd3d-intervene-multi/*.tar; do tar xf $f -C /kaggle/temp/causal; done && ls /kaggle/temp/causal /kaggle/temp/patch", "python scripts/audit/validation/patch_copy_check.py --outputs /kaggle/temp/patch/patch_part0 /kaggle/temp/patch/patch_part1 --plans {PREV}/dd3d-plans/plan_patch_part0.dat {PREV}/dd3d-plans/plan_patch_part1.dat --out {OUT}/patch_copy", "python scripts/audit/validation/shading_measure.py --set b04=/kaggle/temp/causal/causal_b04={PREV}/dd3d-analyze-plans-v2/out/plans/b04t400/plan.npz --set b10=/kaggle/temp/causal/causal_b10={PREV}/dd3d-analyze-plans-v2/out/plans/b10t400/plan.npz --set b18=/kaggle/temp/causal/causal_b18={PREV}/dd3d-analyze-plans-v2/out/plans/b18t400/plan.npz --set b05t100=/kaggle/temp/causal/causal_b05t100={PREV}/dd3d-analyze-plans-v2-b05/out/plans/b05t100/plan.npz --set multi=/kaggle/temp/causal/causal_multi={PREV}/dd3d-analyze-plans-multi/out/plans/multi_all/plan.npz --set patch0=/kaggle/temp/patch/patch_part0={PREV}/dd3d-plans/plan_patch_part0.dat --set patch1=/kaggle/temp/patch/patch_part1={PREV}/dd3d-plans/plan_patch_part1.dat --splits {DATA}/v2/splits --images {DATA}/v2/images --out {OUT}/shading"]}
+[09:30:58] $ nproc; free -g | head -2; df -h /kaggle/temp /kaggle/working | tail -2
+[09:30:58] 4
+               total        used        free      shared  buff/cache   available
+Mem:              31           0          26           0           4          30
+overlay         8.0T  7.0T  1.1T  87% /
+/dev/loop2       20G  176K   20G   1% /kaggle/working
+[09:30:58] $ ls /kaggle/input /kaggle/input/* | head -60
+[09:30:58] /kaggle/input:
+datasets
+notebooks
+
+/kaggle/input/datasets:
+jankombajn
+
+/kaggle/input/notebooks:
+jankombajn
+[09:30:58] $ pip install -q tabulate
+[09:31:05] $ git clone -q https://github.com/FilipLangiewicz/DoesDiffusionLearn3D /kaggle/temp/repo && cd /kaggle/temp/repo && git checkout -q 4567113527b4a936b47002721ff836488258868f && git log -1 --format=%h
+[09:31:30] 4567113
+[09:31:30] $ tar xf '/kaggle/input/notebooks/jankombajn/dd3d-renders/v2pos/v2pos_00000_00300.tar' -C /kaggle/temp/img_v2pos/0
+[09:31:32] v2pos: 1 shards, 300 labels, images {'Sphere': 100, 'SmoothCylinder': 100, 'SmoothCube_v2': 100}
+[09:31:32] $ tar xf '/kaggle/input/notebooks/jankombajn/dd3d-renders/v2/v2_00000_00500.tar' -C /kaggle/temp/img_v2/0
+[09:31:34] $ tar xf '/kaggle/input/notebooks/jankombajn/dd3d-renders/v2/v2_00500_01000.tar' -C /kaggle/temp/img_v2/1
+[09:31:38] $ tar xf '/kaggle/input/notebooks/jankombajn/dd3d-renders/v2/v2_01000_01500.tar' -C /kaggle/temp/img_v2/2
+[09:31:39] $ tar xf '/kaggle/input/notebooks/jankombajn/dd3d-renders/v2/v2_01500_02000.tar' -C /kaggle/temp/img_v2/3
+[09:31:44] $ tar xf '/kaggle/input/notebooks/jankombajn/dd3d-renders/v2/v2_02000_02500.tar' -C /kaggle/temp/img_v2/4
+[09:31:46] $ tar xf '/kaggle/input/notebooks/jankombajn/dd3d-renders/v2/v2_02500_03000.tar' -C /kaggle/temp/img_v2/5
+[09:31:51] v2: 6 shards, 3000 labels, images {'Sphere': 1000, 'SmoothCylinder': 1000, 'SmoothCube_v2': 1000}
+[09:31:51] $ python scripts/data/make_v2_splits.py --labels /kaggle/temp/data/v2pos/labels.csv --pos-labels none --out /kaggle/temp/data/v2pos/splits
+[09:31:56] /kaggle/temp/data/v2pos/splits/test.csv 20
+/kaggle/temp/data/v2pos/splits/test_cubes.csv 100
+/kaggle/temp/data/v2pos/splits/train.csv 160
+/kaggle/temp/data/v2pos/splits/val.csv 20
+[09:31:56] v2pos: splits md5 f206d018c01e6de7076d1d9ae9259893 (expected None)
+[09:31:56] $ python scripts/data/make_v2_splits.py --labels /kaggle/temp/data/v2/labels.csv --pos-labels /kaggle/temp/data/v2pos/labels.csv --out /kaggle/temp/data/v2/splits
+[09:31:57] /kaggle/temp/data/v2/splits/test.csv 200
+/kaggle/temp/data/v2/splits/test_cubes.csv 1000
+/kaggle/temp/data/v2/splits/test_pos.csv 300
+/kaggle/temp/data/v2/splits/train.csv 1600
+/kaggle/temp/data/v2/splits/val.csv 200
+[09:31:57] v2: splits md5 067ad25419c8b1beb3b2a0f4f9b20167 (expected 067ad25419c8b1beb3b2a0f4f9b20167)
+[09:31:57] earlier output: /kaggle/input/notebooks/jankombajn/dd3d-analyze-plans-multi
+[09:31:57] earlier output: /kaggle/input/notebooks/jankombajn/dd3d-analyze-plans-v2
+[09:31:57] earlier output: /kaggle/input/notebooks/jankombajn/dd3d-analyze-plans-v2-b05
+[09:31:57] earlier output: /kaggle/input/notebooks/jankombajn/dd3d-intervene-causal
+[09:31:57] earlier output: /kaggle/input/notebooks/jankombajn/dd3d-intervene-causal-b05
+[09:31:57] earlier output: /kaggle/input/notebooks/jankombajn/dd3d-intervene-multi
+[09:31:57] earlier output: /kaggle/input/notebooks/jankombajn/dd3d-intervene-patch
+[09:31:57] earlier output: /kaggle/input/datasets/jankombajn/dd3d-plans
+[09:31:57] $ mkdir -p /kaggle/temp/patch && for f in /kaggle/temp/prev/dd3d-intervene-patch/*.tar; do tar xf $f -C /kaggle/temp/patch; done
+[09:32:01] command 0 ended with code 0 after 3 s
+[09:32:01] $ mkdir -p /kaggle/temp/causal && for f in /kaggle/temp/prev/dd3d-intervene-causal/*.tar /kaggle/temp/prev/dd3d-intervene-causal-b05/*.tar /kaggle/temp/prev/dd3d-intervene-multi/*.tar; do tar xf $f -C /kaggle/temp/causal; done && ls /kaggle/temp/causal /kaggle/temp/patch
+[09:32:05] /kaggle/temp/causal:
+causal_b04
+causal_b05t100
+causal_b10
+causal_b18
+causal_multi
+
+/kaggle/temp/patch:
+patch_part0
+patch_part1
+[09:32:05] command 1 ended with code 0 after 4 s
+[09:32:05] $ python scripts/audit/validation/patch_copy_check.py --outputs /kaggle/temp/patch/patch_part0 /kaggle/temp/patch/patch_part1 --plans /kaggle/temp/prev/dd3d-plans/plan_patch_part0.dat /kaggle/temp/prev/dd3d-plans/plan_patch_part1.dat --out /kaggle/working/out/patch_copy
+[09:38:01] 000                         0.311
+43         16         patch:b02_floor     48                   0.700      0.124           0.143                0.031               33                      0.969                         0.000                         0.000
+44         16        patch:b04_object     48                   0.700      0.376           0.473                0.084               33                      0.811                         0.375                         0.004
+45         16    patch:b04_shadow_src     48                   0.700      0.591           0.529                0.748               33                      0.908                        27.500                         0.306
+46         16         patch:b04_floor     48                   0.700      0.124           0.143                0.031               33                      0.971                         0.000                         0.000
+47         16        patch:b06_object     48                   0.700      0.377           0.475                0.075               33                      0.821                         0.250                         0.003
+48         16    patch:b06_shadow_src     48                   0.700      0.586           0.524                0.742               33                      0.905                        25.500                         0.283
+49         16         patch:b06_floor     48                   0.700      0.124           0.143                0.031               33                      0.963                         0.000                         0.000
+50         16        patch:b08_object     48                   0.700      0.374           0.476                0.066               33                      0.863                         0.125                         0.001
+51         16    patch:b08_shadow_src     48                   0.700      0.596           0.530                0.751               33                      0.907                        24.500                         0.272
+52         16         patch:b08_floor     48                   0.700      0.124           0.143                0.031               33                      0.967                         0.000                         0.000
+53         16        patch:b10_object     48                   0.700      0.375           0.477                0.054               33                      0.883                         0.125                         0.001
+54         16    patch:b10_shadow_src     48                   0.700      0.597           0.529                0.759               33                      0.922                        25.250                         0.281
+55         16         patch:b10_floor     48                   0.700      0.124           0.143                0.031               33                      0.966                         0.000                         0.000
+56         16        patch:b12_object     48                   0.700      0.363           0.459                0.048               33                      0.899                         0.000                         0.000
+57         16    patch:b12_shadow_src     48                   0.700      0.599           0.530                0.763               33                      0.929                        24.750                         0.275
+58         16         patch:b12_floor     48                   0.700      0.124           0.143                0.031               33                      0.961                         0.000                         0.000
+59         16        patch:b14_object     48                   0.700      0.340           0.428                0.042               33                      0.903                         0.125                         0.001
+60         16    patch:b14_shadow_src     48                   0.700      0.588           0.519                0.763               33                      0.932                        25.500                         0.283
+61         16         patch:b14_floor     48                   0.700      0.124           0.143                0.031               33                      0.955                         0.000                         0.000
+62         16        patch:b16_object     48                   0.700      0.326           0.417                0.033               33                      0.944                         0.000                         0.000
+63         16    patch:b16_shadow_src     48                   0.700      0.572           0.494                0.772               33                      0.934                        27.250                         0.303
+64         16         patch:b16_floor     48                   0.700      0.124           0.143                0.032               33                      0.962                         0.000                         0.000
+65         16        patch:b18_object     48                   0.700      0.354           0.462                0.031               33                      0.972                         0.000                         0.000
+66         16    patch:b18_shadow_src     48                   0.700      0.584           0.500                0.807               33                      0.935                        27.750                         0.308
+67         16         patch:b18_floor     48                   0.700      0.128           0.146                0.037               33                      0.975                         0.000                         0.000
+68         16  patch:b10_object_early     48                   0.700      0.276           0.331                0.050               33                      0.890                         0.125                         0.001
+69         16   patch:b10_object_late     48                   0.700      0.157           0.185                0.031               33                      0.998                         0.000                         0.000
+[09:38:01] command 2 ended with code 0 after 356 s
+[09:38:01] $ python scripts/audit/validation/shading_measure.py --set b04=/kaggle/temp/causal/causal_b04=/kaggle/temp/prev/dd3d-analyze-plans-v2/out/plans/b04t400/plan.npz --set b10=/kaggle/temp/causal/causal_b10=/kaggle/temp/prev/dd3d-analyze-plans-v2/out/plans/b10t400/plan.npz --set b18=/kaggle/temp/causal/causal_b18=/kaggle/temp/prev/dd3d-analyze-plans-v2/out/plans/b18t400/plan.npz --set b05t100=/kaggle/temp/causal/causal_b05t100=/kaggle/temp/prev/dd3d-analyze-plans-v2-b05/out/plans/b05t100/plan.npz --set multi=/kaggle/temp/causal/causal_multi=/kaggle/temp/prev/dd3d-analyze-plans-multi/out/plans/multi_all/plan.npz --set patch0=/kaggle/temp/patch/patch_part0=/kaggle/temp/prev/dd3d-plans/plan_patch_part0.dat --set patch1=/kaggle/temp/patch/patch_part1=/kaggle/temp/prev/dd3d-plans/plan_patch_part1.dat --splits /kaggle/temp/data/v2/splits --images /kaggle/temp/data/v2/images --out /kaggle/working/out/shading
+[09:44:37] 1.88                  1.19                        0.00                      0.00
+69    patch0   patch:b10_object_early  24                 32.41               35.34                 28.04                        0.08                      0.25
+70    patch0    patch:b10_object_late  24                 19.47               24.68                 17.45                        0.00                      0.21
+71    patch1                     base  24                  0.00                0.00                  0.00                        0.00                      0.00
+72    patch1                   source  24                 93.14               39.80                 67.05                        0.96                      0.67
+73    patch1            patch:b10_all  24                 68.50               31.43                 37.16                        0.96                      0.38
+74    patch1         patch:b00_object  24                 59.01               34.01                 40.49                        0.79                      0.42
+75    patch1     patch:b00_shadow_src  24                  9.71                1.36                  1.05                        0.00                      0.04
+76    patch1          patch:b00_floor  24                  0.59                0.97                  1.10                        0.00                      0.00
+77    patch1         patch:b02_object  24                 58.56               31.42                 43.42                        0.79                      0.46
+78    patch1     patch:b02_shadow_src  24                  9.64               -0.03                  0.09                        0.00                      0.00
+79    patch1          patch:b02_floor  24                  0.62                0.76                  1.03                        0.00                      0.00
+80    patch1         patch:b04_object  24                 58.46               21.68                 41.29                        0.75                      0.50
+81    patch1     patch:b04_shadow_src  24                  9.77                0.66                  0.00                        0.00                      0.00
+82    patch1          patch:b04_floor  24                  0.57                1.80                  1.28                        0.00                      0.00
+83    patch1         patch:b06_object  24                 57.91               20.22                 34.92                        0.75                      0.42
+84    patch1     patch:b06_shadow_src  24                  9.46               -0.73                  0.10                        0.00                      0.00
+85    patch1          patch:b06_floor  24                  0.50                1.01                  0.79                        0.00                      0.00
+86    patch1         patch:b08_object  24                 57.54               28.99                 39.04                        0.79                      0.46
+87    patch1     patch:b08_shadow_src  24                  9.33               -2.96                  0.00                        0.00                      0.00
+88    patch1          patch:b08_floor  24                  0.52                1.22                  1.19                        0.00                      0.00
+89    patch1         patch:b10_object  24                 57.36               31.53                 37.04                        0.79                      0.38
+90    patch1     patch:b10_shadow_src  24                  9.56               -3.61                  0.11                        0.00                      0.00
+91    patch1          patch:b10_floor  24                  0.53                2.07                  1.27                        0.00                      0.00
+92    patch1         patch:b12_object  24                 56.58               33.52                 37.02                        0.79                      0.33
+93    patch1     patch:b12_shadow_src  24                 10.04               -2.21                  0.00                        0.00                      0.00
+94    patch1          patch:b12_floor  24                  0.51                1.32                  0.64                        0.00                      0.00
+95    patch1         patch:b14_object  24                 55.34               33.98                 35.18                        0.71                      0.33
+96    patch1     patch:b14_shadow_src  24                 10.29               -3.06                  0.00                        0.00                      0.00
+97    patch1          patch:b14_floor  24                  0.54                1.46                  1.05                        0.00                      0.00
+98    patch1         patch:b16_object  24                 55.99               35.98                 37.45                        0.75                      0.42
+99    patch1     patch:b16_shadow_src  24                  9.40               -2.10                  0.43                        0.00                      0.00
+100   patch1          patch:b16_floor  24                  0.52                0.18                  1.03                        0.00                      0.00
+101   patch1         patch:b18_object  24                 59.79               34.72                 38.60                        0.88                      0.38
+102   patch1     patch:b18_shadow_src  24                  8.36               -1.24                  0.00                        0.00                      0.00
+103   patch1          patch:b18_floor  24                  0.35               -0.24                  0.41                        0.00                      0.00
+104   patch1   patch:b10_object_early  24                 37.57               21.92                 18.92                        0.33                      0.29
+105   patch1    patch:b10_object_late  24                 21.22               17.82                 19.03                        0.00                      0.12
+[09:44:37] command 3 ended with code 0 after 396 s
+[09:44:37] all commands ended with code 0
+[09:44:37] $ cd /kaggle/working/out && find . -type f | sort | head -300 && du -sh .
+[09:44:37] ./patch_copy/examples.png
+./patch_copy/per_pair.csv
+./patch_copy/summary.csv
+./patch_copy/summary.md
+./shading/per_image.csv
+./shading/probe_check.csv
+./shading/summary.csv
+./shading/summary.md
+1012K	.

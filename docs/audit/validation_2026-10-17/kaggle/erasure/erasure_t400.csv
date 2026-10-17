@@ -1,0 +1,25 @@
+key,features,split,az_mae,az_ci_low,az_ci_high
+sana/block_04/t_400,"original, 8x8",test,4.631,4.128,5.148
+sana/block_04/t_400,"original, 8x8",test_cubes,7.180,6.832,7.524
+sana/block_04/t_400,"erased, 8x8",test,4.674,4.165,5.188
+sana/block_04/t_400,"erased, 8x8",test_cubes,7.131,6.776,7.458
+sana/block_04/t_400,"original, 1x1",test,8.522,7.472,9.641
+sana/block_04/t_400,"original, 1x1",test_cubes,11.994,11.356,12.683
+sana/block_04/t_400,"erased, 1x1",test,46.803,41.870,52.139
+sana/block_04/t_400,"erased, 1x1",test_cubes,72.487,69.619,75.323
+sana/block_10/t_400,"original, 8x8",test,4.442,3.988,4.924
+sana/block_10/t_400,"original, 8x8",test_cubes,9.080,8.644,9.528
+sana/block_10/t_400,"erased, 8x8",test,4.470,4.006,4.923
+sana/block_10/t_400,"erased, 8x8",test_cubes,8.017,7.617,8.424
+sana/block_10/t_400,"original, 1x1",test,6.167,5.508,6.832
+sana/block_10/t_400,"original, 1x1",test_cubes,7.987,7.600,8.374
+sana/block_10/t_400,"erased, 1x1",test,55.657,49.665,61.661
+sana/block_10/t_400,"erased, 1x1",test_cubes,80.261,77.262,83.424
+sana/block_18/t_400,"original, 8x8",test,4.504,3.982,5.039
+sana/block_18/t_400,"original, 8x8",test_cubes,8.095,7.695,8.503
+sana/block_18/t_400,"erased, 8x8",test,4.270,3.772,4.789
+sana/block_18/t_400,"erased, 8x8",test_cubes,7.810,7.413,8.196
+sana/block_18/t_400,"original, 1x1",test,8.190,7.137,9.324
+sana/block_18/t_400,"original, 1x1",test_cubes,12.089,11.469,12.705
+sana/block_18/t_400,"erased, 1x1",test,55.484,49.503,61.826
+sana/block_18/t_400,"erased, 1x1",test_cubes,67.182,64.223,70.358

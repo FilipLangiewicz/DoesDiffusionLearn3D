@@ -1,0 +1,5 @@
+check,n,nan_share,median,mean
+"dark-region azimuth error, v2 test",200,0.0050,6.3800,12.7270
+"dark-region azimuth error, v2 test_cubes",1000,0.0460,8.6800,13.8707
+"kept share, same render",48,0.0208,1.0000,1.0000
+"kept share, v2 against v2rot",48,0.0208,0.0706,0.0909

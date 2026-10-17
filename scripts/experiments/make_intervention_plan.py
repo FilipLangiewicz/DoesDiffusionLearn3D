@@ -15,7 +15,13 @@ The plan has these conditions for each selected test image:
   natural size in the data.
 - shift:random_<family>: a random change with the same norm in each cell as
   the largest shift of the family (probe or pattern);
-- erase: the LEACE eraser of the azimuth (sin and cos) in this block.
+- erase: one LEACE eraser of the azimuth (sin and cos), fitted on the cells of
+  all positions. It removes only the code that is the same at every position;
+- erase_cell (option --cell-eraser): one LEACE eraser for each grid cell. After
+  it, no linear function of the grid features carries the azimuth.
+
+The plan report gives the error of a new probe on the erased features
+(probe_after_erasure). This shows what each eraser removes before the GPU test.
 
 A probe weight vector shows where the probe reads. It can also contain
 directions that only cancel noise. The pattern shows how the features change
@@ -35,7 +41,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from dd3d.intervene import leace_fit, make_shift
+from dd3d.intervene import apply_cell_erasers, cell_erasers, leace_fit, make_shift
 from dd3d.metrics import decode_azimuth, encode_targets
 from dd3d.probe import ProbeConfig, probe_direction, run
 from dd3d.store import FeatureStore
@@ -47,6 +53,11 @@ def mean_token_norm(store: FeatureStore, key: str) -> float:
     stats = store.stats(run_name)
     sel = stats[(stats["block"] == int(block.split("_")[1])) & (stats["t"] == int(t.split("_")[1]))]
     return float(sel["mean_token_norm"].mean())
+
+
+def as_cells(v: np.ndarray, grid: int, channels: int) -> np.ndarray:
+    """Return the (n, grid * grid, channels) float32 view of pooled features."""
+    return v.reshape(len(v), grid * grid, channels).astype(np.float32)
 
 
 def pattern_of(x: np.ndarray, y: np.ndarray) -> np.ndarray:
@@ -71,6 +82,10 @@ def main() -> None:
     parser.add_argument("--channels", type=int, default=2240)
     parser.add_argument("--grid", type=int, default=8)
     parser.add_argument("--no-erase", action="store_true")
+    parser.add_argument(
+        "--cell-eraser", action="store_true", help="Also add erase_cell: one LEACE eraser for each grid cell."
+    )
+    parser.add_argument("--only-erase", action="store_true", help="Only base and the erase conditions.")
     parser.add_argument("--test-job", action="store_true", help="Random probe and eraser (test of the job).")
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--out", type=Path, required=True)
@@ -90,6 +105,9 @@ def main() -> None:
         token_norm = args.token_norm or 1.0
         before = encode_targets(rng.uniform(0, 360, len(pick)), np.zeros(len(pick)))[:, :2]
         report["mode"] = "test of the job (random probe, pattern and eraser)"
+        z_img = rng.normal(size=(200, 2))
+        x = rng.normal(size=(200, args.grid * args.grid, args.channels))
+        cell_parts = cell_erasers(x, z_img) if args.cell_eraser else None
     else:
         store = FeatureStore(args.features)
         labels = {
@@ -112,8 +130,25 @@ def main() -> None:
         token_norm = args.token_norm or mean_token_norm(store, args.key)
         rows_pick = splits[args.split].index.get_indexer(pick.index)
         before = res.model.predict(feats[args.split][rows_pick])[:, :2]
-        del feats, x
+        cell_parts = cell_erasers(x, z_img) if args.cell_eraser else None
     eraser_mean, eraser_matrix = (None, None) if args.no_erase else leace_fit(cells, z)
+    if not args.test_job and not args.no_erase:
+        # A new probe on the erased features shows what each eraser removes. The
+        # eraser is affine, so the cell means of the erased tokens are the erased cell means.
+        erasers = {"erase": lambda v: v - (v - eraser_mean) @ eraser_matrix.T}
+        if cell_parts is not None:
+            erasers["erase_cell"] = lambda v: apply_cell_erasers(v, *cell_parts)
+        report["probe_after_erasure"] = {}
+        for name, fn in erasers.items():
+            erased = {
+                k: fn(as_cells(v, args.grid, args.channels)).reshape(len(v), -1) for k, v in feats.items()
+            }
+            res_e = run(erased, labels, ProbeConfig())
+            report["probe_after_erasure"][name] = {k: v["az_mae"] for k, v in res_e.splits.items()}
+            del erased
+        print(json.dumps(report["probe_after_erasure"], indent=1), flush=True)
+    if not args.test_job:
+        del feats, x
 
     az = pick["light_azimuth_deg"].to_numpy()
     el = pick["light_elevation_deg"].to_numpy()
@@ -146,6 +181,8 @@ def main() -> None:
     s_unit = token_norm / np.linalg.norm(cells_of(to_turned), axis=2).mean(axis=1)[:, None]
     natural = delta_y @ b
     conditions, shifts = ["base", "shift:probe_exact"], [np.zeros((len(pick), d)), exact]
+    if args.only_erase:
+        conditions, shifts, args.relative, args.pattern_scales = ["base"], [np.zeros((len(pick), d))], "", ""
     rel = [float(v) for v in args.relative.split(",") if v]
     for r in rel:
         conditions.append(f"shift:probe_r{r:g}")
@@ -162,6 +199,9 @@ def main() -> None:
         shifts.append(random_like(max(scales) * natural))
     if not args.no_erase:
         conditions.append("erase")
+        shifts.append(np.zeros((len(pick), d)))
+    if cell_parts is not None:
+        conditions.append("erase_cell")
         shifts.append(np.zeros((len(pick), d)))
     shifts = np.stack(shifts, axis=1).astype(np.float16)  # (n_img, n_cond, D)
     # The probe is linear, so its output after a shift is known before the test.
@@ -180,6 +220,10 @@ def main() -> None:
 
     args.out.mkdir(parents=True, exist_ok=True)
     extra = {} if eraser_mean is None else {"eraser_mean": eraser_mean, "eraser_matrix": eraser_matrix}
+    if cell_parts is not None:
+        extra |= dict(
+            zip(("eraser_cell_mean", "eraser_cell_left", "eraser_cell_right"), cell_parts, strict=True)
+        )
     np.savez(
         args.out / "plan.npz",
         image_ids=pick["image_id"].to_numpy().astype(str),

@@ -8,7 +8,11 @@ step. The model gets all conditions of one image as one batch:
 - base: no change;
 - shift: add a vector to the tokens of each grid cell. Each image has its own
   vector, made from the weights of a linear probe (see make_shift);
-- erase: apply a LEACE eraser to every token.
+- erase: apply one LEACE eraser to every token. This eraser is fitted on the
+  cells of all positions, so it removes only the code that is the same at
+  every position. A probe on the grid can still read the azimuth after it;
+- erase_cell: apply the LEACE eraser of its grid cell to each token. After it,
+  no linear function of the grid features has a covariance with the azimuth.
 
 The output images go to a pixel probe, which measures the light direction.
 The probe works on the mean of the tokens in each cell. A vector added to all
@@ -52,6 +56,61 @@ def leace_fit(x: np.ndarray, z: np.ndarray, eps: float = 1e-6) -> tuple[np.ndarr
     u = u[:, s > eps * s.max()]
     a = root @ (u @ u.T) @ inv_root
     return mean.astype(np.float32), a.astype(np.float32)
+
+
+def leace_factors(
+    x: np.ndarray, z: np.ndarray, rank: int = 2, eps: float = 1e-6
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Return the mean and the factors (left, right) of the LEACE eraser, with A = left @ right.T.
+
+    The matrix A of leace_fit has the rank of cov(x, z), so at most the number of
+    columns of z. Two (D, rank) factors need much less memory than A, which is
+    important for one eraser in each grid cell. Unused columns are zero.
+    """
+    x = np.asarray(x, dtype=np.float64)
+    z = np.asarray(z, dtype=np.float64)
+    mean = x.mean(0)
+    xc, zc = x - mean, z - z.mean(0)
+    vals, vecs = np.linalg.eigh(xc.T @ xc / len(x))
+    keep = vals > eps * vals.max()
+    vecs, vals = vecs[:, keep], vals[keep]
+    cross = xc.T @ zc / len(x)
+    # S^(-1/2) cov(x, z) without the full D x D matrix S^(-1/2).
+    whitened_cross = vecs @ ((vecs.T @ cross) / np.sqrt(vals)[:, None])
+    u, s, _ = np.linalg.svd(whitened_cross, full_matrices=False)
+    u = u[:, s > eps * s.max()][:, :rank]
+    # S^(1/2) u and S^(-1/2) u, both computed in the eigenbasis of S.
+    proj = vecs.T @ u
+    left = np.zeros((x.shape[1], rank))
+    right = np.zeros((x.shape[1], rank))
+    left[:, : u.shape[1]] = vecs @ (proj * np.sqrt(vals)[:, None])
+    right[:, : u.shape[1]] = vecs @ (proj / np.sqrt(vals)[:, None])
+    return mean.astype(np.float32), left.astype(np.float32), right.astype(np.float32)
+
+
+def cell_erasers(x: np.ndarray, z: np.ndarray, rank: int = 2) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Fit one LEACE eraser for each grid cell of pooled features.
+
+    ``x`` has shape (n, cells, C) and ``z`` shape (n, k). The result has the shapes
+    (cells, C), (cells, C, rank) and (cells, C, rank). Each cell has its own eraser,
+    so after it no cell has a linear covariance with z. A linear function of all
+    cells is a sum of functions of single cells, so it has no covariance with z either.
+    """
+    out = [leace_factors(x[:, c], z, rank) for c in range(x.shape[1])]
+    return tuple(np.stack(parts) for parts in zip(*out, strict=True))
+
+
+def token_cells(grid: int, side: int) -> np.ndarray:
+    """Return the grid cell of each token of a (side x side) token map (row-major)."""
+    k = side // grid
+    rows, cols = np.divmod(np.arange(side * side), side)
+    return (rows // k) * grid + cols // k
+
+
+def apply_cell_erasers(h: np.ndarray, mean: np.ndarray, left: np.ndarray, right: np.ndarray) -> np.ndarray:
+    """Apply the eraser of each cell to the rows of h, shape (n, cells, C)."""
+    coef = np.einsum("ncd,cdr->ncr", h - mean, right)
+    return h - np.einsum("ncr,cdr->ncd", coef, left)
 
 
 def make_shift(w: np.ndarray, delta_y: np.ndarray) -> np.ndarray:
@@ -124,11 +183,21 @@ def run(cfg: InterveneConfig) -> Path:
 
     n_c = len(conditions)
     erase_rows = torch.tensor([c == "erase" for c in conditions], device=cfg.device)
+    cell_rows = torch.tensor([c == "erase_cell" for c in conditions], device=cfg.device)
     eraser = None
     if "eraser_mean" in plan.files and erase_rows.any():
         eraser = (
             torch.tensor(plan["eraser_mean"], device=cfg.device, dtype=torch.float32),
             torch.tensor(plan["eraser_matrix"], device=cfg.device, dtype=torch.float32),
+        )
+    # One eraser for each grid cell, spread to the tokens of the cell: (tokens, C) and (tokens, C, rank).
+    cell_eraser = None
+    if "eraser_cell_mean" in plan.files and cell_rows.any():
+        # DC-AE makes the image 32 times smaller, and each latent pixel is one token.
+        idx = token_cells(cfg.grid, cfg.image_size // 32)
+        cell_eraser = tuple(
+            torch.tensor(plan[k][idx], device=cfg.device, dtype=torch.float32)
+            for k in ("eraser_cell_mean", "eraser_cell_left", "eraser_cell_right")
         )
     state: dict[int, torch.Tensor] = {}
 
@@ -140,6 +209,11 @@ def run(cfg: InterveneConfig) -> Path:
                 mean, a = eraser
                 erased = h32 - (h32 - mean) @ a.T
                 h32 = torch.where(erase_rows[:, None, None], erased, h32)
+            if cell_eraser is not None and block == cfg.block:
+                mean, left, right = cell_eraser
+                coef = torch.einsum("btc,tcr->btr", h32 - mean, right)
+                erased = h32 - torch.einsum("btr,tcr->btc", coef, left)
+                h32 = torch.where(cell_rows[:, None, None], erased, h32)
             if block in state:
                 h32 = h32 + state[block]
             out = h32.to(h.dtype)

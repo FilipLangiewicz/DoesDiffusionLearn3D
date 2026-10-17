@@ -1,0 +1,30 @@
+{
+ "name": "audit-erasure",
+ "sets": [
+  "v2pos",
+  "v2"
+ ],
+ "features": {
+  "v2": [
+   "dd3d-extract-v2-",
+   "dd3d-extract-v2pos-"
+  ]
+ },
+ "kernels": [
+  "jankombajn/dd3d-extract-v2-0",
+  "jankombajn/dd3d-extract-v2-1",
+  "jankombajn/dd3d-extract-v2-2",
+  "jankombajn/dd3d-extract-v2-3",
+  "jankombajn/dd3d-extract-v2-4",
+  "jankombajn/dd3d-extract-v2-5",
+  "jankombajn/dd3d-extract-v2pos-0",
+  "jankombajn/dd3d-renders",
+  "jankombajn/dd3d-analyze-plans-v2",
+  "jankombajn/dd3d-analyze-plans-v2-b05"
+ ],
+ "datasets": [],
+ "commands": [
+  "python scripts/audit/validation/erasure_check.py --features {FEAT}/v2 --item sana/block_04/t_400={PREV}/dd3d-analyze-plans-v2/out/plans/b04t400/plan.npz --item sana/block_10/t_400={PREV}/dd3d-analyze-plans-v2/out/plans/b10t400/plan.npz --item sana/block_18/t_400={PREV}/dd3d-analyze-plans-v2/out/plans/b18t400/plan.npz --splits {DATA}/v2/splits --out {OUT}/erasure_t400",
+  "python scripts/audit/validation/erasure_check.py --features {FEAT}/v2 --item sana/block_05/t_100={PREV}/dd3d-analyze-plans-v2-b05/out/plans/b05t100/plan.npz --grid 4 --splits {DATA}/v2/splits --out {OUT}/erasure_b05"
+ ]
+}

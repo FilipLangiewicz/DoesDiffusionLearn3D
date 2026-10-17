@@ -305,20 +305,29 @@ def reanalyze_spec() -> dict:
     return {"name": "reanalyze-v2", **spec, "commands": cmds}
 
 
-def erase_spec() -> dict:
-    """Analyse the erasure test with one eraser for each grid cell."""
+def erase_spec(control: bool = False) -> dict:
+    """Analyse the erasure test with one eraser for each grid cell.
+
+    With control=True, analyse the second run, which adds the cell erasers of
+    labels in a random order.
+    """
+    job, plans, prefix, suffix, out = (
+        ("erase-ctrl", "plans-erase-ctrl-v2", "erasectrl", "c", "causal_erase_ctrl")
+        if control
+        else ("erase", "plans-erase-v2", "erase", "e", "causal_erase")
+    )
     spec = sources("v2")
     spec["features"] = {}
-    spec["kernels"] = [RENDERS, f"{O}/dd3d-intervene-erase", f"{O}/dd3d-analyze-plans-erase-v2"]
+    spec["kernels"] = [RENDERS, f"{O}/dd3d-intervene-{job}", f"{O}/dd3d-analyze-{plans}"]
     data = "--splits {DATA}/v2/splits --images {DATA}/v2/images"
-    cmds = [unpack("dd3d-intervene-erase", "/kaggle/temp/erase")]
+    cmds = [unpack(f"dd3d-intervene-{job}", "/kaggle/temp/erase")]
     for tag in ("b04t400", "b10t400", "b18t400", "b05t100"):
         cmds.append(
-            f"python scripts/experiments/analyze_interventions.py --outputs /kaggle/temp/erase/erase_{tag}"
-            f" --plan {{PREV}}/dd3d-analyze-plans-erase-v2/out/plans/{tag}e/plan.npz {data}"
-            f" --out {{OUT}}/causal_erase/{tag}"
+            f"python scripts/experiments/analyze_interventions.py --outputs /kaggle/temp/erase/{prefix}_{tag}"
+            f" --plan {{PREV}}/dd3d-analyze-{plans}/out/plans/{tag}{suffix}/plan.npz {data}"
+            f" --out {{OUT}}/{out}/{tag}"
         )
-    return {"name": "erase-v2", **spec, "commands": cmds}
+    return {"name": f"{job}-v2", **spec, "commands": cmds}
 
 
 def main() -> None:
@@ -329,6 +338,7 @@ def main() -> None:
     specs["transfer_pos_vision"] = vision_transfer_spec()
     specs["reanalyze_v2"] = reanalyze_spec()
     specs["erase_v2"] = erase_spec()
+    specs["erase_ctrl_v2"] = erase_spec(control=True)
     for s in ("v1", "v2", "v2r", "v2rns", "v2rso"):
         specs[f"scan_{s}"] = scan_spec(s)
         specs[f"deep_{s}"] = deep_spec(s)

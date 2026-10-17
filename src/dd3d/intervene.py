@@ -12,7 +12,9 @@ step. The model gets all conditions of one image as one batch:
   cells of all positions, so it removes only the code that is the same at
   every position. A probe on the grid can still read the azimuth after it;
 - erase_cell: apply the LEACE eraser of its grid cell to each token. After it,
-  no linear function of the grid features has a covariance with the azimuth.
+  no linear function of the grid features has a covariance with the azimuth;
+- erase_cell_random: the same, with erasers fitted on labels in a random order
+  (the control of erase_cell).
 
 The output images go to a pixel probe, which measures the light direction.
 The probe works on the mean of the tokens in each cell. A vector added to all
@@ -183,7 +185,6 @@ def run(cfg: InterveneConfig) -> Path:
 
     n_c = len(conditions)
     erase_rows = torch.tensor([c == "erase" for c in conditions], device=cfg.device)
-    cell_rows = torch.tensor([c == "erase_cell" for c in conditions], device=cfg.device)
     eraser = None
     if "eraser_mean" in plan.files and erase_rows.any():
         eraser = (
@@ -191,14 +192,19 @@ def run(cfg: InterveneConfig) -> Path:
             torch.tensor(plan["eraser_matrix"], device=cfg.device, dtype=torch.float32),
         )
     # One eraser for each grid cell, spread to the tokens of the cell: (tokens, C) and (tokens, C, rank).
-    cell_eraser = None
-    if "eraser_cell_mean" in plan.files and cell_rows.any():
-        # DC-AE makes the image 32 times smaller, and each latent pixel is one token.
-        idx = token_cells(cfg.grid, cfg.image_size // 32)
-        cell_eraser = tuple(
-            torch.tensor(plan[k][idx], device=cfg.device, dtype=torch.float32)
-            for k in ("eraser_cell_mean", "eraser_cell_left", "eraser_cell_right")
-        )
+    # The plan key of each condition is its name with "erase" replaced by "eraser".
+    cell_erasers_of = {}
+    for name in ("erase_cell", "erase_cell_random"):
+        key = name.replace("erase", "eraser", 1)
+        rows = torch.tensor([c == name for c in conditions], device=cfg.device)
+        if f"{key}_mean" in plan.files and rows.any():
+            # DC-AE makes the image 32 times smaller, and each latent pixel is one token.
+            idx = token_cells(cfg.grid, cfg.image_size // 32)
+            parts = tuple(
+                torch.tensor(plan[f"{key}_{p}"][idx], device=cfg.device, dtype=torch.float32)
+                for p in ("mean", "left", "right")
+            )
+            cell_erasers_of[name] = (rows, *parts)
     state: dict[int, torch.Tensor] = {}
 
     def make_hook(block: int):
@@ -209,11 +215,10 @@ def run(cfg: InterveneConfig) -> Path:
                 mean, a = eraser
                 erased = h32 - (h32 - mean) @ a.T
                 h32 = torch.where(erase_rows[:, None, None], erased, h32)
-            if cell_eraser is not None and block == cfg.block:
-                mean, left, right = cell_eraser
+            for rows, mean, left, right in cell_erasers_of.values() if block == cfg.block else ():
                 coef = torch.einsum("btc,tcr->btr", h32 - mean, right)
                 erased = h32 - torch.einsum("btr,tcr->btc", coef, left)
-                h32 = torch.where(cell_rows[:, None, None], erased, h32)
+                h32 = torch.where(rows[:, None, None], erased, h32)
             if block in state:
                 h32 = h32 + state[block]
             out = h32.to(h.dtype)

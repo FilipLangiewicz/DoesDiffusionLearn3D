@@ -1,0 +1,54 @@
+{
+ "plans": [
+  {
+   "name": "erasectrl_b04t400",
+   "plan": "b04t400c/plan.npz",
+   "config": {
+    "block": 4,
+    "grid": 8,
+    "sigma0": 0.7,
+    "steps": 20
+   }
+  },
+  {
+   "name": "erasectrl_b10t400",
+   "plan": "b10t400c/plan.npz",
+   "config": {
+    "block": 10,
+    "grid": 8,
+    "sigma0": 0.7,
+    "steps": 20
+   }
+  },
+  {
+   "name": "erasectrl_b18t400",
+   "plan": "b18t400c/plan.npz",
+   "config": {
+    "block": 18,
+    "grid": 8,
+    "sigma0": 0.7,
+    "steps": 20
+   }
+  },
+  {
+   "name": "erasectrl_b05t100",
+   "plan": "b05t100c/plan.npz",
+   "config": {
+    "block": 5,
+    "grid": 4,
+    "sigma0": 0.7,
+    "steps": 20
+   }
+  }
+ ],
+ "kernels": [
+  "jankombajn/dd3d-render-v2-0",
+  "jankombajn/dd3d-render-v2-1",
+  "jankombajn/dd3d-render-v2-2",
+  "jankombajn/dd3d-render-v2-3",
+  "jankombajn/dd3d-render-v2-4",
+  "jankombajn/dd3d-render-v2-5",
+  "jankombajn/dd3d-analyze-plans-erase-ctrl-v2"
+ ],
+ "datasets": []
+}

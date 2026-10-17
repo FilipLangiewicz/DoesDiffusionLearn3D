@@ -59,6 +59,19 @@ def test_cell_erasers_remove_a_code_that_depends_on_the_position():
     assert np.corrcoef(fit[:, 0], z[:, 0])[0, 1] > 0.9
 
 
+def test_cell_erasers_of_shuffled_labels_keep_the_code():
+    # The control eraser removes a subspace of the same rank, but the code of z stays.
+    rng = np.random.default_rng(4)
+    n, cells, c = 800, 4, 6
+    z = rng.normal(size=(n, 2))
+    x = rng.normal(size=(n, cells, c))
+    x[:, :, :2] += 2.0 * z[:, None, :]
+    erased = apply_cell_erasers(x, *cell_erasers(x, rng.permutation(z))).reshape(n, -1)
+    coef, *_ = np.linalg.lstsq(erased - erased.mean(0), z - z.mean(0), rcond=None)
+    fit = (erased - erased.mean(0)) @ coef
+    assert np.corrcoef(fit[:, 0], z[:, 0])[0, 1] > 0.9
+
+
 def test_token_cells_follow_the_token_order():
     cells = token_cells(2, 4).reshape(4, 4)
     assert (cells[:2, :2] == 0).all() and (cells[:2, 2:] == 1).all() and (cells[2:, 2:] == 3).all()

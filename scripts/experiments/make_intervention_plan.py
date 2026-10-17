@@ -18,7 +18,10 @@ The plan has these conditions for each selected test image:
 - erase: one LEACE eraser of the azimuth (sin and cos), fitted on the cells of
   all positions. It removes only the code that is the same at every position;
 - erase_cell (option --cell-eraser): one LEACE eraser for each grid cell. After
-  it, no linear function of the grid features carries the azimuth.
+  it, no linear function of the grid features carries the azimuth;
+- erase_cell_random (option --cell-eraser-control): the same erasers, fitted on
+  labels in a random order. They remove a subspace of the same rank and the
+  same whitened variance, but not the light code. This is the control of erase_cell.
 
 The plan report gives the error of a new probe on the erased features
 (probe_after_erasure). This shows what each eraser removes before the GPU test.
@@ -85,6 +88,11 @@ def main() -> None:
     parser.add_argument(
         "--cell-eraser", action="store_true", help="Also add erase_cell: one LEACE eraser for each grid cell."
     )
+    parser.add_argument(
+        "--cell-eraser-control",
+        action="store_true",
+        help="Also add erase_cell_random: the cell erasers of labels in a random order.",
+    )
     parser.add_argument("--only-erase", action="store_true", help="Only base and the erase conditions.")
     parser.add_argument("--test-job", action="store_true", help="Random probe and eraser (test of the job).")
     parser.add_argument("--seed", type=int, default=0)
@@ -108,6 +116,7 @@ def main() -> None:
         z_img = rng.normal(size=(200, 2))
         x = rng.normal(size=(200, args.grid * args.grid, args.channels))
         cell_parts = cell_erasers(x, z_img) if args.cell_eraser else None
+        ctrl_parts = cell_erasers(x, rng.permutation(z_img)) if args.cell_eraser_control else None
     else:
         store = FeatureStore(args.features)
         labels = {
@@ -131,20 +140,28 @@ def main() -> None:
         rows_pick = splits[args.split].index.get_indexer(pick.index)
         before = res.model.predict(feats[args.split][rows_pick])[:, :2]
         cell_parts = cell_erasers(x, z_img) if args.cell_eraser else None
+        ctrl_parts = cell_erasers(x, rng.permutation(z_img)) if args.cell_eraser_control else None
     eraser_mean, eraser_matrix = (None, None) if args.no_erase else leace_fit(cells, z)
-    if not args.test_job and not args.no_erase:
+    erasers = {}
+    if not args.no_erase:
+        erasers["erase"] = lambda v: v - (v - eraser_mean) @ eraser_matrix.T
+    if cell_parts is not None:
+        erasers["erase_cell"] = lambda v: apply_cell_erasers(v, *cell_parts)
+    if ctrl_parts is not None:
+        erasers["erase_cell_random"] = lambda v: apply_cell_erasers(v, *ctrl_parts)
+    if not args.test_job and erasers:
         # A new probe on the erased features shows what each eraser removes. The
         # eraser is affine, so the cell means of the erased tokens are the erased cell means.
-        erasers = {"erase": lambda v: v - (v - eraser_mean) @ eraser_matrix.T}
-        if cell_parts is not None:
-            erasers["erase_cell"] = lambda v: apply_cell_erasers(v, *cell_parts)
-        report["probe_after_erasure"] = {}
+        # The mean change of a cell vector shows if the control changes the features as much.
+        report["probe_after_erasure"], report["erasure_change_norm"] = {}, {}
         for name, fn in erasers.items():
             erased = {
                 k: fn(as_cells(v, args.grid, args.channels)).reshape(len(v), -1) for k, v in feats.items()
             }
             res_e = run(erased, labels, ProbeConfig())
             report["probe_after_erasure"][name] = {k: v["az_mae"] for k, v in res_e.splits.items()}
+            change = as_cells(erased["test"] - feats["test"], args.grid, args.channels)
+            report["erasure_change_norm"][name] = float(np.linalg.norm(change, axis=2).mean())
             del erased
         print(json.dumps(report["probe_after_erasure"], indent=1), flush=True)
     if not args.test_job:
@@ -203,6 +220,9 @@ def main() -> None:
     if cell_parts is not None:
         conditions.append("erase_cell")
         shifts.append(np.zeros((len(pick), d)))
+    if ctrl_parts is not None:
+        conditions.append("erase_cell_random")
+        shifts.append(np.zeros((len(pick), d)))
     shifts = np.stack(shifts, axis=1).astype(np.float16)  # (n_img, n_cond, D)
     # The probe is linear, so its output after a shift is known before the test.
     # This rotation of the probe output shows how far each shift moves the readout.
@@ -223,6 +243,14 @@ def main() -> None:
     if cell_parts is not None:
         extra |= dict(
             zip(("eraser_cell_mean", "eraser_cell_left", "eraser_cell_right"), cell_parts, strict=True)
+        )
+    if ctrl_parts is not None:
+        extra |= dict(
+            zip(
+                ("eraser_cell_random_mean", "eraser_cell_random_left", "eraser_cell_random_right"),
+                ctrl_parts,
+                strict=True,
+            )
         )
     np.savez(
         args.out / "plan.npz",

@@ -24,6 +24,7 @@ The full table with 95% intervals is in [`reports/experiments/rq1.md`](reports/e
 2. **A readable light direction is not specific to a generative model.** DINOv2 and CLIP are better than SANA on the known shapes. SANA is better on cubes only when the object moves and its shading is visible.
 3. **The code depends little on the position.** A probe on the mean of all tokens, fitted on centred objects, gives 9.0° (17.6° on cubes) on objects at random positions. The pixel probe gives 71°.
 4. **The model uses the code to light the object.** A shift along the activation pattern of the light (2% of the token norm) turns the shading of the object by about 50° towards a target of 90°. A random shift of the same size does nothing.
+   If we erase the code from each grid cell of one block, the output light agrees less with the input (22° to 44°, against 9° to 10° for a control eraser). The control changes the features less, so this evidence is not final.
 5. **We found no link between the code and the cast shadow.** No shift draws a new crisp shadow. A patch of the object tokens from a scene with another light moves the shading, but not the shadow outside the patched tokens.
 
 The images of each data set version are in [`data/examples/`](data/examples/README.md). An interactive viewer of the interventions is in [`tools/viewer/`](tools/viewer/).

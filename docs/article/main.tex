@@ -11,8 +11,6 @@
 \usepackage{amssymb}
 \usepackage{siunitx}
 
-% Results that need the GPU runs. Search for \pending before submission.
-\newcommand{\pending}[1]{\textcolor{red}{[pending: #1]}}
 \newcommand{\degr}{^\circ}
 
 \title{What Does a Diffusion Transformer Know about the Light Direction? An Audit of a Probe Study, with Controls and Interventions}
@@ -37,14 +35,13 @@ The label was the lamp position, not the light at the object.
 A floor highlight gave a 2D shortcut.
 With a corrected pipeline, the same data give $4.8\degr$: the wrong noise hid the information.
 We then render scenes with one directional light and a random object position, where a linear read-out of the pixels fails.
-On unseen cubes, SANA gives $7.6\degr$, the best pixel probe $20.1\degr$, the autoencoder latent $19.0\degr$, and the same network with random weights $15.9\degr$.
+On unseen cubes, SANA gives $7.6\degr$, the best pixel probe $20.1\degr$, and the same network with random weights $15.9\degr$.
 SD~1.5 and SDXL show the same effect.
-The code does not depend on the position: a probe on the mean of all tokens, fitted on centred objects, gives $9.0\degr$ on moved objects.
-Interventions show that the model uses the code.
-A small shift along the activation pattern of the light turns the shading of the object by $60\degr$ to $65\degr$ towards a target of $90\degr$.
-A random shift of the same size does nothing.
-Large shifts remove the old cast shadow and darken the floor towards the target, but they draw no new crisp shadow.
-A patch of the object tokens from a scene with another light moves the shading and about a third of the cast shadow.
+But two vision encoders without a generative objective, DINOv2 and CLIP, read the light equally well or better on known shapes; on the cubes they give $10.0\degr$ and $16.0\degr$.
+A readable light direction is thus a property of good image features, not of image generation.
+Interventions show that SANA uses the code for the shading of the object: a shift along the activation pattern of the light turns the shading by about $50\degr$ towards a target of $90\degr$, and a random shift does nothing.
+We find no link between this code and the cast shadow. No shift draws a new shadow, and a patch of the object tokens does not move the shadow outside these tokens.
+An eraser for each grid cell makes the output light agree less with the input ($22\degr$ to $44\degr$, against $9\degr$ to $10\degr$ for a control eraser), but the control changes the features less.
 We give a checklist for probe studies and release the code, the data and a fix for the library pitfall.
 \end{abstract}
 
@@ -61,19 +58,18 @@ Thus a claim about the knowledge of a model needs controls: a baseline on the in
 
 This paper examines one probe study in detail.
 The study is an unpublished course report of the authors; it is in the supplementary material.
-The study used SANA-1.6B \citep{xie2025sana}, a linear diffusion transformer with a flow-matching objective, and renders from a modified CLEVR generator \citep{johnson2017clevr} with one object and one key lamp.
+It used SANA-1.6B \citep{xie2025sana}, a linear diffusion transformer with a flow-matching objective, and renders from a modified CLEVR generator \citep{johnson2017clevr} with one object and one key lamp.
 It reported that a Ridge probe on block~10 at timestep $t=200$ predicts the lamp azimuth with an MAE of $14.0\degr$ on cubes, a shape that the probe did not see in training (Table~\ref{tab:original}).
 The study concluded that SANA encodes the light direction as a physical property of the scene.
 
-We re-examine every step of this pipeline: the render geometry, the labels, the noise injection, the probe fit and the figures.
-Then we ask the question again with corrected tools and new data.
+We re-examine every step of this pipeline, then ask the question again with corrected tools and new data.
 Our contributions are:
 \begin{enumerate}
     \item An audit that finds four problems in the original pipeline (Section~\ref{sec:audit}). Each problem can explain the result without 3D knowledge. Controls on the original data show that the floor carries the information (Section~\ref{sec:controls}).
-    \item A corrected pipeline (Section~\ref{sec:pipeline}). On the original data it gives $4.8\degr$ on cubes instead of $14.5\degr$. The wrong noise, not the model, limited the original probe.
-    \item New data sets without the shortcuts, with paired renders that separate the cues (Section~\ref{sec:clean}). Probes with four controls on three diffusion models show that the light direction is readable far beyond the input (Section~\ref{sec:rq1}). The code does not depend on the position, and it comes from the shading and from the cast shadow.
-    \item Interventions during generation, with two independent measures of the output light (Section~\ref{sec:causal}). A shift along the activation pattern of the light changes the shading of the object. Large shifts remove the old cast shadow but draw no new one, and the object tokens carry only part of the shadow.
-    \item A checklist for probe studies of generative models (Section~\ref{sec:discussion}). We also release an exact model of the render geometry and a fix with tests for a pitfall in a popular diffusion library.
+    \item A corrected pipeline (Section~\ref{sec:pipeline}). On the original data it gives $4.8\degr$ on cubes instead of $14.5\degr$.
+    \item New data sets without the shortcuts, with paired renders that separate the cues (Section~\ref{sec:clean}). Probes with five controls show that three diffusion models carry the light direction far beyond a linear read-out of the input, and that two models without a generative objective do the same (Section~\ref{sec:rq1}).
+    \item Interventions during generation with four measures of the output light (Section~\ref{sec:causal}). They separate the shading of the object from the cast shadow. A shift along the activation pattern of the light changes the shading but does not draw a new shadow, and the object tokens carry the shading but not the shadow.
+    \item A checklist for probe studies of generative models (Section~\ref{sec:discussion}), an exact model of the render geometry, and a fix with tests for a pitfall in a popular diffusion library.
 \end{enumerate}
 
 \paragraph{Terms.}
@@ -87,19 +83,19 @@ Appendix~\ref{app:details} gives all settings of the experiments.
 
 \paragraph{Probes and their controls.}
 Linear probes test whether a layer encodes a property in a linearly decodable form \citep{alain2016probes}.
-\citet{hewitt2019control} showed that a probe can be accurate because it learns the task, and proposed control tasks and selectivity.
+\citet{hewitt2019control} showed that a probe can be accurate because it learns the task, and proposed control tasks.
 \citet{belinkov2022probing} reviews these and other limits.
-Concept vectors such as TCAV \citep{kim2018tcav} and regression concept vectors \citep{graziani2018rcv} use the same linear directions as explanations.
+Concept vectors \citep{kim2018tcav,graziani2018rcv} use the same linear directions as explanations.
 Erasure methods remove a linear concept from the activations and test whether the model needs it \citep{ravfogel2020inlp,elazar2021amnesic,belrose2023leace}.
 Randomized models give a baseline for explanations \citep{adebayo2018sanity}.
 
 \paragraph{3D and physical knowledge in generative models.}
-\citet{chen2023beyond} found linear representations of depth and of the salient object in a latent diffusion model, and changed the output with interventions on these representations.
-\citet{zhan2024protocol} probed Stable Diffusion features for scene geometry, support relations, shadows, occlusion and depth.
+\citet{chen2023beyond} found linear representations of depth and of the salient object in a latent diffusion model, and changed the output with interventions on them.
+\citet{zhan2024protocol} probed Stable Diffusion features for scene geometry, shadows, occlusion and depth.
 \citet{elbanani2024probing} compared the 3D awareness of visual foundation models with depth and normal probes.
 \citet{du2023generative} and \citet{bhattad2023stylegan} extracted normals, depth, albedo and shading from generative models with small adapters.
 In contrast, \citet{sarkar2024shadows} found that generated images often have inconsistent shadows and perspective.
-Diffusion features also work as general image descriptors, for example for correspondence \citep{tang2023dift}, so a probe result can show a property of good image features and not of the generative model.
+Diffusion features also work as general image descriptors \citep{tang2023dift}, so a probe result can show a property of good image features and not of the generative model.
 
 \paragraph{Light in diffusion models.}
 Several methods control the light of generated images \citep{zhang2025iclight,zeng2024dilightnet,kocsis2024lightit}, and a diffusion model can estimate the scene light from an image \citep{phongthawee2024light}.
@@ -115,14 +111,11 @@ There are 1000 images for each shape.
 The probe trains on 1600 spheres and cylinders; 200 images are for validation and 200 for the test.
 The 1000 cubes form the set \texttt{test\_cubes}.
 
-\paragraph{Activations.}
+\paragraph{Activations and probe.}
 Each image goes through the DC-AE encoder of SANA-1.6B ($1024\times1024$ input, $32\times32\times32$ latent).
 Noise for timestep $t\in\{200,500,800\}$ is added, and forward hooks record the output of transformer blocks 4, 10 and 18 (1024 tokens with 2240 channels) for the empty prompt.
-
-\paragraph{Probe.}
 A $4\times4$ average pool gives $8\times8\times2240$ features.
-Incremental PCA (256 components) and a Ridge regression ($\alpha=1$) predict $[\sin\phi,\cos\phi,\theta]$.
-The azimuth is $\hat\phi=\operatorname{atan2}(\hat s,\hat c)$.
+Incremental PCA (256 components) and a Ridge regression ($\alpha=1$) predict $[\sin\phi,\cos\phi,\theta]$, and the azimuth is $\hat\phi=\operatorname{atan2}(\hat s,\hat c)$.
 
 \begin{table}[t]
 \centering
@@ -150,17 +143,12 @@ Some problems made the input as informative as the model: the label is the lamp 
 Other problems hid the information in the model: the noise injection and a Ridge penalty without effect.
 The original study also selected its final configuration on the test data, and its figures used a wrong camera.
 
-\subsection{An exact model of the render geometry}
-\label{sec:geometry}
-
+\paragraph{An exact model of the render geometry.}
 To check labels and figures, we need the exact camera of each image.
-The CLEVR camera has a track-to constraint on the scene centre, a 35~mm lens on a 32~mm sensor, and a random jitter in $[-0.5,0.5]$ on each axis that the scene files do not store.
-We wrote the projection of Blender in NumPy and fitted the jitter of each image to the object position in the scene file (pixel position and depth).
-The fit reproduces the pixel position of all 3000 objects with a maximum error of $0.56$~px, and the fitted jitter is uniform in $[-0.5,0.5]$.
-A new render of a dataset scene with these values equals the dataset image (mean absolute difference $0.14/255$, object-mask IoU $0.98$).
-
-The azimuth turns counter-clockwise in the world and in the image: $0\degr$ means light from the front right, $90\degr$ from the back right, $180\degr$ from the back left and $270\degr$ from the front left (Figure~\ref{fig:conventions}).
-The original report described the opposite direction.
+The CLEVR camera has a random jitter in $[-0.5,0.5]$ on each axis that the scene files do not store.
+We wrote the projection of Blender in NumPy and fitted the jitter of each image to the object position in the scene file (Appendix~\ref{app:geometry}).
+The fit reproduces the pixel position of all 3000 objects with a maximum error of $0.56$~px, and a new render of a scene with these values equals the dataset image (mean absolute difference $0.14/255$).
+The azimuth turns counter-clockwise in the world and in the image: $0\degr$ means light from the front right and $90\degr$ from the back right (Figure~\ref{fig:conventions}). The original report described the opposite direction.
 
 \begin{figure}[t]
 \centering
@@ -169,33 +157,26 @@ The original report described the opposite direction.
 \label{fig:conventions}
 \end{figure}
 
-\subsection{The label is the lamp position, not the light at the object}
-
+\paragraph{The label is the lamp position, not the light at the object.}
 The lamp turns around the scene centre, but the object stands up to $2.8$ units from the centre.
-The light direction at the object, $\mathrm{dir}(L-p)$ for lamp $L$ and object centre $p$, differs from the label by $35.0\degr$ in azimuth (mean; median $27.2\degr$) and by $16.2\degr$ in elevation (mean absolute value).
-At the object, the light elevation spans $8\degr$ to $89\degr$, not $30\degr$ to $75\degr$.
+The light direction at the object, $\mathrm{dir}(L-p)$ for lamp $L$ and object centre $p$, differs from the label by $35.0\degr$ in azimuth (mean) and by $16.2\degr$ in elevation.
 The original probe follows the label: its azimuth MAE on cubes is $14.0\degr$ for the label and $35.5\degr$ for the light at the object.
 So the probe reads the position of the lamp in the scene, and not the light that falls on the object.
 
-\subsection{Scene lights and a shortcut cue}
-
+\paragraph{Scene lights and a shortcut cue.}
 The key lamp is an area lamp that always faces the scene centre.
 It makes a bright spot on the floor between the lamp and the centre, and the position of this spot follows the label (Figure~\ref{fig:conventions}).
-The spot is larger and brighter than the cast shadow of the object, and it does not depend on the object shape.
-The CLEVR base scene also contains a sun lamp (strength $0.45$, from azimuth $334.9\degr$ and elevation $62.7\degr$) that the modified script did not switch off.
-With the white world light, it gives $19\%$ of the floor brightness.
-Its shadow falls behind the object as the camera sees it, so the effect is a constant front light.
+The spot is larger and brighter than the cast shadow, and it does not depend on the object shape.
+The CLEVR base scene also contains a sun lamp that the modified script did not switch off. It gives $19\%$ of the floor brightness, as a constant front light.
 
-\subsection{A pitfall in the noise schedule}
-\label{sec:noise}
-
+\paragraph{A pitfall in the noise schedule.}
 The original code noised the latent with \texttt{scheduler.add\_noise} of the SANA scheduler (\texttt{DPMSolverMultistepScheduler} with flow sigmas) before any call to \texttt{set\_timesteps}.
 After construction, this scheduler stores variance-preserving sigmas in ascending order of the training step, while its timesteps are in descending order.
 The function finds the index of $t$ in the descending list and reads the sigma of step $999-t$.
 With flow sigmas it then computes $x_t=(1-\sigma)x_0+\sigma\epsilon$ with this value of $\sigma$.
 Table~\ref{tab:noise} shows the result: for $t=200$ the transformer receives an input with $35$ times the expected norm and an inverted signal, while its timestep embedding says $\sigma=0.2$.
-The stored activations agree with this: in block 4 the mean token norm is about $11{,}100$ at $t=200$ and $720$ at $t=800$.
-The same order problem affects the variance-preserving case of four schedulers of the library. We reported the problem to the maintainers of the library, with a fix and tests (the link is withheld for anonymity).
+The stored activations agree: in block 4 the mean token norm is about $11{,}100$ at $t=200$ and $720$ at $t=800$.
+The same order problem affects four schedulers of the library. We reported it to the maintainers, with a fix and tests (the link is withheld for anonymity).
 
 \begin{table}[t]
 \centering
@@ -212,44 +193,30 @@ $t$ & $a$ (original) & $b$ (original) & $a$ (flow) & $b$ (flow) \\
 \end{tabular}
 \end{table}
 
-\subsection{Figures and probe fit}
-
-The figures of the original study drew the shadow direction with the default Blender camera instead of the CLEVR camera and with an orthographic projection.
-The mean direction error is $5.2\degr$, and $16\%$ of the scenes have an error above $10\degr$.
-Because the arrows had a fixed length from the object centre, about $18\%$ of them ended outside the image and the plot library did not draw them.
-Renders without the object confirm our exact arrows: for scenes with long shadows, the mean angle between our arrow and the measured shadow is $4.7\degr$ ($7.6\degr$ for the original arrows).
-Finally, the Ridge $\alpha$ had no effect (the same MAE for $\alpha$ from $10^{-3}$ to $10^{3}$): the sums of squares of the PCA scores are many orders of magnitude larger than these values.
+\paragraph{Figures and probe fit.}
+The figures of the original study drew the shadow direction with the default Blender camera and an orthographic projection (mean direction error $5.2\degr$), and about $18\%$ of the arrows ended outside the image.
+The Ridge $\alpha$ had no effect (the same MAE for $\alpha$ from $10^{-3}$ to $10^{3}$), because the sums of squares of the PCA scores are many orders of magnitude larger.
 The final configuration was selected with test data.
 
 \section{Controls on the existing data}
 \label{sec:controls}
 
-All controls use the original splits.
-The probe is the same recipe (PCA with 256 components, then Ridge).
-The PCA scores are centred, and the log grid of $\alpha$ is relative to the sums of squares of the scores, so the penalty has an effect.
+All controls use the original splits and the same probe recipe (PCA with 256 components, then Ridge).
+The PCA scores are centred, and the grid of $\alpha$ is relative to the sums of squares of the scores, so the penalty has an effect.
 The validation split alone selects $\alpha$.
 Intervals are 95\% bootstrap intervals over the test images (2000 samples).
 
 \paragraph{Pixels.}
-Table~\ref{tab:original} shows that a probe on raw pixels is as good as the probe on SANA activations, on spheres and cylinders ($11.8\degr$ against $13.0\degr$) and on cubes ($14.3\degr$ against $14.0\degr$).
+A probe on raw pixels is as good as the probe on SANA activations (Table~\ref{tab:original}): $11.8\degr$ against $13.0\degr$ on spheres and cylinders, and $14.3\degr$ against $14.0\degr$ on cubes.
 The pixel grid that the validation split selects ($16\times16$) is better than SANA ($9.6\degr$ and $12.8\degr$).
 The input image already contains the label in a linearly decodable form.
 
 \paragraph{Image regions.}
-To find the region that carries the information, we fit the probe on four variants of each image (Table~\ref{tab:cues}): the full image; the image with the object replaced by the floor colour (the cast shadow and the floor highlight stay); a crop of the object alone on a grey background; and only the position of the brightest floor region (two numbers).
-The floor carries the label.
-Without the object, the probe is better than with it ($9.4\degr$ against $14.3\degr$ on cubes), because the object only adds shape-specific variance.
-The position of the floor highlight alone, two numbers, gives $12.2\degr$ on the test split and $17.6\degr$ on cubes.
-The object alone predicts the light at the object well on known shapes ($7.7\degr$), which is the expected physical cue, but this cue does not transfer to cubes ($21.5\degr$) and it does not predict the lamp label ($44.3\degr$ on cubes).
+To find the region that carries the information, we fit the probe on four variants of each image (Table~\ref{tab:cues}; Figure~\ref{fig:cues} in the appendix): the full image; the image with the object replaced by the floor colour; a crop of the object alone on a grey background; and only the position of the brightest floor region (two numbers).
+The floor carries the label: without the object, the probe is better than with it ($9.4\degr$ against $14.3\degr$ on cubes).
+The position of the floor highlight alone gives $17.6\degr$ on cubes.
+The object alone predicts the light at the object well on known shapes ($7.7\degr$), but this cue does not transfer to cubes ($21.5\degr$) and it does not predict the lamp label ($44.3\degr$ on cubes).
 Thus the transfer to cubes that the original study reported is a property of the floor cues, which do not depend on the object shape.
-Figure~\ref{fig:cues} shows the variants and the errors.
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=\linewidth]{figures/cues.png}
-\caption{Left: the image variants for the region probes (the red dot marks the floor highlight). Right: azimuth MAE with 95\% intervals. The dashed line is the original SANA probe on cubes.}
-\label{fig:cues}
-\end{figure}
 
 \begin{table}[t]
 \centering
@@ -262,18 +229,8 @@ Figure~\ref{fig:cues} shows the variants and the errors.
 \label{sec:pipeline}
 
 The corrected extraction (package \texttt{dd3d}) uses the flow rule $x_t=(1-t/1000)\,x_0+(t/1000)\,\epsilon$, a fixed noise seed for each image, and the attention mask of the empty prompt.
-All five timesteps $t\in\{100,200,400,600,800\}$ of one image go through the transformer as one batch.
-The features of all 20 blocks are average-pooled to a $4\times4$ grid, and blocks 4, 10 and 18 also to the $8\times8$ grid of the original study (float16).
-
-\paragraph{Agreement with the original pipeline.}
-With the original noise rule, our extraction gives a mean token norm of $11{,}147$ in block~4 at $t=200$; the stored original activations have about $11{,}100$.
-With the flow rule, the norm is $718$.
-Thus our pipeline agrees with the original one, except for the noise.
-
-\paragraph{Numeric precision.}
-The runs use a T4 GPU, which has no bfloat16 arithmetic.
-On the same 12 images, float16 and float32 give the same features (relative difference $0.1\%$; cosine of the centered features $0.9999$), and float16 is four times faster.
-The original noise rule gives inputs with 35 times the expected norm, which overflow in float16 in block 18; this control therefore runs in float32.
+The features of all 20 blocks at $t\in\{100,200,400,600,800\}$ are average-pooled to a $4\times4$ grid, and blocks 4, 10 and 18 also to the $8\times8$ grid of the original study.
+With the original noise rule, our extraction gives the token norms of the stored original activations, so the two pipelines differ only in the noise (Appendix~\ref{app:more}).
 
 \paragraph{Controls.}
 Each data set has the same probe on these inputs:
@@ -281,23 +238,21 @@ Each data set has the same probe on these inputs:
     \item the input pixels at four grids ($8\times8$ to $64\times64$ px; the validation split selects the grid);
     \item the DC-AE latent;
     \item SANA-1.6B with random weights (the default initialization of the same architecture) \citep{adebayo2018sanity};
-    \item for generality, the UNets of Stable Diffusion 1.5 ($512$ px) and SDXL ($1024$ px), with the DDPM noise rule of their own schedules;
-    \item two vision encoders that do not generate images, DINOv2-L \citep{oquab2024dinov2} and CLIP ViT-L/14 \citep{radford2021clip} ($224$ px, no noise), to test whether the effect needs a generative model.
+    \item the UNets of Stable Diffusion 1.5 and SDXL, with the noise rules of their own schedules;
+    \item two vision encoders without a generative objective, DINOv2-L \citep{oquab2024dinov2} and CLIP ViT-L/14 \citep{radford2021clip} ($224$ px, no noise). They test whether the effect needs a generative model.
 \end{itemize}
 
 \paragraph{The original data with the corrected pipeline.}
-We repeat the original experiment on the same 3000 images and splits (Table~\ref{tab:rq1}, rows v1).
-With the original noise rule, the best SANA probe on the validation split (block~18, $t=200$) gives $12.4\degr$ on the test split and $14.5\degr$ on cubes.
-This reproduces the original result ($14.0\degr$ on cubes), and it is $1.7\degr$ worse than the best pixel grid ($16\times16$: $9.6\degr$ and $12.8\degr$).
-With the flow rule, the best SANA probe (block~7, $t=100$) gives $4.1\degr$ and $4.8\degr$. On cubes this is $8.0\degr$ better than the pixels (95\% interval $[7.1, 8.9]$).
-The DC-AE latent gives $7.3\degr$ and $8.9\degr$, and SANA with random weights gives $11.5\degr$ and $11.9\degr$.
+We repeat the original experiment on the same images and splits (Table~\ref{tab:rq1}, rows v1).
+With the original noise rule, the best SANA probe on the validation split gives $14.5\degr$ on cubes. This reproduces the original result and is $1.7\degr$ worse than the best pixel grid ($12.8\degr$).
+With the flow rule, the best SANA probe (block~7, $t=100$) gives $4.8\degr$, $8.0\degr$ better than the pixels (95\% interval $[7.1, 8.9]$).
 Thus the original study did not fail because SANA lacks the information: the wrong noise hid it.
 The v1 images still have the floor highlight, so this result alone does not show a representation of the light at the object.
 
 \section{Clean data: one directional light and a controlled position}
 \label{sec:clean}
 
-Table~\ref{tab:sets} lists the data sets. Each set has the splits of the original study: the probe trains on 1600 spheres and cylinders, the validation and test splits have 200 images each, and 1000 cubes form \texttt{test\_cubes}.
+Table~\ref{tab:sets} lists the data sets. Each set has the splits of the original study.
 
 \begin{table}[t]
 \centering
@@ -320,107 +275,83 @@ v2rot & 48 test scenes of v2 with the light azimuth $+90\degr$ & 48 & patch test
 \end{table}
 
 \paragraph{Data set v2.}
-We rendered 3000 new images with the same camera and object sizes, but with these changes: the key lamp is a sun lamp (only a direction, so the label is exact at every point of the scene); the extra sun lamp of the base scene is off; a flat floor replaces the curved backdrop, whose back wall blocks a sun lamp from behind; there is no camera jitter; and the object stands at the scene centre.
-The elevation is $\mathcal{U}(30\degr,75\degr)$, as in the original data, and the splits follow the same rules.
+We rendered 3000 new images with the same camera and object sizes, but with these changes: the key lamp is a sun lamp, so the label is exact at every point of the scene; the extra lamp is off; a flat floor replaces the curved backdrop; there is no camera jitter; and the object stands at the scene centre.
 
 \paragraph{A centred object makes the pixel control almost perfect.}
 On v2, the pixel probe has an azimuth MAE of $2.5\degr$ on spheres and cylinders and $13.7\degr$ on cubes.
 With the object always at the same place, the shadow always falls in the same part of the image, and a linear read-out of the pixels needs no 3D knowledge.
-The floor brightness also shows the elevation: the floor alone gives an elevation MAE of $1.7\degr$ on cubes, because a low sun lights the floor less.
-Thus the elevation is not a useful target for a claim about 3D knowledge, and we use the azimuth.
-The same pixel probe on v2pos (300 images with the object at random positions) has an azimuth MAE of $69.0\degr$, near the chance level of $90\degr$.
-Figure~\ref{fig:maps} shows where the pixel probe reads the azimuth: on v1, the weight spreads over the floor, where the highlight moves; on v2, it lies around the object and its shadow.
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=\linewidth]{figures/probe_maps_pixels.png}
-\caption{Exact spatial decomposition of a linear probe on $16\times16$ pixels (brighter cells have a larger share of the azimuth output) on the original data (left) and on v2 (right). The title of each map gives the error of this $16\times16$ probe on cubes; Table~\ref{tab:rq1} uses the grid that the validation split selects.}
-\label{fig:maps}
-\end{figure}
+The floor brightness also shows the elevation (floor alone: $1.7\degr$ on cubes), so we use the azimuth only.
+The same pixel probe on v2pos (object at random positions) has $69.0\degr$, near the chance level of $90\degr$.
 
 \paragraph{Data set v2r: a random position.}
-The decisive test needs data in which the shadow position depends on the object position.
 Data set v2r has the same lights, sizes and rotations as v2, image for image; only the position changes.
-The position is uniform on the part of $[-3,3]^2$ where the largest object is fully in the image; this region depends only on the camera, so the position does not correlate with the light ($|r|\le0.02$).
-The tip of the shadow is in the image for $99\%$ of the scenes.
+The position is uniform on the part of $[-3,3]^2$ where the largest object is fully in the image, so it does not correlate with the light ($|r|\le0.02$).
+On v2r, the pixel probe has $25.1\degr$ on spheres and cylinders and $25.8\degr$ on cubes; a pixel probe fitted on v2 has $71.2\degr$ and $70.4\degr$.
+The information is still in the image: a crop of the object alone gives $4.4\degr$ on spheres and cylinders.
+Thus a linear read-out of the pixels cannot find the light at an arbitrary place in the image, while a representation that does not depend on the position can.
 
-\paragraph{A random position removes the linear shortcut.}
-On v2r, the pixel probe has an azimuth MAE of $25.1\degr$ on spheres and cylinders and $25.8\degr$ on cubes, against $2.5\degr$ and $13.7\degr$ on v2.
-A pixel probe fitted on v2 and tested on v2r has $71.2\degr$ and $70.4\degr$, close to chance.
-The information is still in the image: a crop of the object alone, which removes the position, gives $4.4\degr$ on spheres and cylinders.
-Thus the light direction is present, but a linear read-out of the pixels cannot find it at an arbitrary place in the image.
-A linear probe on a representation of the light that does not depend on the position can do better than these values.
-The floor brightness still gives the elevation ($2\degr$).
-
-\paragraph{Weak cues remain.}
-Without the cast shadow (v2ns, object at the centre), the floor alone still predicts the azimuth ($4.6\degr$; $10.2\degr$ on cubes).
-The cue is the light that the purple object reflects onto the floor on its lit side.
-This cue is physically correct, but it is one more 2D cue that a probe can read.
-
-\paragraph{Cue variants.}
-Two more variants have the same scenes as v2r: in v2rns, the object casts no shadow (only its shading is left); in v2rso, the camera does not see the object, but its shadow stays.
+\paragraph{Cue variants and weak cues.}
+In v2rns the object casts no shadow, so only its shading is left; in v2rso the camera does not see the object, but its shadow stays.
 A pair of images thus differs in one main cue only.
-In both variants the object still reflects light onto the floor, as in v2ns, so each variant keeps this weak cue.
+One weak cue stays in both variants: the purple object reflects light onto the floor on its lit side. Without the cast shadow (v2ns), the floor alone still gives $4.6\degr$.
 
 \section{Probes on the clean data}
 \label{sec:rq1}
 
 \paragraph{Protocol.}
-For each model we fit the probe on every block and on the timesteps $t\in\{100,200,400,600,800\}$.
-The features of a block are the token means on a grid of $1\times1$, $2\times2$ or $4\times4$ cells, and also $8\times8$ cells for blocks 4, 10 and 18 of SANA. The $1\times1$ grid is the mean of all tokens and has no information about the position.
-The validation split selects the block, the timestep and the grid of each model (criterion: the sum of the azimuth and elevation MAE; the elevation errors of the models are small, so the azimuth decides).
-The pixel baseline is the same probe on the RGB image at $8\times8$, $16\times16$, $32\times32$ or $64\times64$ pixels. The validation split also selects this resolution.
+For each model we fit the probe on every block and on the timesteps $t\in\{100,200,400,600,800\}$ (DINOv2 and CLIP: every second layer, no noise).
+The features of a block are the token means on a grid of $1\times1$, $2\times2$ or $4\times4$ cells, and also $8\times8$ cells for some blocks. The $1\times1$ grid has no information about the position.
+The validation split selects the block, the timestep and the grid of each model.
+The pixel baseline is the same probe on the RGB image at four resolutions, and the validation split also selects the resolution.
 A coarse grid is often the stronger linear baseline, because it averages the position of the shadow.
-A control task with shuffled train and validation labels gives a mean MAE of $82\degr$ to $98\degr$ (three shuffles) for every source. Thus the probes do not fit noise \citep{hewitt2019control}.
+A control task with shuffled train and validation labels gives a mean MAE of $82\degr$ to $98\degr$ for every source, so the probes do not fit noise \citep{hewitt2019control}.
 Table~\ref{tab:rq1} compares each source with the best pixel grid on the same test images (paired bootstrap).
 
 \begin{table}[t]
 \centering
-\caption{Azimuth MAE (degrees, 95\% interval) of the probe selected on the validation split. Test: spheres and cylinders; cubes: a shape that the probe did not see. Last column: paired difference to the best pixel grid on the cubes. Block names of the UNets follow the order down, mid, up.}
+\caption{Azimuth MAE (degrees, 95\% interval) of the probe selected on the validation split. Test: spheres and cylinders; cubes: a shape that the probe did not see. Last column: paired difference to the best pixel grid on the cubes. Block names of the UNets follow the order down, mid, up; DINOv2 and CLIP get no noise ($t=0$).}
 \label{tab:rq1}
 \resizebox{\linewidth}{!}{\input{tables/rq1.tex}}
 \end{table}
 
 \paragraph{With a random position, diffusion features are much better than a linear read-out of the input.}
 On v2r the SANA probe (block 5, $t=100$, $2\times2$ grid) has an azimuth MAE of $5.4\degr$ on spheres and cylinders and $7.6\degr$ on cubes.
-The best pixel grid ($8\times8$) gives $21.5\degr$ and $20.1\degr$, so SANA is better by $12.5\degr$ on cubes (95\% interval $[11.1, 13.8]$).
+The best pixel grid gives $21.5\degr$ and $20.1\degr$, so SANA is better by $12.5\degr$ on cubes (95\% interval $[11.1, 13.8]$).
 The DC-AE latent gives $18.8\degr$ and $19.0\degr$.
-SD~1.5 ($7.5\degr$, $11.1\degr$) and SDXL ($5.9\degr$, $7.3\degr$) show the same effect, so it is not specific to one model.
-The SANA transformer with random weights is better than the latent at a low noise level ($11.9\degr$, $15.9\degr$). Random nonlinear features of the latent already help a linear probe.
-The trained model reduces this error by about half.
-Figure~\ref{fig:scan} shows that the best blocks are early and middle blocks (4 to 10) at the lowest noise level. The error rises with $t$.
+SD~1.5 ($7.5\degr$, $11.1\degr$) and SDXL ($5.9\degr$, $7.3\degr$) show the same effect.
+SANA with random weights already beats the latent ($11.9\degr$, $15.9\degr$), so random nonlinear features help a linear probe; training halves the error.
+Figure~\ref{fig:scan} shows that the best blocks are early and middle blocks (4 to 10) at the lowest noise level.
+
+\paragraph{Models without a generative objective read the light equally well.}
+DINOv2 and CLIP are better than SANA on spheres and cylinders on every data set, by $0.5\degr$ to $2.5\degr$ (paired intervals exclude zero); on v2r they give $3.3\degr$ and $3.9\degr$.
+On cubes, SANA is clearly better only where the object moves and its shading is visible: on v2r by $2.4\degr$ against DINOv2 ($10.0\degr$) and by $8.4\degr$ against CLIP ($16.0\degr$), and on v2rns by $4.2\degr$ and $9.6\degr$.
+On the other sets, also on v2rso where only the shadow is visible, the differences are below $1\degr$ in either direction.
+A light direction that a linear probe can read is thus a property of good image features, not specific to a generative model.
+Training for generation gives at most a code of the shading that transfers better to a new shape.
+DINOv2 and CLIP get $224$~px images and SANA $1024$~px, so this comparison is not exact.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=\linewidth]{figures/scan.png}
-\caption{Azimuth MAE on the cubes for the SANA probe on each block ($4\times4$ grid), one line for each timestep. Horizontal lines: the probe on $64\times64$ pixels and on the DC-AE latent. The third line is SANA with random weights, at its best setting on the validation split.}
+\caption{Azimuth MAE on the cubes for the SANA probe on each block ($4\times4$ grid), one line for each timestep. Horizontal lines: the pixel grid that the validation split selects, the DC-AE latent, SANA with random weights, DINOv2 and CLIP, each at its setting from the validation split.}
 \label{fig:scan}
 \end{figure}
 
 \paragraph{The representation depends little on the position.}
 The mean of all tokens (the $1\times1$ grid) still gives $5.9\degr$ on spheres and cylinders of v2r ($13.2\degr$ on cubes).
 A stronger test fits the probe on v2, where the object is always at the centre, and applies it to v2r.
-The pixel probe fails ($71.2\degr$ and $70.4\degr$, near chance).
-The SANA probe on the mean of all tokens (block 5, $t=100$) gives $9.0\degr$ and $17.6\degr$; SD~1.5 gives $10.6\degr$ and $22.0\degr$.
-With the $8\times8$ grid, which keeps the position, the transfer is weaker ($38.4\degr$ and $40.9\degr$).
-Thus the model has a direction code that is largely the same at every place in the image, and the cell features add a position-dependent part.
-The transfer is not perfect: on cubes, the probe from v2 is $4.4\degr$ worse than a probe fitted on v2r itself.
+The pixel probe fails ($71.2\degr$ and $70.4\degr$).
+The SANA probe on the mean of all tokens gives $9.0\degr$ and $17.6\degr$; SD~1.5 gives $10.6\degr$ and $22.0\degr$, DINOv2 $6.8\degr$ and $21.5\degr$, and CLIP $8.0\degr$ and $19.0\degr$.
+With the $8\times8$ grid, which keeps the position, the transfer is weaker (SANA: $38.4\degr$ and $40.9\degr$).
+Thus each model has a direction code that is largely the same at every place in the image, and the cell features add a position-dependent part.
+The transfer is not perfect: on cubes, the SANA probe from v2 is $4.4\degr$ worse than a probe fitted on v2r itself.
 
 \paragraph{Both cues are readable.}
 Without the cast shadow (v2rns), the SANA probe gives $6.9\degr$ and $9.9\degr$; the best pixel grid gives $24.6\degr$ and $23.3\degr$.
 With only the shadow (v2rso), SANA gives $5.9\degr$ and $7.9\degr$, against $24.6\degr$ and $16.9\degr$ for the pixels.
-So the model encodes the light without the cast shadow and also without the visible object.
-Both variants keep the light that the object reflects onto the floor, so this test does not separate the shading from this weak cue.
-A probe fitted on v2r, where both cues are present, partly transfers to the scenes with one cue. SANA gives $33.3\degr$ without the shadow and $30.2\degr$ with only the shadow (pixels: $72.7\degr$ and $74.6\degr$).
-The two cues therefore share part of their code in the features, but not all of it.
-
-\paragraph{Where the probe reads.}
-The exact decomposition of the linear probe over the $8\times8$ cells gives the share of each cell in the output. The scene geometry gives the cells of the object and of its cast shadow.
-On v2r the SANA probe (block~10, $t=100$) gives $20\%$ of its weight to the object cells and $5.4\%$ to the shadow cells. Their area shares are $14.5\%$ and $3.7\%$.
-The pixel probe on an $8\times8$ grid has almost the same shares ($19.6\%$ and $5.3\%$).
-So the maps do not separate the models. Both probes give the object and the shadow about 1.4 times their area share, and spread the rest over the floor.
-On v2rso, where the object is not visible, the cells of the hidden object still get $25\%$ of the weight (area $15\%$).
-These cells also hold the start of the shadow, so this does not show that the model represents the hidden object.
+So the model encodes the light without the cast shadow and also without the visible object, although both variants keep the weak floor cue.
+A probe fitted on v2r partly transfers to the scenes with one cue ($33.3\degr$ without the shadow and $30.2\degr$ with only the shadow; pixels: $72.7\degr$ and $74.6\degr$), so the two cues share part of their code.
+A map of the probe weights over the grid cells does not separate SANA from the pixels (Appendix~\ref{app:more}).
 
 \section{Does the model use the direction?}
 \label{sec:causal}
@@ -428,144 +359,84 @@ These cells also hold the start of the shadow, so this does not show that the mo
 A probe shows that a property is readable, not that the model uses it \citep{elazar2021amnesic,belinkov2022probing}.
 We test use with three interventions during generation.
 All three start from a render of v2.
-We encode the render, add flow noise up to $\sigma_0=0.7$, and integrate the flow back to $\sigma=0$ in 20 Euler steps, $x_{\sigma'}=x_\sigma+(\sigma'-\sigma)\,v_\theta(x_\sigma,\sigma)$ \citep{meng2022sdedit}.
+We encode the render, add flow noise up to $\sigma_0=0.7$, and integrate the flow back to $\sigma=0$ in 20 Euler steps \citep{meng2022sdedit}.
 Without an intervention, this gives a close copy of the render (the base output).
 A forward hook on one transformer block changes its output at every step.
-We report the signed rotation of the output light against the base output of the same image and noise, with four measures (Table~\ref{tab:measures}).
+
+\paragraph{Four measures of the output light.}
+We compare each output with the base output of the same image and noise (Table~\ref{tab:measures}).
 \begin{itemize}
     \item The \emph{pixel probe} ($64\times64$ pixels, fitted on the v2 renders) reads the azimuth from the whole image: the object, the cast shadow and the floor.
     \item The \emph{object probe} is the same probe on a crop of the object, with the floor set to grey. It reads the shading of the object alone.
-    \item The \emph{dark-region measure} uses no fitted model. It takes the floor pixels that are more than 20 grey levels darker than the floor median and computes their darkness-weighted centroid. The camera model turns the image vector from the object base to this centroid into a ground azimuth. It fails on short shadows under a high light, so we report medians.
-    \item The \emph{kept share} compares the crisp shadow of an output (floor pixels 40 grey levels below the floor median) with the crisp shadow of the base output. It is the share of the base shadow pixels that are still in shadow.
+    \item The \emph{dark-region measure} uses no fitted model. It takes the floor pixels that are more than 20 grey levels darker than the floor median, computes their darkness-weighted centroid, and turns the image vector from the object base to this centroid into a ground azimuth with the camera model. It fails on short shadows, so we report medians.
+    \item The \emph{kept share} is the share of the crisp shadow pixels of the base output (40 grey levels below the floor median) that are still in shadow.
 \end{itemize}
 A centroid of dark pixels cannot separate a turned shadow from an old shadow plus a new dark region, so the kept share and a visual check complete it.
-Table~\ref{tab:measures} gives the scale of each measure on renders with a known light.
+On renders, each measure sees a turn of the light by $90\degr$ (Table~\ref{tab:measures}).
 
 \begin{table}[t]
 \centering
-\caption{The measures of the output light on renders with a known light. Error: azimuth error on the v2 test renders (cubes in brackets). Turn: the reading for a v2 render and the same scene with the light turned by $+90\degr$ (v2rot, 48 pairs; median).}
+\caption{The measures of the output light on renders with a known light. Error: median azimuth error on the v2 test renders (cubes in brackets). Turn: the median reading for a v2 render and the same scene with the light turned by $+90\degr$ (v2rot, 48 pairs).}
 \label{tab:measures}
 \begin{tabular}{lrr}
 \toprule
 Measure & Error & Turn of $+90\degr$ \\
 \midrule
-Pixel probe & \pending{} & \pending{} \\
-Object probe & \pending{} & \pending{} \\
-Dark region (median) & $6.4\degr$ ($8.7\degr$) & \pending{} \\
+Pixel probe & $1.7\degr$ ($10.7\degr$) & $+90.7\degr$ \\
+Object probe & $2.6\degr$ ($20.6\degr$) & $+89.1\degr$ \\
+Dark region & $6.4\degr$ ($8.7\degr$) & $+83.5\degr$ \\
 Kept share & -- & $0.07$ (same image: $1.00$) \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \paragraph{Shift along a direction.}
-The probe of block $b$ is linear in the cell features: $\hat{\mathbf y}=W h+c$, where $W$ combines the PCA, the centring and the Ridge weights.
+The probe of block $b$ is linear in the cell features: $\hat{\mathbf y}=W h+c$.
 We add a vector $\delta$ to all tokens of each grid cell, which changes the cell mean by exactly $\delta$.
-We use two directions.
-The probe direction is the shortest change that turns the probe output $(\hat s,\hat c)$ by $90\degr$: $\delta=W^\top(WW^\top)^{-1}(R_{90}\hat{\mathbf y}-\hat{\mathbf y})$. We apply it as it is and scaled to the mean token norm of the block.
-A probe weight vector can contain directions that only cancel noise in the data. Thus it is not the best candidate for a change that the model uses \citep{haufe2014interpretation,marks2024geometry}.
-The second direction is the activation pattern. A least-squares regression of the features on $(\sin\phi,\cos\phi)$ over the train split gives a matrix $B$. Then $\delta=(\mathbf y(\phi+90\degr)-\mathbf y(\phi))B$ is the mean feature change between images whose light differs by $90\degr$.
-We apply it with factors 1 and 3.
-Each family has a control: a random vector with, in each cell, the norm of the largest step of the family ($\times3$ for the pattern).
-The plans use the features at $t=400$, because this noise level lies inside the range of the test ($\sigma$ from $0.7$ to $0$).
-The probes read best at $t=100$, so a second test uses the pattern of block~5 at $t=100$.
+The \emph{probe direction} is the shortest change that turns the probe output by $90\degr$: $\delta=W^\top(WW^\top)^{-1}(R_{90}\hat{\mathbf y}-\hat{\mathbf y})$. We apply it as it is and scaled to the mean token norm of the block (r1).
+A probe weight vector can contain directions that only cancel noise, so it is not the best candidate for a change that the model uses \citep{haufe2014interpretation,marks2024geometry}.
+The \emph{activation pattern} comes from a least-squares regression of the features on $(\sin\phi,\cos\phi)$ over the train split, with the matrix $B$. Then $\delta=(\mathbf y(\phi+90\degr)-\mathbf y(\phi))B$ is the mean feature change between images whose light differs by $90\degr$. We apply it with factors 1 and 3.
+Each family has a control: a random vector with, in each cell, the norm of the largest step of the family.
+The plans use the features at $t=400$, inside the noise range of the test.
 This is a form of activation steering \citep{turner2023activation,chen2023beyond}.
 
 \paragraph{Erasure.}
-The LEACE eraser \citep{belrose2023leace} of $(\sin\phi,\cos\phi)$ is fitted on the cell features of the train split. It removes all linear information about the azimuth from every token of the block.
-If the model uses this information in later blocks, the output light must change or become less consistent with the input light.
+LEACE \citep{belrose2023leace} removes the linear information about $(\sin\phi,\cos\phi)$ from features with the smallest change.
+The \emph{pooled eraser} is one LEACE eraser for the cells of all positions. It removes only the part of the code that is the same in every cell: a new probe on the $8\times8$ grid still reads the azimuth after it ($4.7\degr$ against $4.6\degr$ in block~4).
+The \emph{cell eraser} has one LEACE eraser for each grid cell. After it, a new probe on the grid is at chance ($88\degr$).
+Its control fits the same cell erasers on the train labels in a random order, so it removes a subspace of the same rank but not the light code.
+If the model uses the erased code in later blocks, the output light must change or become less consistent with the input light.
 
 \paragraph{Patch test.}
-The shift and the erasure depend on a linear direction.
-The patch test does not \citep{meng2022locating,zhang2024patching,basu2024localizing}.
+The shift and the erasure depend on a linear direction; the patch test does not \citep{meng2022locating,zhang2024patching,basu2024localizing}.
 For 48 test scenes of v2 we rendered a second image of the same scene with the light azimuth $+90\degr$ (set v2rot).
 Both images get the same noise.
-The source pass (v2rot) records the output of a block at every step.
-In the target pass (v2), the tokens of one region get the recorded source values at every step.
-The regions come from the scene geometry. They are all tokens, the object, the cast shadow of the source light, the cast shadow of the target light, and the rest of the floor.
-If the patched tokens carry the light direction that the model uses, the shadow of the output turns towards the source light.
-We report the rotation as a fraction of the $90\degr$ offset.
-SANA has no skip connections between blocks. Thus a patch of all tokens at all steps makes the output equal to the source output, up to the difference of the two inputs. This condition is a positive control.
+The source pass (v2rot) records the output of a block at every step, and in the target pass (v2) the tokens of one region get the recorded values.
+The regions come from the scene geometry: all tokens, the object, the cast shadow of the source light, and the rest of the floor.
+A patched token copies the source image at its own place, and the object cells also hold the floor next to the object, where the shadow starts.
+Thus we also measure the source shadow outside the patched cells, grown by one token (16~px). Only this part shows a shadow that the model draws at another place.
 
-\paragraph{Results of the shift and the erasure.}
-Table~\ref{tab:causal} and Figure~\ref{fig:causal} give the results for 60 test images of v2 and three blocks.
+\paragraph{Results of the shift.}
+Table~\ref{tab:causal} gives the results for 60 test images of v2 and three blocks.
 The probes come from the $8\times8$ features at $t=400$ (test MAE $4.4\degr$ to $4.6\degr$).
 The base output keeps the light of the render (pixel probe MAE $7.6\degr$ against the label).
-A random change of the base output, for example a random shift, keeps $82\%$ to $88\%$ of its crisp shadow, so this is the level of no effect.
+A random change of the base output keeps $82\%$ to $88\%$ of its crisp shadow, so this is the level of no effect.
 \begin{itemize}
-    \item The pattern direction at the natural size ($\times1$) turns the pixel probe by $+60\degr$ to $+65\degr$ towards the target of $+90\degr$. The change has a mean cell norm of $2\%$ of the mean token norm, and the mean pixel change is $4$ grey levels. The crisp shadow stays: $68\%$ to $80\%$ of it is kept, and its direction turns by $+5\degr$ to $+7\degr$ (median). So the shift changes the shading of the object, not the cast shadow.
-    \item With $\times3$ the pixel probe turns by about $+120\degr$. Only $32\%$ to $40\%$ of the old crisp shadow stays, and a diffuse dark region appears on the floor towards the target, which turns the dark-region measure by $+92\degr$ to $+109\degr$. The images show no new crisp shadow (Figure~\ref{fig:causal_examples}).
-    \item A random vector with the same norm in each cell does nothing (both rotation measures within $\pm2\degr$).
-    \item The shortest change along the probe weights turns the pixel probe by $+23\degr$ to $+41\degr$ and keeps $74\%$ to $89\%$ of the crisp shadow. The same direction at the size of the token norm destroys the image in blocks 4 and 10 (mean pixel change above 100). The readings of these outputs have no meaning.
-    \item The LEACE eraser in one block has no effect on any measure (rotation $0\degr$, kept share $0.93$ to $0.99$).
+    \item The pattern direction at the natural size ($\times1$) turns the object probe by $+50\degr$ to $+52\degr$ and the pixel probe by $+60\degr$ to $+65\degr$, towards the target of $+90\degr$. The change has a mean cell norm of $2\%$ of the token norm, and the image changes by $4$ grey levels. The crisp shadow stays ($68\%$ to $80\%$ kept), and the dark region turns by only $+5\degr$ to $+7\degr$. The shift changes the shading of the object, not the cast shadow.
+    \item With $\times3$ the object probe turns by $+71\degr$ to $+82\degr$. Only $32\%$ to $40\%$ of the old crisp shadow stays, and a diffuse dark region appears on the floor towards the target, which turns the dark-region measure by $+92\degr$ to $+109\degr$. The images show no new crisp shadow (Figure~\ref{fig:causal_examples}).
+    \item A random vector with the same norm in each cell does nothing.
+    \item The shortest change along the probe weights turns the object probe by only $+22\degr$ to $+29\degr$. At the size of the token norm, it destroys the image in blocks 4 and 10 (mean change above 100 grey levels). In block 18 it turns the pixel probe by $+84\degr$ but the object probe by only $+11\degr$: the whole-image reading then comes from changes of the floor.
 \end{itemize}
-Thus the pattern direction is a causal handle on the light of the output. The probe weights are a worse handle, as \citet{haufe2014interpretation} predict for a regression with correlated noise.
-A step of natural size along the pattern changes the shading of the object, but not the cast shadow.
-A large step removes much of the old shadow and darkens the floor towards the target, without a new crisp shadow.
-The erasure result does not show that the information is unused. The noisy input at $\sigma_0=0.7$ still shows the shadow and the shading, and later blocks can read the light again from them.
-
-\paragraph{The best layer and more noise.}
-On v2r, the validation split selects block~5 at $t=100$, so we repeated the test with the pattern of these features (v2, $4\times4$ grid, test MAE $2.6\degr$; Table~\ref{tab:causal_more}).
-The effect grows with the dose: the pixel probe turns by $+30\degr$, $+79\degr$ and $+105\degr$ for $\times1$, $\times2$ and $\times3$, and the kept share of the crisp shadow falls from $0.76$ to $0.55$ and $0.41$.
-At $\times2$ the shading reaches the target in all 60 images, while half of the old shadow stays.
-We also repeated the block~4 test with more noise, because the noisy input at $\sigma_0=0.7$ can hold the old shadow.
-With $\sigma_0=0.85$ and $0.95$ the base output keeps less of the input light (MAE $34.8\degr$ and $70\degr$).
-At $\sigma_0=0.85$ the pattern shift ($\times1$) still turns the pixel probe by $+63\degr$, but the dark region does not turn ($-9\degr$; $-3\degr$ with $\times3$).
-At $\sigma_0=0.95$ the effects are small and uncertain.
-So the weak response of the cast shadow is not an effect of the input alone.
-
-\paragraph{All blocks together.}
-Last, we added the pattern of each block to all 20 blocks in the same pass ($t=100$ features, $4\times4$ grid, 48 images).
-Already a quarter of the natural size turns the pixel probe by $+120\degr$ and the dark region by $+107\degr$, and only $37\%$ of the old crisp shadow stays.
-A random vector of the same size in each block has no effect.
-But the images change by 20 grey levels, and they show dark and bright blocks on the $4\times4$ grid of the shift, not a new cast shadow (Figure~\ref{fig:multi}).
-The shading of the object turns, and the old shadow often stays.
-The patches lie on the grid of the shift, so they come from the form of the intervention: one constant vector for each cell.
-None of our shifts drew a new crisp shadow.
-A shift that is constant in each cell cannot draw a sharp shape by itself, so this result concerns such shifts only.
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=\linewidth]{figures/causal_multi_examples.png}
-\caption{Shift of the pattern in all 20 blocks at the same time ($t=100$ features, $4\times4$ grid). The shading of the object turns, but the floor shows dark and bright blocks on the grid of the shift, not a new cast shadow. A random shift of the same size (last column) has no effect.}
-\label{fig:multi}
-\end{figure}
-
+Thus the pattern direction is a causal handle on the shading of the object. The probe weights are a worse handle, as \citet{haufe2014interpretation} predict for a regression with correlated noise.
+The same holds for the pattern of block~5 at $t=100$, the best probe on v2r, with a clear dose effect; with more noise ($\sigma_0=0.85$ and $0.95$) the base output loses the input light and the effects become small (Appendix~\ref{app:more}, Table~\ref{tab:causal_more}).
+A shift of the pattern in all 20 blocks at the same time turns all measures, but it draws dark and bright blocks on the grid of the shift, not a new shadow (Figure~\ref{fig:multi}).
+None of our shifts drew a new crisp shadow. A shift that is constant in each cell cannot draw a sharp shape by itself, so this result concerns such shifts only.
 
 \begin{table}[t]
 \centering
-\caption{Rotation of the output light (degrees) against the base output for a target of $+90\degr$, 60 images of v2. Probe: the pixel probe (mean and 95\% interval). Shadow: the median rotation of the dark shadow region. Pixels: mean absolute change against the base output (grey levels), mean over the blocks. The two \texttt{probe\_r1} and \texttt{random\_probe} rows destroy the image in blocks 4 and 10, so their readings there have no meaning.}
+\caption{Shift test: output light against the base output for a target of $+90\degr$, 60 images of v2. Each cell gives blocks 4 / 10 / 18. Probes: mean rotation (degrees); dark region: median rotation; kept share of the crisp shadow; pixels: mean absolute change (grey levels). The rows \texttt{probe\_r1} and \texttt{random\_probe} destroy the image in blocks 4 and 10, so their readings there have no meaning.}
 \label{tab:causal}
 \resizebox{\linewidth}{!}{\input{tables/causal.tex}}
-\end{table}
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=\linewidth]{figures/causal.png}
-\caption{Rotation of the output light (pixel probe) for each condition and block. The dotted line is the target ($+90\degr$).}
-\label{fig:causal}
-\end{figure}
-
-\begin{table}[t]
-\centering
-\caption{Causal test with the pattern of block~5 at $t=100$ ($\sigma_0=0.7$), and with the pattern of block~4 at more noise. Rotation of the pixel probe (mean) and of the dark region (median) in degrees, kept share of the crisp shadow, mean pixel change. Target: $+90\degr$; 60 images of v2.}
-\label{tab:causal_more}
-\begin{tabular}{llrrrr}
-\toprule
-Setting & Condition & Probe & Dark region & Kept & Pixels \\
-\midrule
-Block 5, $t=100$ & pattern $\times1$ & $+30$ & $+2$ & $0.76$ & 4 \\
- & pattern $\times2$ & $+79$ & $+40$ & $0.55$ & 9 \\
- & pattern $\times3$ & $+105$ & $+88$ & $0.41$ & 13 \\
- & random & $+1$ & $0$ & $0.88$ & 1 \\
-\midrule
-Block 4, $\sigma_0=0.85$ & pattern $\times1$ & $+63$ & $-9$ & $0.49$ & 8 \\
- & pattern $\times3$ & $+92$ & $-3$ & $0.40$ & 20 \\
- & random & $+1$ & $0$ & $0.73$ & 2 \\
-\midrule
-Block 4, $\sigma_0=0.95$ & pattern $\times1$ & $+27$ & $+2$ & $0.67$ & 12 \\
- & random & $+7$ & $+2$ & $0.78$ & 4 \\
-\bottomrule
-\end{tabular}
 \end{table}
 
 \begin{figure}[t]
@@ -575,23 +446,34 @@ Block 4, $\sigma_0=0.95$ & pattern $\times1$ & $+27$ & $+2$ & $0.67$ & 12 \\
 \label{fig:causal_examples}
 \end{figure}
 
+\paragraph{Results of the erasure.}
+The pooled eraser has no effect on any measure (rotation $0\degr$, kept share $0.93$ to $0.99$), as expected from an eraser that leaves the code in the cells.
+Table~\ref{tab:erase} in Appendix~\ref{app:more} gives the cell eraser and its control.
+In blocks 4, 10 and 18 at $t=400$, the cell eraser increases the azimuth error of the output from $7.6\degr$ to $21.9\degr$, $30.4\degr$ and $44.2\degr$; its control gives $8.7\degr$ to $9.6\degr$.
+The mean rotation stays near $0\degr$, so the light does not turn to one side: it agrees less with the input.
+The crisp shadow of the base output also stays less often (kept share $0.65$ to $0.79$, control $0.92$ to $0.95$).
+Two facts limit this result.
+The control changes the features about three times less ($0.4\%$ to $0.7\%$ of the token norm, against $1.2\%$ to $1.8\%$), because shuffled labels give only a weak linear relation.
+And the cell eraser adds local grey smears near the object (Figure~\ref{fig:erase_examples}).
+In block~5 at $t=100$, the control also breaks the output (error $31.1\degr$), so this setting cannot separate the two erasers.
+
+
 \paragraph{Results of the patch test.}
 Figure~\ref{fig:patch} gives the results for 48 pairs.
-The full source pass turns the pixel probe by $1.01$ of the $90\degr$ offset, and its crisp shadow is the source shadow by construction.
-A patch of all tokens of block~10 moves $0.73$ of the rotation; $84\%$ of the source shadow appears, and only $16\%$ of the target shadow stays.
-A patch of the object tokens (about $10\%$ of the image) moves $0.57$ to $0.63$ of the rotation by the pixel probe in every block from 0 to 18.
-It also moves part of the cast shadow: $33\%$ to $38\%$ of the crisp source shadow appears, and $60\%$ to $67\%$ of the target shadow stays.
-The patch of the other floor tokens gives the reference: $12\%$ of the source shadow (the two shadows meet at the object base) and $96\%$ of the target shadow.
-A patch of the tokens where the source shadow lies copies $59\%$ of the source shadow to its place, but keeps $92\%$ of the target shadow: the output has two shadows.
-In block~10, the first half of the steps moves more than the second half (object tokens: $28\%$ against $16\%$ of the source shadow).
-Thus the object tokens carry the light code that sets the shading and part of the cast shadow.
-The rest of the shadow needs the other tokens: no single region moves it as a patch of all tokens does.
+The full source pass turns the pixel probe by $1.01$ of the $90\degr$ offset and the object probe by $0.56$; the object probe reads generated images less well than renders.
+A patch of all tokens of block~10 moves $0.73$ of the pixel-probe rotation and $84\%$ of the crisp source shadow.
+A patch of the object tokens (about $10\%$ of the image) moves $0.57$ to $0.63$ of the pixel-probe rotation and $0.36$ to $0.45$ of the object-probe rotation in every block from 0 to 18, about three quarters of the full source pass.
+In the whole image, $33\%$ to $38\%$ of the source shadow appears, but this is mostly a copy: on average $42\%$ of the source shadow lies in the object cells.
+Outside these cells, $3\%$ to $9\%$ of the source shadow appears, against $3\%$ without a patch, and $79\%$ to $97\%$ of the target shadow stays. The small gain is mostly in blocks 0 to 8.
+A patch of the source-shadow tokens copies the source shadow to its place but keeps the target shadow: the output has two shadows.
+Thus the object tokens carry the light code that sets the shading of the object, but not the cast shadow.
+The shadow comes from the tokens at its own place, and only a patch of all tokens moves it.
 The results are the same in every block, because a patch of a token replaces its whole state, which later blocks only refine.
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=\linewidth]{figures/patch.png}
-\caption{Patch of one region in one block, 48 pairs (source light $+90\degr$). Left: share of the rotation that the pixel probe reads (mostly the shading of the object). Right: share of the crisp source shadow that appears in the output. Lines: the full source pass and a patch of all tokens in block~10.}
+\caption{Patch of one region in one block, 48 pairs (source light $+90\degr$). Left and middle: share of the rotation that the pixel probe and the object probe read. Right: the share of the crisp source shadow that appears outside the patched cells (grown by 16~px), minus the same share without a patch. Lines: the full source pass and a patch of all tokens in block~10.}
 \label{fig:patch}
 \end{figure}
 
@@ -599,57 +481,55 @@ The results are the same in every block, because a patch of a token replaces its
 \label{sec:discussion}
 
 \paragraph{What the original result shows.}
-The original probe reads the lamp position, and pixels give the same accuracy.
-The floor highlight is visible in 2D and does not depend on the object shape, which explains the transfer to cubes.
-The original result therefore does not show that SANA represents the light direction.
-It also does not show the opposite. With the flow noise, the same probe on the same data is much better than the pixels (Section~\ref{sec:pipeline}).
+The original probe reads the lamp position, and pixels give the same accuracy because a floor highlight follows the label.
+The result therefore does not show that SANA represents the light direction.
+It also does not show the opposite: with the flow noise, the same probe on the same data is much better than the pixels.
 The noise pitfall hid the information; the shortcut made the pixels look as good as the model.
 
 \paragraph{What the new results show.}
-On scenes where the object moves, a linear probe on the pixels cannot find the light. A linear probe on the activations of three diffusion models can.
-The code survives the mean over all tokens and transfers from centred objects to random positions. So it does not depend on where the object stands in the image.
-The model reads the light from the shading of the object and from the cast shadow, each one alone.
-A network with the same architecture and random weights also beats the pixels at a low noise level. Part of the effect thus comes from the architecture, and training halves the remaining error.
-The model also uses a direction of its activations. A small shift along the activation pattern of the light changes the light of the output, and a random shift does not.
-This change appears in the shading of the object.
-The cast shadow needs the 3D relation between light, object and floor. A shift along the pattern does not draw it again in the new direction. Small shifts keep it. Large shifts, also in all blocks together, only remove it and add dark patches.
-A patch of the object tokens moves about a third of the shadow, and only a patch of all tokens moves it fully.
-We read this as a code of the light at the object that controls its shading directly and the cast shadow only in part. The rest of the shadow comes from information that is spread over the image.
-The data do not show if the model uses one code for both, or a second code for the shadow that our linear handles do not reach.
+On scenes where the object moves, a linear probe on the pixels cannot find the light, and a linear probe on the activations of three diffusion models can.
+The code depends little on the position, and the model reads the light from the shading and from the cast shadow, each one alone.
+But this is not evidence of a generative world model. Two encoders without a generative objective read the light equally well, and a network with random weights already beats the pixels.
+SANA uses its code for the shading of the object: a shift along the activation pattern turns it, a random shift does not, and the object tokens carry it.
+We found no link between this code and the cast shadow, which needs the 3D relation between light, object and floor.
+Our shifts do not draw a new shadow, and the object tokens do not move the shadow outside their own cells.
+The cell eraser suggests that later blocks need the code: without it, the output light agrees less with the input. This effect is larger than the effect of the control eraser, but the control changes the features less, so the evidence is not final.
+The data do not show if the model uses a second code for the shadow that our linear and local handles do not reach.
 
 \paragraph{Probes and their measures.}
-Two results warn against simple measures.
-The probe weights are a poor steering handle. The shortest change that moves the probe output to the target moves the image by less than half of it, while the activation pattern works \citep{haufe2014interpretation}.
-And a measure of the output light that reads the whole image can report a full rotation when only the shading turns.
-A claim that a model ``moves the shadow'' needs a measure of the shadow.
+Three results warn against simple measures.
+The probe weights are a poor steering handle, while the activation pattern works \citep{haufe2014interpretation}.
+A measure that reads the whole image can report a large rotation when only the floor or the shading changes.
+And a patch can look like a transfer of the shadow when it only copies the pixels of the patched tokens.
+A claim that a model ``moves the shadow'' needs a measure of the shadow outside the changed region.
 
 \paragraph{A checklist for probe studies of generative models.}
 \begin{enumerate}
-    \item Compare every probe with the same probe on the input pixels (at several resolutions) and on the latent of the autoencoder.
+    \item Compare every probe with the same probe on the input pixels (at several resolutions), on the latent of the autoencoder, and on strong image encoders without a generative objective.
     \item Compare with the same architecture with random weights.
     \item Check the noise that the model receives: fit $x_t=a\,x_0+b\,\epsilon$ and compare with the schedule of the model.
-    \item Define the label at the place of the effect (here, the light at the object), and store all scene parameters (camera, all lamps).
-    \item Remove or randomize shortcut cues (floor highlights, constant extra lights), vary the object position, and separate the cues with paired renders.
+    \item Define the label at the place of the effect, and store all scene parameters (camera, all lamps).
+    \item Remove or randomize shortcut cues, vary the object position, and separate the cues with paired renders.
     \item Select the layer, the timestep and all hyperparameters on validation data only, and report intervals and paired comparisons.
-    \item Test causal use. Steer along the activation pattern, not only along the probe weights, and compare with a random change of the same size.
-    \item Measure the effect of an intervention with at least two independent measures, one of them specific to the cue in question.
+    \item Test causal use. Steer along the activation pattern, not only along the probe weights, and compare with a random change of the same size. Fit an eraser for each position if the code depends on the position, and compare it with a control eraser.
+    \item Measure the effect of an intervention with several independent measures, one of them specific to the cue in question and outside the changed region.
     \item Check figures against the true geometry.
 \end{enumerate}
 
 \section{Limitations}
 The study uses one property, simple synthetic scenes with one object, and the empty prompt.
 All interventions start from a render (SDEdit); at $\sigma_0=0.7$ the noisy input still shows the original shadow, which can resist a change.
-Most shifts act in one block at a time, and all shifts are constant in each grid cell.
-The pixel probe reads the whole image. The object probe reads the object alone, but it has larger errors on generated images than on renders. The dark-region measure has large errors on short shadows, so we report medians and all measures.
+Most interventions act in one block at a time, and all shifts are constant in each grid cell.
+The object probe has larger errors on generated images than on renders, and the dark-region measure has large errors on short shadows.
 The causal tests use 60 images (48 for the shift in all blocks), and the patch test uses 48 pairs.
 The features are average-pooled, so the probes cannot see fine structure inside a cell.
-All runs use float16 on T4 GPUs; float32 gives the same features on a test set (relative difference $0.1\%$).
+DINOv2 and CLIP get smaller images than SANA.
 
 \section{Conclusion}
 A probe that reads a scene property from a generative model is a starting point, not evidence of 3D knowledge.
 In the case that we studied, the first probe result was right for the wrong reasons. The shortcut made the pixels as good as the model, and a noise pitfall made the model look no better than the pixels.
-With correct noise, controlled data and controls, SANA and two other diffusion models carry the light direction in a form that the input does not offer. SANA uses it to light the object.
-A measure of the whole image cannot show if the model also draws the cast shadow from this code. Our shadow measures show that a shift along the code does not draw a new shadow. The tokens at the object carry part of it.
+With correct noise, controlled data and controls, SANA carries the light direction in a form that the input pixels do not offer, but so do image encoders that never generate images.
+SANA uses this code to light the object. We found no evidence that it uses the same code to draw the cast shadow.
 We release the tools so that other studies can run the same checks.
 
 \paragraph{Reproducibility.}
@@ -668,6 +548,7 @@ For a point $p$, let $d=p-c$; the pixel position is $x=W\,(0.5+\tfrac{35}{32}\,\
 The key lamp is at $L=5(\cos\theta\cos\phi,\cos\theta\sin\phi,\sin\theta)$.
 The shadow of the object centre $p$ on the floor is $L+\tfrac{L_z}{L_z-p_z}(p-L)$.
 For the sun lamp of the new data sets with the light direction $u$ (unit vector to the light), the shadow of a point $p$ is $p-\tfrac{p_z}{u_z}\,u$.
+Renders without the object confirm the shadow arrows of this model: for scenes with long shadows, the mean angle between our arrow and the measured shadow is $4.7\degr$ ($7.6\degr$ for the original arrows).
 
 \section{Experimental details}
 \label{app:details}
@@ -675,7 +556,7 @@ For the sun lamp of the new data sets with the light direction $u$ (unit vector 
 \paragraph{Renders.}
 Blender 2.78c with Cycles renders each image with 64 samples at $512\times512$ px.
 The sets v2 to v2rot have a sun lamp with strength $3.0$ and a soft size of $0.02$, a white world light of strength $0.2$, a flat floor and no camera jitter. The extra lamp of the CLEVR scene is off.
-The object size $r$ is uniform in $[0.8,1.4]$ and its rotation is uniform in $[0,2\pi)$.
+The elevation is $\mathcal{U}(30\degr,75\degr)$, the object size $r$ is uniform in $[0.8,1.4]$ and its rotation is uniform in $[0,2\pi)$.
 In v2rns the object casts no shadow (Cycles shadow visibility off); in v2rso the camera does not see the object (camera visibility off). In both sets the object still reflects light.
 
 \paragraph{Features.}
@@ -685,17 +566,99 @@ Stable Diffusion 1.5 uses $512$ px and SDXL $1024$ px; their VAE runs in float32
 DINOv2-L and CLIP ViT-L/14 get the image at $224$ px without a crop, with the normalization of each model. Their features are the patch tokens of every second layer, without the class token.
 
 \paragraph{Probe.}
-A randomized PCA (at most 256 components) and the Ridge regression are fitted on the train split. The grid of $\alpha$ has 19 values from $10^{-5}$ to $10$ times the median sum of squares of the scores. The validation split selects $\alpha$ by the sum of the azimuth and elevation MAE.
+A randomized PCA (at most 256 components) and the Ridge regression are fitted on the train split. The grid of $\alpha$ has 19 values from $10^{-5}$ to $10$ times the median sum of squares of the scores. The validation split selects $\alpha$, and the block, timestep and grid of each model, by the sum of the azimuth and elevation MAE.
 The intervals are percentile intervals of 2000 bootstrap samples over the images; a paired comparison uses the same samples for both sources.
 
 \paragraph{Causal tests.}
-The tests use 60 test images of v2 (a random sample with a fixed seed), $\sigma_0=0.7$ unless stated, and 20 Euler steps; the transformer gets the timestep $1000\,\sigma$.
+The tests use 60 test images of v2 (a random sample with a fixed seed), $\sigma_0=0.7$ unless stated, and 20 Euler steps $x_{\sigma'}=x_\sigma+(\sigma'-\sigma)\,v_\theta(x_\sigma,\sigma)$; the transformer gets the timestep $1000\,\sigma$.
 A hook changes the output of one block at every step. The decoder output ($1024$ px) is scaled to $512$ px for the measures.
 The pooled eraser is one LEACE eraser, fitted on 30{,}000 cells of the train images. The cell eraser has one LEACE eraser for each grid cell, fitted on all train images.
 
 \paragraph{Patch test.}
 The regions come from the scene geometry on a $16\times16$ grid. A cylinder with radius $r$ and height $2r$ stands for the object, and its shadow comes from the sun direction.
 The object region has the cells that contain the object; the shadow region has the cells that contain the shadow but not the object.
-The analysis also measures outside the patched cells, grown by 16 px (one token), because the decoder spreads the change of a token to its neighbours.
+
+\section{More results}
+\label{app:more}
+
+\paragraph{Agreement with the original pipeline and numeric precision.}
+With the original noise rule, our extraction gives a mean token norm of $11{,}147$ in block~4 at $t=200$; the stored original activations have about $11{,}100$. With the flow rule, the norm is $718$.
+On the same 12 images, float16 and float32 give the same features (relative difference $0.1\%$). The original noise rule overflows in float16 in block 18, so this control runs in float32.
+
+\paragraph{Image regions of the original data.}
+Figure~\ref{fig:cues} shows the image variants of Table~\ref{tab:cues}.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\linewidth]{figures/cues.png}
+\caption{Left: the image variants for the region probes (the red dot marks the floor highlight). Right: azimuth MAE with 95\% intervals. The dashed line is the original SANA probe on cubes.}
+\label{fig:cues}
+\end{figure}
+
+\paragraph{Where the probe reads.}
+The exact decomposition of a linear probe over the grid cells gives the share of each cell in the output (Figure~\ref{fig:maps}).
+On v1 the pixel probe spreads its weight over the floor, where the highlight moves; on v2 it lies around the object and its shadow.
+On v2r the SANA probe (block~10, $t=100$, $8\times8$) gives $20\%$ of its weight to the object cells and $5.4\%$ to the shadow cells, whose area shares are $14.5\%$ and $3.7\%$. The pixel probe on an $8\times8$ grid has almost the same shares ($19.6\%$ and $5.3\%$), so the maps do not separate the models.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.7\linewidth]{figures/probe_maps_pixels.png}
+\caption{Exact spatial decomposition of a linear probe on $16\times16$ pixels (brighter cells have a larger share of the azimuth output) on the original data (left) and on v2 (right). The title of each map gives the error of this $16\times16$ probe on cubes; Table~\ref{tab:rq1} uses the grid that the validation split selects.}
+\label{fig:maps}
+\end{figure}
+
+\paragraph{Other shift tests.}
+Table~\ref{tab:causal_more} gives the shift test with the pattern of block~5 at $t=100$ ($4\times4$ grid, test MAE $2.6\degr$), the best probe on v2r. The effect grows with the dose; at $\times2$ the shading reaches the target in all 60 images, while half of the old shadow stays.
+With more noise, the base output keeps less of the input light (MAE $34.8\degr$ at $\sigma_0=0.85$ and $70\degr$ at $0.95$). At $\sigma_0=0.85$ the pattern ($\times1$) still turns the pixel probe by $+63\degr$, but the dark region does not turn, so the weak response of the shadow is not an effect of the input alone.
+Figure~\ref{fig:multi} shows the shift of the pattern in all 20 blocks at the same time ($t=100$ features, 48 images). A quarter of the natural size turns the pixel probe by $+120\degr$, the object probe by $+81\degr$ and the dark region by $+107\degr$, and $37\%$ of the old shadow stays; the images change by 20 grey levels.
+
+\begin{table}[h]
+\centering
+\caption{More shift tests. Rotation of the pixel probe and the object probe (mean) and of the dark region (median) in degrees, kept share of the crisp shadow, mean pixel change. Target: $+90\degr$; 60 images of v2 (48 for all blocks). At $\sigma_0=0.85$ and $0.95$ the base output has lost much of the input light, so the object probe is unreliable there.}
+\label{tab:causal_more}
+\begin{tabular}{llrrrrr}
+\toprule
+Setting & Condition & Pixel probe & Object probe & Dark region & Kept & Pixels \\
+\midrule
+Block 5, $t=100$ & pattern $\times1$ & $+30$ & $+20$ & $+2$ & $0.76$ & 4 \\
+ & pattern $\times2$ & $+79$ & $+48$ & $+40$ & $0.55$ & 9 \\
+ & pattern $\times3$ & $+105$ & $+69$ & $+88$ & $0.41$ & 13 \\
+ & random & $+1$ & $-1$ & $0$ & $0.88$ & 1 \\
+\midrule
+Block 4, $\sigma_0=0.85$ & pattern $\times1$ & $+63$ & $+37$ & $-9$ & $0.49$ & 8 \\
+ & pattern $\times3$ & $+92$ & $+7$ & $-3$ & $0.40$ & 20 \\
+ & random & $+1$ & $+22$ & $0$ & $0.73$ & 2 \\
+\midrule
+Block 4, $\sigma_0=0.95$ & pattern $\times1$ & $+27$ & $-4$ & $+2$ & $0.67$ & 12 \\
+ & random & $+7$ & $-1$ & $+2$ & $0.78$ & 4 \\
+\midrule
+All 20 blocks, $t=100$ & pattern $\times0.25$ & $+120$ & $+81$ & $+107$ & $0.37$ & 20 \\
+ & pattern $\times0.5$ & $+129$ & $+71$ & $+129$ & $0.31$ & 32 \\
+ & pattern $\times1$ & $+124$ & $+40$ & $+132$ & $0.26$ & 47 \\
+ & random & $0$ & $+1$ & $0$ & $0.85$ & 4 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\linewidth]{figures/causal_multi_examples.png}
+\caption{Shift of the pattern in all 20 blocks at the same time ($t=100$ features, $4\times4$ grid). The shading of the object turns, but the floor shows dark and bright blocks on the grid of the shift, not a new cast shadow. A random shift of the same size (last column) has no effect.}
+\label{fig:multi}
+\end{figure}
+
+\begin{table}[h]
+\centering
+\caption{Erasure test, 60 images of v2. Features: the azimuth MAE of a new probe on the $8\times8$ grid after the eraser (test split), and the mean change of a cell as a percentage of the token norm. Output: azimuth error of the pixel probe against the input label, median absolute rotation of the dark region (degrees), kept share of the crisp shadow, and mean pixel change (grey levels). The control eraser is fitted on shuffled labels.}
+\label{tab:erase}
+\resizebox{\linewidth}{!}{\input{tables/erase.tex}}
+\end{table}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.7\linewidth]{figures/erase_examples.png}
+\caption{Erasure in block~10 ($t=400$). Columns: the render, the base output, the cell eraser and its control. After the cell eraser, the crisp shadow often stays, but grey smears appear near the object. The control eraser keeps the image. Titles: the azimuth that the pixel probe reads.}
+\label{fig:erase_examples}
+\end{figure}
 
 \end{document}

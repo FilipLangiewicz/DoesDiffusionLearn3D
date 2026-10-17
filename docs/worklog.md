@@ -67,7 +67,7 @@ This file is the weekly standup log of the team. Each week has one entry. We wri
   - F19: DINOv2 and CLIP do not generate images, but they read the light direction equally well or better on the known shapes (v2r: 3.3 and 3.9 deg, SANA 5.4 deg). On cubes, SANA is better only when the object moves and its shading is visible (v2r: 7.6 deg, DINOv2 10.0 deg, CLIP 16.0 deg). A readable light direction is thus not specific to a generative model.
   - F20: The probe on the object crop confirms F15 for the shading: the pattern shift (x1) turns the object by 50 to 52 deg.
   - F21: A patch of the object tokens turns the shading of the object (0.36 to 0.45 of the turn by the object probe, against 0.56 for the full source pass). Outside the patched cells, 3% to 9% of the source shadow appears, against 3% without a patch. This replaces F16.
-  - F22: After the cell eraser, a new probe on the grid is at chance (88 deg). TODO_F22
+  - F22: After the cell eraser, a new probe on the grid is at chance (88 deg). In blocks 4, 10 and 18 at t = 400, the output error of the light grows from 7.6 deg to 21.9, 30.4 and 44.2 deg. A control with cell erasers of shuffled labels gives 8.7 to 9.6 deg. But the control changes the features about three times less, and the cell eraser adds grey smears near the object. Thus the later blocks probably use the code, but the evidence is not final. At t = 100, the control also breaks the output (31.1 deg).
 - `docs/RESULTS.md` (Polish) is now the only summary of the results. It replaces `docs/STAN_PRAC.md` and `docs/PODSUMOWANIE.md`. The explanation of the library error is now in `tools/diffusers_upstream/WYJASNIENIE.md`.
 
 ### Deviations from the plan

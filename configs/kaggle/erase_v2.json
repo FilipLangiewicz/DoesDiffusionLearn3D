@@ -1,0 +1,21 @@
+{
+ "name": "erase-v2",
+ "sets": [
+  "v2pos",
+  "v2"
+ ],
+ "features": {},
+ "kernels": [
+  "jankombajn/dd3d-renders",
+  "jankombajn/dd3d-intervene-erase",
+  "jankombajn/dd3d-analyze-plans-erase-v2"
+ ],
+ "datasets": [],
+ "commands": [
+  "mkdir -p /kaggle/temp/erase && for f in {PREV}/dd3d-intervene-erase/*.tar; do tar xf $f -C /kaggle/temp/erase; done",
+  "python scripts/experiments/analyze_interventions.py --outputs /kaggle/temp/erase/erase_b04t400 --plan {PREV}/dd3d-analyze-plans-erase-v2/out/plans/b04t400e/plan.npz --splits {DATA}/v2/splits --images {DATA}/v2/images --out {OUT}/causal_erase/b04t400",
+  "python scripts/experiments/analyze_interventions.py --outputs /kaggle/temp/erase/erase_b10t400 --plan {PREV}/dd3d-analyze-plans-erase-v2/out/plans/b10t400e/plan.npz --splits {DATA}/v2/splits --images {DATA}/v2/images --out {OUT}/causal_erase/b10t400",
+  "python scripts/experiments/analyze_interventions.py --outputs /kaggle/temp/erase/erase_b18t400 --plan {PREV}/dd3d-analyze-plans-erase-v2/out/plans/b18t400e/plan.npz --splits {DATA}/v2/splits --images {DATA}/v2/images --out {OUT}/causal_erase/b18t400",
+  "python scripts/experiments/analyze_interventions.py --outputs /kaggle/temp/erase/erase_b05t100 --plan {PREV}/dd3d-analyze-plans-erase-v2/out/plans/b05t100e/plan.npz --splits {DATA}/v2/splits --images {DATA}/v2/images --out {OUT}/causal_erase/b05t100"
+ ]
+}

@@ -214,9 +214,121 @@ def viewer_spec() -> dict:
     return {"name": "viewer-data", **spec, "commands": cmds}
 
 
+# Features of two vision encoders that do not generate images (dd3d.extract_vision).
+VISION_SETS = ("v1", "v2", "v2r", "v2rns", "v2rso")
+VISION_JOBS = {s: [f"dd3d-extract-vis-{s}-"] for s in VISION_SETS}
+VISION_JOBS["v2"] = VISION_JOBS["v2"] + ["dd3d-extract-vis-v2pos-"]
+
+
+def vision_spec(s: str) -> dict:
+    """Add the DINOv2 and CLIP runs to the scan of a set, then select the probes again.
+
+    The job starts from the scan.csv of stage 1, so only the new runs are fitted.
+    """
+    spec = sources(s)
+    spec["kernels"] = spec["kernels"] + [f"{O}/{p}0" for p in VISION_JOBS[s]] + [f"{O}/dd3d-analyze-scan-{s}"]
+    spec["features"] = {s: spec["features"][s] + VISION_JOBS[s]}
+    extra = " --scenes {DATA}/v1/scenes --targets global,local" if s == "v1" else ""
+    scan_dir = f"{{OUT}}/{s}/scan"
+    cmds = [
+        f"mkdir -p {scan_dir} && cp {scan_csv(s)} {scan_dir}/scan.csv",
+        f"python scripts/experiments/feature_scan.py --features {{FEAT}}/{s} --runs dinov2,clip"
+        f" {data_args(s)} --out {scan_dir}{extra}",
+        f"python scripts/experiments/plot_scan.py --scan {scan_dir}/scan.csv --title {s}"
+        f" --out {{OUT}}/{s}/scan_summary",
+        f"python scripts/experiments/best_probes.py --scan {scan_dir}/scan.csv --features {{FEAT}}/{s}"
+        f" {data_args(s)} --out {{OUT}}/{s}/best",
+    ]
+    return {"name": f"vis-{s}", **spec, "commands": cmds}
+
+
+def vision_transfer_spec() -> dict:
+    """The position transfer (fit on v2, test on v2r) for the vision encoders."""
+    spec = sources("v2", "v2r")
+    spec["kernels"] = (
+        spec["kernels"]
+        + [f"{O}/{p}0" for s in ("v2", "v2r") for p in VISION_JOBS[s]]
+        + [f"{O}/dd3d-analyze-vis-v2"]
+    )
+    spec["features"] = {s: spec["features"][s] + VISION_JOBS[s] for s in ("v2", "v2r")}
+    cmd = (
+        "python scripts/experiments/transfer.py --fit v2 --tests v2r --data-root {DATA} --feature-root {FEAT}"
+        " --scan {PREV}/dd3d-analyze-vis-v2/out/v2/scan/scan.csv --runs dinov2,clip --pooled-grids 1,2"
+        " --out {OUT}/transfer/pos_vision"
+    )
+    return {"name": "transfer-pos-vision", **spec, "commands": [cmd]}
+
+
+def reanalyze_spec() -> dict:
+    """Analyse the images of all earlier GPU tests again with the measures of the audit fix.
+
+    The new columns: the rotation that a probe on the object crop reads, and the
+    shadow shares outside the patched cells. The job also calibrates the measures.
+    """
+    spec = sources("v2")
+    spec["sets"] = spec["sets"] + ["v2rot"]
+    spec["features"] = {}
+    gpu_jobs = ["causal", "causal-b05", "multi", "causal-sigma", "patch"]
+    spec["kernels"] = (
+        [RENDERS, f"{O}/dd3d-render-v2rot-0"]
+        + [f"{O}/dd3d-intervene-{j}" for j in gpu_jobs]
+        + [f"{O}/dd3d-analyze-plans-v2", f"{O}/dd3d-analyze-plans-v2-b05", f"{O}/dd3d-analyze-plans-multi"]
+    )
+    spec["datasets"] = [f"{O}/dd3d-plans"]
+    data = "--splits {DATA}/v2/splits --images {DATA}/v2/images"
+    cmds = [unpack(f"dd3d-intervene-{j}", "/kaggle/temp/gpu") for j in gpu_jobs]
+    runs = [
+        ("causal_b04", "dd3d-analyze-plans-v2/out/plans/b04t400", "causal/b04"),
+        ("causal_b10", "dd3d-analyze-plans-v2/out/plans/b10t400", "causal/b10"),
+        ("causal_b18", "dd3d-analyze-plans-v2/out/plans/b18t400", "causal/b18"),
+        ("causal_b05t100", "dd3d-analyze-plans-v2-b05/out/plans/b05t100", "causal_b05/b05t100"),
+        ("causal_multi", "dd3d-analyze-plans-multi/out/plans/multi_all", "causal_multi/all"),
+        ("causal_b04_s085", "dd3d-analyze-plans-v2/out/plans/b04t400", "causal_sigma/b04_s085"),
+        ("causal_b04_s095", "dd3d-analyze-plans-v2/out/plans/b04t400", "causal_sigma/b04_s095"),
+    ]
+    for folder, plan, out in runs:
+        cmds.append(
+            f"python scripts/experiments/analyze_interventions.py --outputs /kaggle/temp/gpu/{folder}"
+            f" --plan {{PREV}}/{plan}/plan.npz {data} --out {{OUT}}/{out}"
+        )
+    parts = (0, 1)
+    outs = " ".join(f"/kaggle/temp/gpu/patch_part{p}" for p in parts)
+    plans = " ".join(f"{{PREV}}/dd3d-plans/plan_patch_part{p}.dat" for p in parts)
+    cmds.append(
+        f"python scripts/experiments/analyze_patching.py --outputs {outs} --plans {plans} {data}"
+        " --out {OUT}/patch"
+    )
+    cmds.append(
+        f"python scripts/experiments/calibrate_measures.py {data} --rot-images {{DATA}}/v2rot/images"
+        " --pairs configs/kaggle/patch_pairs.txt --out {OUT}/measures"
+    )
+    return {"name": "reanalyze-v2", **spec, "commands": cmds}
+
+
+def erase_spec() -> dict:
+    """Analyse the erasure test with one eraser for each grid cell."""
+    spec = sources("v2")
+    spec["features"] = {}
+    spec["kernels"] = [RENDERS, f"{O}/dd3d-intervene-erase", f"{O}/dd3d-analyze-plans-erase-v2"]
+    data = "--splits {DATA}/v2/splits --images {DATA}/v2/images"
+    cmds = [unpack("dd3d-intervene-erase", "/kaggle/temp/erase")]
+    for tag in ("b04t400", "b10t400", "b18t400", "b05t100"):
+        cmds.append(
+            f"python scripts/experiments/analyze_interventions.py --outputs /kaggle/temp/erase/erase_{tag}"
+            f" --plan {{PREV}}/dd3d-analyze-plans-erase-v2/out/plans/{tag}e/plan.npz {data}"
+            f" --out {{OUT}}/causal_erase/{tag}"
+        )
+    return {"name": "erase-v2", **spec, "commands": cmds}
+
+
 def main() -> None:
     OUT.mkdir(parents=True, exist_ok=True)
     specs = {}
+    for s in VISION_SETS:
+        specs[f"vis_{s}"] = vision_spec(s)
+    specs["transfer_pos_vision"] = vision_transfer_spec()
+    specs["reanalyze_v2"] = reanalyze_spec()
+    specs["erase_v2"] = erase_spec()
     for s in ("v1", "v2", "v2r", "v2rns", "v2rso"):
         specs[f"scan_{s}"] = scan_spec(s)
         specs[f"deep_{s}"] = deep_spec(s)

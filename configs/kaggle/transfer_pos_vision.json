@@ -1,0 +1,45 @@
+{
+ "name": "transfer-pos-vision",
+ "sets": [
+  "v2pos",
+  "v2",
+  "v2r"
+ ],
+ "features": {
+  "v2": [
+   "dd3d-extract-v2-",
+   "dd3d-extract-v2pos-",
+   "dd3d-extract-vis-v2-",
+   "dd3d-extract-vis-v2pos-"
+  ],
+  "v2r": [
+   "dd3d-features-v2r-",
+   "dd3d-extract-vis-v2r-"
+  ]
+ },
+ "kernels": [
+  "jankombajn/dd3d-extract-v2-0",
+  "jankombajn/dd3d-extract-v2-1",
+  "jankombajn/dd3d-extract-v2-2",
+  "jankombajn/dd3d-extract-v2-3",
+  "jankombajn/dd3d-extract-v2-4",
+  "jankombajn/dd3d-extract-v2-5",
+  "jankombajn/dd3d-extract-v2pos-0",
+  "jankombajn/dd3d-renders",
+  "jankombajn/dd3d-extract-vis-v2-0",
+  "jankombajn/dd3d-extract-vis-v2pos-0",
+  "jankombajn/dd3d-extract-vis-v2r-0",
+  "jankombajn/dd3d-analyze-vis-v2"
+ ],
+ "datasets": [
+  "jankombajn/dd3d-features-v2r-0",
+  "jankombajn/dd3d-features-v2r-1",
+  "jankombajn/dd3d-features-v2r-2",
+  "jankombajn/dd3d-features-v2r-3",
+  "jankombajn/dd3d-features-v2r-4",
+  "jankombajn/dd3d-features-v2r-5"
+ ],
+ "commands": [
+  "python scripts/experiments/transfer.py --fit v2 --tests v2r --data-root {DATA} --feature-root {FEAT} --scan {PREV}/dd3d-analyze-vis-v2/out/v2/scan/scan.csv --runs dinov2,clip --pooled-grids 1,2 --out {OUT}/transfer/pos_vision"
+ ]
+}

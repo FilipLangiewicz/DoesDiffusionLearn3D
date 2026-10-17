@@ -1,0 +1,40 @@
+{
+ "name": "reanalyze-v2",
+ "sets": [
+  "v2pos",
+  "v2",
+  "v2rot"
+ ],
+ "features": {},
+ "kernels": [
+  "jankombajn/dd3d-renders",
+  "jankombajn/dd3d-render-v2rot-0",
+  "jankombajn/dd3d-intervene-causal",
+  "jankombajn/dd3d-intervene-causal-b05",
+  "jankombajn/dd3d-intervene-multi",
+  "jankombajn/dd3d-intervene-causal-sigma",
+  "jankombajn/dd3d-intervene-patch",
+  "jankombajn/dd3d-analyze-plans-v2",
+  "jankombajn/dd3d-analyze-plans-v2-b05",
+  "jankombajn/dd3d-analyze-plans-multi"
+ ],
+ "datasets": [
+  "jankombajn/dd3d-plans"
+ ],
+ "commands": [
+  "mkdir -p /kaggle/temp/gpu && for f in {PREV}/dd3d-intervene-causal/*.tar; do tar xf $f -C /kaggle/temp/gpu; done",
+  "mkdir -p /kaggle/temp/gpu && for f in {PREV}/dd3d-intervene-causal-b05/*.tar; do tar xf $f -C /kaggle/temp/gpu; done",
+  "mkdir -p /kaggle/temp/gpu && for f in {PREV}/dd3d-intervene-multi/*.tar; do tar xf $f -C /kaggle/temp/gpu; done",
+  "mkdir -p /kaggle/temp/gpu && for f in {PREV}/dd3d-intervene-causal-sigma/*.tar; do tar xf $f -C /kaggle/temp/gpu; done",
+  "mkdir -p /kaggle/temp/gpu && for f in {PREV}/dd3d-intervene-patch/*.tar; do tar xf $f -C /kaggle/temp/gpu; done",
+  "python scripts/experiments/analyze_interventions.py --outputs /kaggle/temp/gpu/causal_b04 --plan {PREV}/dd3d-analyze-plans-v2/out/plans/b04t400/plan.npz --splits {DATA}/v2/splits --images {DATA}/v2/images --out {OUT}/causal/b04",
+  "python scripts/experiments/analyze_interventions.py --outputs /kaggle/temp/gpu/causal_b10 --plan {PREV}/dd3d-analyze-plans-v2/out/plans/b10t400/plan.npz --splits {DATA}/v2/splits --images {DATA}/v2/images --out {OUT}/causal/b10",
+  "python scripts/experiments/analyze_interventions.py --outputs /kaggle/temp/gpu/causal_b18 --plan {PREV}/dd3d-analyze-plans-v2/out/plans/b18t400/plan.npz --splits {DATA}/v2/splits --images {DATA}/v2/images --out {OUT}/causal/b18",
+  "python scripts/experiments/analyze_interventions.py --outputs /kaggle/temp/gpu/causal_b05t100 --plan {PREV}/dd3d-analyze-plans-v2-b05/out/plans/b05t100/plan.npz --splits {DATA}/v2/splits --images {DATA}/v2/images --out {OUT}/causal_b05/b05t100",
+  "python scripts/experiments/analyze_interventions.py --outputs /kaggle/temp/gpu/causal_multi --plan {PREV}/dd3d-analyze-plans-multi/out/plans/multi_all/plan.npz --splits {DATA}/v2/splits --images {DATA}/v2/images --out {OUT}/causal_multi/all",
+  "python scripts/experiments/analyze_interventions.py --outputs /kaggle/temp/gpu/causal_b04_s085 --plan {PREV}/dd3d-analyze-plans-v2/out/plans/b04t400/plan.npz --splits {DATA}/v2/splits --images {DATA}/v2/images --out {OUT}/causal_sigma/b04_s085",
+  "python scripts/experiments/analyze_interventions.py --outputs /kaggle/temp/gpu/causal_b04_s095 --plan {PREV}/dd3d-analyze-plans-v2/out/plans/b04t400/plan.npz --splits {DATA}/v2/splits --images {DATA}/v2/images --out {OUT}/causal_sigma/b04_s095",
+  "python scripts/experiments/analyze_patching.py --outputs /kaggle/temp/gpu/patch_part0 /kaggle/temp/gpu/patch_part1 --plans {PREV}/dd3d-plans/plan_patch_part0.dat {PREV}/dd3d-plans/plan_patch_part1.dat --splits {DATA}/v2/splits --images {DATA}/v2/images --out {OUT}/patch",
+  "python scripts/experiments/calibrate_measures.py --splits {DATA}/v2/splits --images {DATA}/v2/images --rot-images {DATA}/v2rot/images --pairs configs/kaggle/patch_pairs.txt --out {OUT}/measures"
+ ]
+}

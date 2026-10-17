@@ -1,0 +1,30 @@
+{
+ "name": "vis-v2rso",
+ "sets": [
+  "v2rso"
+ ],
+ "features": {
+  "v2rso": [
+   "dd3d-extract-v2rso-",
+   "dd3d-extract-vis-v2rso-"
+  ]
+ },
+ "kernels": [
+  "jankombajn/dd3d-extract-v2rso-0",
+  "jankombajn/dd3d-extract-v2rso-1",
+  "jankombajn/dd3d-extract-v2rso-2",
+  "jankombajn/dd3d-extract-v2rso-3",
+  "jankombajn/dd3d-extract-v2rso-4",
+  "jankombajn/dd3d-extract-v2rso-5",
+  "jankombajn/dd3d-renders",
+  "jankombajn/dd3d-extract-vis-v2rso-0",
+  "jankombajn/dd3d-analyze-scan-v2rso"
+ ],
+ "datasets": [],
+ "commands": [
+  "mkdir -p {OUT}/v2rso/scan && cp {PREV}/dd3d-analyze-scan-v2rso/out/v2rso/scan/scan.csv {OUT}/v2rso/scan/scan.csv",
+  "python scripts/experiments/feature_scan.py --features {FEAT}/v2rso --runs dinov2,clip --splits {DATA}/v2rso/splits --images {DATA}/v2rso/images --out {OUT}/v2rso/scan",
+  "python scripts/experiments/plot_scan.py --scan {OUT}/v2rso/scan/scan.csv --title v2rso --out {OUT}/v2rso/scan_summary",
+  "python scripts/experiments/best_probes.py --scan {OUT}/v2rso/scan/scan.csv --features {FEAT}/v2rso --splits {DATA}/v2rso/splits --images {DATA}/v2rso/images --out {OUT}/v2rso/best"
+ ]
+}

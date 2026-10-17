@@ -93,6 +93,7 @@ Randomized models give a baseline for explanations \citep{adebayo2018sanity}.
 \citet{elbanani2024probing} compared the 3D awareness of visual foundation models with depth and normal probes.
 \citet{du2023generative} and \citet{bhattad2023stylegan} extracted normals, depth, albedo and shading from generative models with small adapters.
 In contrast, \citet{sarkar2024shadows} found that generated images often have inconsistent shadows and perspective.
+Diffusion features also work as general image descriptors, for example for correspondence \citep{tang2023dift}, so a probe result can show a property of good image features and not of the generative model.
 
 \paragraph{Light in diffusion models.}
 Several methods control the light of generated images \citep{zhang2025iclight,zeng2024dilightnet,kocsis2024lightit}, and a diffusion model can estimate the scene light from an image \citep{phongthawee2024light}.
@@ -275,7 +276,7 @@ Each data set has the same probe on these inputs:
     \item the DC-AE latent;
     \item SANA-1.6B with random weights (the default initialization of the same architecture) \citep{adebayo2018sanity};
     \item for generality, the UNets of Stable Diffusion 1.5 ($512$ px) and SDXL ($1024$ px), with the DDPM noise rule of their own schedules;
-    \item two vision encoders that do not generate images, DINOv2-L and CLIP ViT-L/14 ($224$ px, no noise), to test whether the effect needs a generative model.
+    \item two vision encoders that do not generate images, DINOv2-L \citep{oquab2024dinov2} and CLIP ViT-L/14 \citep{radford2021clip} ($224$ px, no noise), to test whether the effect needs a generative model.
 \end{itemize}
 
 \paragraph{The original data with the corrected pipeline.}

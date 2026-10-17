@@ -1,0 +1,104 @@
+[
+ {
+  "condition": "base",
+  "rotation_mean": 0.0,
+  "rotation_ci": [
+   0.0,
+   0.0
+  ],
+  "toward_target_share": 0.0,
+  "label_az_error": 7.603105870882668,
+  "label_az_error_ci": [
+   5.946015077845255,
+   9.26825874706109
+  ],
+  "pixel_change": 0.0,
+  "shadow_rotation_median": 0.0,
+  "shadow_rotation_mean": 0.0,
+  "shadow_rotation_ci": [
+   0.0,
+   0.0
+  ],
+  "shadow_n": 59,
+  "shadow_kept": 1.0,
+  "shadow_kept_ci": [
+   1.0,
+   1.0
+  ],
+  "crop_rotation_mean": 0.0,
+  "crop_rotation_median": 0.0,
+  "crop_rotation_ci": [
+   0.0,
+   0.0
+  ],
+  "crop_toward_target_share": 0.0
+ },
+ {
+  "condition": "erase_cell",
+  "rotation_mean": 0.9521428346633911,
+  "rotation_ci": [
+   -10.859430891672766,
+   12.792918939590452
+  ],
+  "toward_target_share": 0.03333333333333333,
+  "label_az_error": 30.40817797660828,
+  "label_az_error_ci": [
+   21.25105139290492,
+   40.930404011515776
+  ],
+  "pixel_change": 2.5883395671844482,
+  "shadow_rotation_median": -0.25,
+  "shadow_rotation_mean": -0.24152542372881355,
+  "shadow_rotation_ci": [
+   -10.86864406779661,
+   9.60730932203389
+  ],
+  "shadow_n": 59,
+  "shadow_kept": 0.7278943286854915,
+  "shadow_kept_ci": [
+   0.6557118285891773,
+   0.7920838039808488
+  ],
+  "crop_rotation_mean": -1.5302215814590454,
+  "crop_rotation_median": -3.072357177734375,
+  "crop_rotation_ci": [
+   -17.721549126307163,
+   14.829101435343407
+  ],
+  "crop_toward_target_share": 0.18333333333333332
+ },
+ {
+  "condition": "erase_cell_random",
+  "rotation_mean": 0.6002303957939148,
+  "rotation_ci": [
+   -0.4586300913492836,
+   1.6466064135233554
+  ],
+  "toward_target_share": 0.0,
+  "label_az_error": 9.232175581137339,
+  "label_az_error_ci": [
+   7.595341112244127,
+   10.975138209533691
+  ],
+  "pixel_change": 1.117753505706787,
+  "shadow_rotation_median": 0.0,
+  "shadow_rotation_mean": 0.4152542372881356,
+  "shadow_rotation_ci": [
+   -0.2584745762711864,
+   1.1356991525423723
+  ],
+  "shadow_n": 59,
+  "shadow_kept": 0.9492487621881612,
+  "shadow_kept_ci": [
+   0.9222899068640756,
+   0.970216570209378
+  ],
+  "crop_rotation_mean": 6.6275410652160645,
+  "crop_rotation_median": 1.986175537109375,
+  "crop_rotation_ci": [
+   -1.1136054229736287,
+   16.07007198969523
+  ],
+  "crop_toward_target_share": 0.0
+ }
+]

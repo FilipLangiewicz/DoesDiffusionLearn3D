@@ -1,0 +1,328 @@
+[21:55:32] params: {"name": "plans-erase-ctrl-v2", "ref": "c33f939d51470563c25b9f749f7b3ee2edfe5808", "sets": ["v2pos", "v2"], "features": {"v2": ["dd3d-extract-v2-", "dd3d-extract-v2pos-"]}, "split_md5": {"v2": "067ad25419c8b1beb3b2a0f4f9b20167"}, "commands": ["python scripts/experiments/make_intervention_plan.py --features {FEAT}/v2 --key sana/block_04/t_400 --splits {DATA}/v2/splits --n-images 60 --grid 8 --cell-eraser --cell-eraser-control --no-erase --only-erase --out {OUT}/plans/b04t400c", "python scripts/experiments/make_intervention_plan.py --features {FEAT}/v2 --key sana/block_10/t_400 --splits {DATA}/v2/splits --n-images 60 --grid 8 --cell-eraser --cell-eraser-control --no-erase --only-erase --out {OUT}/plans/b10t400c", "python scripts/experiments/make_intervention_plan.py --features {FEAT}/v2 --key sana/block_18/t_400 --splits {DATA}/v2/splits --n-images 60 --grid 8 --cell-eraser --cell-eraser-control --no-erase --only-erase --out {OUT}/plans/b18t400c", "python scripts/experiments/make_intervention_plan.py --features {FEAT}/v2 --key sana/block_05/t_100 --splits {DATA}/v2/splits --n-images 60 --grid 4 --cell-eraser --cell-eraser-control --no-erase --only-erase --out {OUT}/plans/b05t100c"]}
+[21:55:32] $ nproc; free -g | head -2; df -h /kaggle/temp /kaggle/working | tail -2
+[21:55:32] 4
+               total        used        free      shared  buff/cache   available
+Mem:              31           0          26           0           4          30
+overlay         8.0T  7.0T  1.1T  87% /
+/dev/loop2       20G  164K   20G   1% /kaggle/working
+[21:55:32] $ ls /kaggle/input /kaggle/input/* | head -60
+[21:55:32] /kaggle/input:
+notebooks
+
+/kaggle/input/notebooks:
+jankombajn
+[21:55:32] $ pip install -q tabulate
+[21:55:38] $ git clone -q https://github.com/FilipLangiewicz/DoesDiffusionLearn3D /kaggle/temp/repo && cd /kaggle/temp/repo && git checkout -q c33f939d51470563c25b9f749f7b3ee2edfe5808 && git log -1 --format=%h
+[21:56:07] c33f939
+[21:56:07] $ tar xf '/kaggle/input/notebooks/jankombajn/dd3d-renders/v2pos/v2pos_00000_00300.tar' -C /kaggle/temp/img_v2pos/0
+[21:56:08] v2pos: 1 shards, 300 labels, images {'Sphere': 100, 'SmoothCylinder': 100, 'SmoothCube_v2': 100}
+[21:56:08] $ tar xf '/kaggle/input/notebooks/jankombajn/dd3d-renders/v2/v2_00000_00500.tar' -C /kaggle/temp/img_v2/0
+[21:56:10] $ tar xf '/kaggle/input/notebooks/jankombajn/dd3d-renders/v2/v2_00500_01000.tar' -C /kaggle/temp/img_v2/1
+[21:56:11] $ tar xf '/kaggle/input/notebooks/jankombajn/dd3d-renders/v2/v2_01000_01500.tar' -C /kaggle/temp/img_v2/2
+[21:56:13] $ tar xf '/kaggle/input/notebooks/jankombajn/dd3d-renders/v2/v2_01500_02000.tar' -C /kaggle/temp/img_v2/3
+[21:56:16] $ tar xf '/kaggle/input/notebooks/jankombajn/dd3d-renders/v2/v2_02000_02500.tar' -C /kaggle/temp/img_v2/4
+[21:56:17] $ tar xf '/kaggle/input/notebooks/jankombajn/dd3d-renders/v2/v2_02500_03000.tar' -C /kaggle/temp/img_v2/5
+[21:56:19] v2: 6 shards, 3000 labels, images {'Sphere': 1000, 'SmoothCylinder': 1000, 'SmoothCube_v2': 1000}
+[21:56:19] $ python scripts/data/make_v2_splits.py --labels /kaggle/temp/data/v2pos/labels.csv --pos-labels none --out /kaggle/temp/data/v2pos/splits
+[21:56:21] /kaggle/temp/data/v2pos/splits/test.csv 20
+/kaggle/temp/data/v2pos/splits/test_cubes.csv 100
+/kaggle/temp/data/v2pos/splits/train.csv 160
+/kaggle/temp/data/v2pos/splits/val.csv 20
+[21:56:21] v2pos: splits md5 f206d018c01e6de7076d1d9ae9259893 (expected None)
+[21:56:21] $ python scripts/data/make_v2_splits.py --labels /kaggle/temp/data/v2/labels.csv --pos-labels /kaggle/temp/data/v2pos/labels.csv --out /kaggle/temp/data/v2/splits
+[21:56:22] /kaggle/temp/data/v2/splits/test.csv 200
+/kaggle/temp/data/v2/splits/test_cubes.csv 1000
+/kaggle/temp/data/v2/splits/test_pos.csv 300
+/kaggle/temp/data/v2/splits/train.csv 1600
+/kaggle/temp/data/v2/splits/val.csv 200
+[21:56:22] v2: splits md5 067ad25419c8b1beb3b2a0f4f9b20167 (expected 067ad25419c8b1beb3b2a0f4f9b20167)
+[21:56:22] features v2: /kaggle/input/notebooks/jankombajn/dd3d-extract-v2-0
+[21:56:22] features v2: /kaggle/input/notebooks/jankombajn/dd3d-extract-v2-1
+[21:56:22] features v2: /kaggle/input/notebooks/jankombajn/dd3d-extract-v2-2
+[21:56:22] features v2: /kaggle/input/notebooks/jankombajn/dd3d-extract-v2-3
+[21:56:22] features v2: /kaggle/input/notebooks/jankombajn/dd3d-extract-v2-4
+[21:56:22] features v2: /kaggle/input/notebooks/jankombajn/dd3d-extract-v2-5
+[21:56:22] features v2: /kaggle/input/notebooks/jankombajn/dd3d-extract-v2pos-0
+[21:56:22] $ python scripts/experiments/make_intervention_plan.py --features /kaggle/temp/feat/v2 --key sana/block_04/t_400 --splits /kaggle/temp/data/v2/splits --n-images 60 --grid 8 --cell-eraser --cell-eraser-control --no-erase --only-erase --out /kaggle/working/out/plans/b04t400c
+[22:03:12] {
+ "erase_cell": {
+  "train": 87.3168388404002,
+  "val": 89.60172150860059,
+  "test": 88.30686294506458
+ },
+ "erase_cell_random": {
+  "train": 3.975696242340658,
+  "val": 4.411686903632968,
+  "test": 4.854239228778611
+ }
+}
+{
+ "key": "sana/block_04/t_400",
+ "split": "test",
+ "n_images": 60,
+ "rotate": 90.0,
+ "probe": {
+  "train": {
+   "az_mae": 3.8383479064500587,
+   "el_mae": 0.5327824769496917
+  },
+  "val": {
+   "az_mae": 4.332680821825817,
+   "el_mae": 0.5615863971710203
+  },
+  "test": {
+   "az_mae": 4.630758135173136,
+   "el_mae": 0.6671649406433101
+  }
+ },
+ "probe_after_erasure": {
+  "erase_cell": {
+   "train": 87.3168388404002,
+   "val": 89.60172150860059,
+   "test": 88.30686294506458
+  },
+  "erase_cell_random": {
+   "train": 3.975696242340658,
+   "val": 4.411686903632968,
+   "test": 4.854239228778611
+  }
+ },
+ "erasure_change_norm": {
+  "erase_cell": 8.560900688171387,
+  "erase_cell_random": 3.1475088596343994
+ },
+ "probe_rotation_deg": {
+  "base": 3.844887733824483e-07,
+  "erase_cell": 3.844887733824483e-07,
+  "erase_cell_random": 3.844887733824483e-07
+ },
+ "mean_token_norm": 710.4488205233487,
+ "cell_norm": {
+  "base": 0.0,
+  "erase_cell": 0.0,
+  "erase_cell_random": 0.0
+ },
+ "relative_shifts": [],
+ "pattern_scales": [],
+ "conditions": [
+  "base",
+  "erase_cell",
+  "erase_cell_random"
+ ]
+}
+[22:03:12] command 0 ended with code 0 after 410 s
+[22:03:12] $ python scripts/experiments/make_intervention_plan.py --features /kaggle/temp/feat/v2 --key sana/block_10/t_400 --splits /kaggle/temp/data/v2/splits --n-images 60 --grid 8 --cell-eraser --cell-eraser-control --no-erase --only-erase --out /kaggle/working/out/plans/b10t400c
+[22:09:26] {
+ "erase_cell": {
+  "train": 87.31689616121645,
+  "val": 89.6017298878339,
+  "test": 88.3072374604059
+ },
+ "erase_cell_random": {
+  "train": 3.9390615686705455,
+  "val": 4.284814274760671,
+  "test": 4.501138525844214
+ }
+}
+{
+ "key": "sana/block_10/t_400",
+ "split": "test",
+ "n_images": 60,
+ "rotate": 90.0,
+ "probe": {
+  "train": {
+   "az_mae": 3.9091117538186015,
+   "el_mae": 0.5666082376003264
+  },
+  "val": {
+   "az_mae": 4.092050956929333,
+   "el_mae": 0.6624634063720705
+  },
+  "test": {
+   "az_mae": 4.442296680588848,
+   "el_mae": 0.74712532081604
+  }
+ },
+ "probe_after_erasure": {
+  "erase_cell": {
+   "train": 87.31689616121645,
+   "val": 89.6017298878339,
+   "test": 88.3072374604059
+  },
+  "erase_cell_random": {
+   "train": 3.9390615686705455,
+   "val": 4.284814274760671,
+   "test": 4.501138525844214
+  }
+ },
+ "erasure_change_norm": {
+  "erase_cell": 27.038625717163086,
+  "erase_cell_random": 8.940400123596191
+ },
+ "probe_rotation_deg": {
+  "base": -1.170473332479105e-06,
+  "erase_cell": -1.170473332479105e-06,
+  "erase_cell_random": -1.170473332479105e-06
+ },
+ "mean_token_norm": 2034.524257886482,
+ "cell_norm": {
+  "base": 0.0,
+  "erase_cell": 0.0,
+  "erase_cell_random": 0.0
+ },
+ "relative_shifts": [],
+ "pattern_scales": [],
+ "conditions": [
+  "base",
+  "erase_cell",
+  "erase_cell_random"
+ ]
+}
+[22:09:26] command 1 ended with code 0 after 374 s
+[22:09:26] $ python scripts/experiments/make_intervention_plan.py --features /kaggle/temp/feat/v2 --key sana/block_18/t_400 --splits /kaggle/temp/data/v2/splits --n-images 60 --grid 8 --cell-eraser --cell-eraser-control --no-erase --only-erase --out /kaggle/working/out/plans/b18t400c
+[22:15:47] {
+ "erase_cell": {
+  "train": 87.31690286497515,
+  "val": 89.60147074415688,
+  "test": 88.30710437673395
+ },
+ "erase_cell_random": {
+  "train": 4.560501801900387,
+  "val": 5.088527454994165,
+  "test": 4.5447104924995845
+ }
+}
+{
+ "key": "sana/block_18/t_400",
+ "split": "test",
+ "n_images": 60,
+ "rotate": 90.0,
+ "probe": {
+  "train": {
+   "az_mae": 4.423799282272849,
+   "el_mae": 0.5290670330047608
+  },
+  "val": {
+   "az_mae": 4.9614775965481845,
+   "el_mae": 0.6319932025909424
+  },
+  "test": {
+   "az_mae": 4.504475381165701,
+   "el_mae": 0.6219843143463131
+  }
+ },
+ "probe_after_erasure": {
+  "erase_cell": {
+   "train": 87.31690286497515,
+   "val": 89.60147074415688,
+   "test": 88.30710437673395
+  },
+  "erase_cell_random": {
+   "train": 4.560501801900387,
+   "val": 5.088527454994165,
+   "test": 4.5447104924995845
+  }
+ },
+ "erasure_change_norm": {
+  "erase_cell": 80.70354461669922,
+  "erase_cell_random": 33.7493782043457
+ },
+ "probe_rotation_deg": {
+  "base": 1.573630178578848e-06,
+  "erase_cell": 1.573630178578848e-06,
+  "erase_cell_random": 1.573630178578848e-06
+ },
+ "mean_token_norm": 4580.5116273082385,
+ "cell_norm": {
+  "base": 0.0,
+  "erase_cell": 0.0,
+  "erase_cell_random": 0.0
+ },
+ "relative_shifts": [],
+ "pattern_scales": [],
+ "conditions": [
+  "base",
+  "erase_cell",
+  "erase_cell_random"
+ ]
+}
+[22:15:47] command 2 ended with code 0 after 380 s
+[22:15:47] $ python scripts/experiments/make_intervention_plan.py --features /kaggle/temp/feat/v2 --key sana/block_05/t_100 --splits /kaggle/temp/data/v2/splits --n-images 60 --grid 4 --cell-eraser --cell-eraser-control --no-erase --only-erase --out /kaggle/working/out/plans/b05t100c
+[22:17:28] {
+ "erase_cell": {
+  "train": 87.31732872823979,
+  "val": 89.60419266008498,
+  "test": 88.30887482357073
+ },
+ "erase_cell_random": {
+  "train": 2.565666564281986,
+  "val": 2.717774577106598,
+  "test": 2.7897519748253603
+ }
+}
+{
+ "key": "sana/block_05/t_100",
+ "split": "test",
+ "n_images": 60,
+ "rotate": 90.0,
+ "probe": {
+  "train": {
+   "az_mae": 2.475624415634331,
+   "el_mae": 0.21697748875617975
+  },
+  "val": {
+   "az_mae": 2.6391195788756376,
+   "el_mae": 0.24706062278747534
+  },
+  "test": {
+   "az_mae": 2.613000803208514,
+   "el_mae": 0.2686215290069582
+  }
+ },
+ "probe_after_erasure": {
+  "erase_cell": {
+   "train": 87.31732872823979,
+   "val": 89.60419266008498,
+   "test": 88.30887482357073
+  },
+  "erase_cell_random": {
+   "train": 2.565666564281986,
+   "val": 2.717774577106598,
+   "test": 2.7897519748253603
+  }
+ },
+ "erasure_change_norm": {
+  "erase_cell": 13.835236549377441,
+  "erase_cell_random": 2.877312660217285
+ },
+ "probe_rotation_deg": {
+  "base": 1.977439193486437e-06,
+  "erase_cell": 1.977439193486437e-06,
+  "erase_cell_random": 1.977439193486437e-06
+ },
+ "mean_token_norm": 901.761639663234,
+ "cell_norm": {
+  "base": 0.0,
+  "erase_cell": 0.0,
+  "erase_cell_random": 0.0
+ },
+ "relative_shifts": [],
+ "pattern_scales": [],
+ "conditions": [
+  "base",
+  "erase_cell",
+  "erase_cell_random"
+ ]
+}
+[22:17:28] command 3 ended with code 0 after 102 s
+[22:17:28] all commands ended with code 0
+[22:17:28] $ cd /kaggle/working/out && find . -type f | sort | head -300 && du -sh .
+[22:17:28] ./plans/b04t400c/plan.json
+./plans/b04t400c/plan.npz
+./plans/b05t100c/plan.json
+./plans/b05t100c/plan.npz
+./plans/b10t400c/plan.json
+./plans/b10t400c/plan.npz
+./plans/b18t400c/plan.json
+./plans/b18t400c/plan.npz
+178M	.

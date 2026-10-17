@@ -1,0 +1,54 @@
+{
+ "key": "sana/block_10/t_400",
+ "split": "test",
+ "n_images": 60,
+ "rotate": 90.0,
+ "probe": {
+  "train": {
+   "az_mae": 3.9091117538186015,
+   "el_mae": 0.5666082376003264
+  },
+  "val": {
+   "az_mae": 4.092050956929333,
+   "el_mae": 0.6624634063720705
+  },
+  "test": {
+   "az_mae": 4.442296680588848,
+   "el_mae": 0.74712532081604
+  }
+ },
+ "probe_after_erasure": {
+  "erase_cell": {
+   "train": 87.31689616121645,
+   "val": 89.6017298878339,
+   "test": 88.3072374604059
+  },
+  "erase_cell_random": {
+   "train": 3.9390615686705455,
+   "val": 4.284814274760671,
+   "test": 4.501138525844214
+  }
+ },
+ "erasure_change_norm": {
+  "erase_cell": 27.038625717163086,
+  "erase_cell_random": 8.940400123596191
+ },
+ "probe_rotation_deg": {
+  "base": -1.170473332479105e-06,
+  "erase_cell": -1.170473332479105e-06,
+  "erase_cell_random": -1.170473332479105e-06
+ },
+ "mean_token_norm": 2034.524257886482,
+ "cell_norm": {
+  "base": 0.0,
+  "erase_cell": 0.0,
+  "erase_cell_random": 0.0
+ },
+ "relative_shifts": [],
+ "pattern_scales": [],
+ "conditions": [
+  "base",
+  "erase_cell",
+  "erase_cell_random"
+ ]
+}

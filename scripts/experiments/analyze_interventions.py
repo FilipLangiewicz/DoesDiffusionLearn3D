@@ -10,7 +10,10 @@ each output image. For each condition the script reports:
 - shadow rotation: the same rotation, measured from the dark shadow region
   (dd3d.cues.shadow_azimuth). This measure uses no fitted model;
 - shadow kept: the share of the crisp shadow pixels of the base output that are
-  still crisp shadow (1: the cast shadow stays; near 0: it moved).
+  still crisp shadow (1: the cast shadow stays; near 0: it moved);
+- crop rotation: the rotation that a probe on a crop of the object reads
+  (dd3d.cues.crop_features). The crop has no floor and no cast shadow, so this
+  measure shows the light and dark sides of the object alone.
 
 All means have 95% bootstrap intervals over the images.
 """
@@ -29,7 +32,7 @@ import numpy as np  # noqa: E402
 import pandas as pd  # noqa: E402
 from PIL import Image  # noqa: E402
 
-from dd3d.cues import shadow_azimuth, shadow_kept  # noqa: E402
+from dd3d.cues import crop_features, shadow_azimuth, shadow_kept  # noqa: E402
 from dd3d.data import pixel_features  # noqa: E402
 from dd3d.metrics import bootstrap_ci, circular_abs_error, decode_azimuth  # noqa: E402
 from dd3d.probe import ProbeConfig, run  # noqa: E402
@@ -59,6 +62,8 @@ def main() -> None:
     }
     feats = {k: pixel_features(v, args.images, 64) for k, v in splits.items()}
     probe = run(feats, labels, ProbeConfig()).model
+    crops = {k: crop_features(v, args.images) for k, v in splits.items()}
+    crop_probe = run(crops, labels, ProbeConfig()).model
 
     plan = np.load(args.plan, allow_pickle=False)
     ids = [str(s) for s in plan["image_ids"]]
@@ -67,12 +72,14 @@ def main() -> None:
     conditions = [str(c) for c in plan["conditions"]]
     frame = pd.DataFrame({"image_id": ids, "shape": shapes})
 
-    preds, pixels, shadow = {}, {}, {}
+    preds, crop_preds, pixels, shadow = {}, {}, {}, {}
     for cond in conditions:
         folder = args.outputs / cond.replace(":", "_")
         x = pixel_features(frame, folder, 64)
         p = probe.predict(x)
         preds[cond] = decode_azimuth(p[:, 0], p[:, 1])
+        p = crop_probe.predict(crop_features(frame, folder))
+        crop_preds[cond] = decode_azimuth(p[:, 0], p[:, 1])
         pixels[cond] = np.stack(
             [
                 np.asarray(Image.open(folder / s / f"{i}.png").convert("RGB"), dtype=np.float32)
@@ -88,6 +95,7 @@ def main() -> None:
         err = circular_abs_error(preds[cond], az_label)
         change = np.abs(pixels[cond] - pixels["base"]).mean(axis=(1, 2, 3))
         srot = signed_diff(shadow[cond], shadow["base"])
+        crot = signed_diff(crop_preds[cond], crop_preds["base"])
         kept = np.array(
             [
                 shadow_kept(pixels["base"][k].astype(np.uint8), pixels[cond][k].astype(np.uint8))
@@ -111,6 +119,10 @@ def main() -> None:
                 "shadow_n": int(len(srot)),
                 "shadow_kept": float(kept.mean()) if len(kept) else float("nan"),
                 "shadow_kept_ci": bootstrap_ci(kept) if len(kept) else (float("nan"), float("nan")),
+                "crop_rotation_mean": float(crot.mean()),
+                "crop_rotation_median": float(np.median(crot)),
+                "crop_rotation_ci": bootstrap_ci(crot),
+                "crop_toward_target_share": float((np.abs(signed_diff(crot, args.rotate)) < 45).mean()),
             }
         )
     df = pd.DataFrame(rows)
@@ -125,6 +137,7 @@ def main() -> None:
                 "label_az": float(az_label[k]),
                 "pred_az": float(preds[c][k]),
                 "shadow_az": float(shadow[c][k]),
+                "crop_az": float(crop_preds[c][k]),
             }
             for c in conditions
             for k, i in enumerate(ids)

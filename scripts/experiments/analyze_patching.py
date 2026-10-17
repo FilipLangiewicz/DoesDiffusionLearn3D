@@ -11,6 +11,17 @@ tokens cannot move it by a copy of the object shading. Two more columns give the
 share of the crisp target shadow that stays (shadow_kept) and the share of the
 crisp source shadow that appears (source_shadow_shown). The
 figure is a map of the mean fraction over the blocks and the regions.
+
+The patched tokens copy the source image at their own place. The object cells
+also show the floor next to the object, where the cast shadow starts, so the
+two shadow shares above include a copy of pixels. The columns *_outside
+measure only outside the patched cells, grown by one token (16 px), because
+the decoder spreads the change of a token to its neighbours. Only these
+columns show a shadow that the model draws at another place. The column
+source_shadow_outside_base gives the same share for the base output.
+
+The column crop_rotation is the rotation that a probe on a crop of the object
+reads (dd3d.cues.crop_features), so it shows the object alone.
 """
 
 from __future__ import annotations
@@ -27,15 +38,41 @@ import numpy as np  # noqa: E402
 import pandas as pd  # noqa: E402
 from PIL import Image  # noqa: E402
 
-from dd3d.cues import shadow_azimuth, shadow_kept  # noqa: E402
+from dd3d.cues import crisp_shadow_mask, crop_features, dilate, shadow_azimuth, shadow_kept  # noqa: E402
 from dd3d.data import pixel_features  # noqa: E402
 from dd3d.metrics import bootstrap_ci, decode_azimuth  # noqa: E402
 from dd3d.probe import ProbeConfig, run  # noqa: E402
+
+SIDE = 32  # token grid of the transformer
+MARGIN_PX = 16  # one token of the 512 px output
+MIN_PX = 30  # the same minimum as dd3d.cues.shadow_kept
 
 
 def signed_diff(a, b) -> np.ndarray:
     """Return a - b in degrees, in (-180, 180]."""
     return (np.asarray(a) - np.asarray(b) + 180.0) % 360.0 - 180.0
+
+
+def region_pixels(token_mask: np.ndarray, size: int, margin: int) -> np.ndarray:
+    """Spread a (SIDE * SIDE,) token mask to a (size, size) pixel mask and grow it by margin pixels."""
+    k = size // SIDE
+    cells = np.kron(token_mask.reshape(SIDE, SIDE), np.ones((k, k), dtype=bool)).astype(bool)
+    return dilate(cells, margin)
+
+
+def share(part: np.ndarray, whole: np.ndarray) -> float:
+    """Return |part| / |whole|, or NaN if the whole has fewer than MIN_PX pixels."""
+    n = int(whole.sum())
+    return float(part.sum() / n) if n >= MIN_PX else float("nan")
+
+
+def without(rgb: np.ndarray, region: np.ndarray) -> np.ndarray:
+    """Return the image with the region set to the floor median, so that it is never dark."""
+    if not region.any():
+        return rgb
+    out = rgb.copy()
+    out[region] = np.median(rgb[~region], axis=0).astype(rgb.dtype)
+    return out
 
 
 def main() -> None:
@@ -56,8 +93,16 @@ def main() -> None:
         {k: pixel_features(v, args.images, 64) for k, v in splits.items()}, labels, ProbeConfig()
     ).model
 
+    crop_probe = run(
+        {k: crop_features(v, args.images) for k, v in splits.items()}, labels, ProbeConfig()
+    ).model
+
     def predict(folder: Path, frame: pd.DataFrame) -> np.ndarray:
         p = probe.predict(pixel_features(frame, folder, 64))
+        return decode_azimuth(p[:, 0], p[:, 1])
+
+    def predict_crop(folder: Path, frame: pd.DataFrame) -> np.ndarray:
+        p = crop_probe.predict(crop_features(frame, folder))
         return decode_azimuth(p[:, 0], p[:, 1])
 
     rows = []
@@ -68,10 +113,13 @@ def main() -> None:
         )
         base = predict(outputs / "base", frame)
         src = predict(outputs / "source", frame)
-        imgs = {}
+        crop_base = predict_crop(outputs / "base", frame)
+        index = {str(c): i for i, c in enumerate(plan["conditions"])}
+        imgs, crisp = {}, {}
         for cond in ["base", "source", *[str(c) for c in plan["conditions"] if str(c) != "base"]]:
             folder = outputs / cond.replace(":", "_")
             pred = base if cond == "base" else (src if cond == "source" else predict(folder, frame))
+            crop_rot = signed_diff(predict_crop(folder, frame), crop_base)
             pix = np.stack(
                 [
                     np.asarray(Image.open(folder / s / f"{i}.png").convert("RGB"), dtype=np.float32)
@@ -83,11 +131,29 @@ def main() -> None:
             if cond == "base":
                 imgs["base"] = pix
                 base_shadow = shadow
-            if cond == "source":
-                imgs["source"] = pix
+            if cond in ("base", "source"):
+                imgs[cond] = pix
+                crisp[cond] = [crisp_shadow_mask(img.astype(np.uint8)) for img in pix]
             rot = signed_diff(pred, base)
             srot = signed_diff(shadow, base_shadow)
             for k, image_id in enumerate(frame["image_id"]):
+                img = pix[k].astype(np.uint8)
+                outside = {}
+                if "source" in crisp:
+                    mask = plan["masks"][k, index[cond]] if cond in index else np.zeros(SIDE * SIDE, bool)
+                    far = ~region_pixels(mask, img.shape[0], MARGIN_PX)
+                    src_far, tgt_far = crisp["source"][k] & far, crisp["base"][k] & far
+                    here = crisp_shadow_mask(img)
+                    base_img = imgs["base"][k].astype(np.uint8)
+                    turn = signed_diff(
+                        shadow_azimuth(without(img, ~far)), shadow_azimuth(without(base_img, ~far))
+                    )
+                    outside = {
+                        "source_shadow_outside": share(src_far & here, src_far),
+                        "source_shadow_outside_base": share(src_far & crisp["base"][k], src_far),
+                        "target_kept_outside": share(tgt_far & here, tgt_far),
+                        "shadow_rotation_outside": float(turn),
+                    }
                 rows.append(
                     {
                         "image_id": image_id,
@@ -105,6 +171,8 @@ def main() -> None:
                         "pixel_change": float(np.abs(pix[k] - imgs["base"][k]).mean())
                         if "base" in imgs
                         else 0.0,
+                        "crop_rotation": float(crop_rot[k]),
+                        **outside,
                     }
                 )
     per_image = pd.DataFrame(rows)
@@ -126,6 +194,12 @@ def main() -> None:
                 "shadow_n": int(len(sfrac)),
                 "shadow_kept": float(g["shadow_kept"].mean()),
                 "source_shadow_shown": float(g["source_shadow_shown"].mean()),
+                "crop_fraction_mean": float(g["crop_rotation"].mean() / args.offset),
+                "crop_fraction_median": float(g["crop_rotation"].median() / args.offset),
+                "source_shadow_outside": float(g["source_shadow_outside"].mean()),
+                "source_shadow_outside_base": float(g["source_shadow_outside_base"].mean()),
+                "target_kept_outside": float(g["target_kept_outside"].mean()),
+                "shadow_fraction_outside_median": float(g["shadow_rotation_outside"].median() / args.offset),
                 "n": len(g),
             }
         )

@@ -115,6 +115,19 @@ def cue_features(df: pd.DataFrame, images_dir: Path, resolution: int = 64) -> di
     }
 
 
+def crop_features(df: pd.DataFrame, images_dir: Path) -> np.ndarray:
+    """Return the object crops (see object_crop) in [0, 1] as one row for each image.
+
+    A probe on these rows reads the light and dark sides of the object alone,
+    without the cast shadow and the floor.
+    """
+    rows = [
+        object_crop(load_rgb(images_dir, shape, image_id)).astype(np.float32).ravel() / 255.0
+        for image_id, shape in zip(df["image_id"], df["shape"], strict=True)
+    ]
+    return np.stack(rows)
+
+
 def shadow_azimuth(rgb: np.ndarray, base_px: np.ndarray | None = None, drop: float = 20.0) -> float:
     """Return the light azimuth that the cast shadow shows, in degrees (NaN if no shadow).
 

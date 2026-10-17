@@ -1,0 +1,17 @@
+{
+ "name": "audit-measures",
+ "sets": [
+  "v2pos",
+  "v2",
+  "v2rot"
+ ],
+ "features": {},
+ "kernels": [
+  "jankombajn/dd3d-renders",
+  "jankombajn/dd3d-render-v2rot-0"
+ ],
+ "datasets": [],
+ "commands": [
+  "python scripts/audit/validation/measure_check.py --splits {DATA}/v2/splits --images {DATA}/v2/images --rot-images {DATA}/v2rot/images --pairs configs/kaggle/patch_pairs.txt --out {OUT}/measures"
+ ]
+}

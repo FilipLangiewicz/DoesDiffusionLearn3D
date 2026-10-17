@@ -26,6 +26,8 @@ LABELS = {
     "sana": "SANA-1.6B",
     "sd15": "Stable Diffusion 1.5",
     "sdxl": "SDXL",
+    "dinov2": "DINOv2-L (no generation)",
+    "clip": "CLIP ViT-L/14 (no generation)",
 }
 UNET_BLOCKS = ["down0", "down1", "down2", "mid", "up0", "up1", "up2"]
 SET_NAMES = {

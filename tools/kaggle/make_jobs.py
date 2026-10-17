@@ -108,6 +108,9 @@ RUNS = {
     # Two UNet models for the check of generality (see dd3d.extract_unet).
     "sd15": {"kind": "unet", "model": "sd15"},
     "sdxl": {"kind": "unet", "model": "sdxl"},
+    # Two vision encoders that do not generate images (see dd3d.extract_vision).
+    "dinov2": {"kind": "vision", "model": "dinov2"},
+    "clip": {"kind": "vision", "model": "clip"},
 }
 
 

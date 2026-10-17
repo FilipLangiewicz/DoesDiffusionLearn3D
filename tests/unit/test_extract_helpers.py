@@ -44,3 +44,17 @@ def test_list_images_order(repo_root):
     assert [p.parent.name for p in paths] == ["Sphere"] * 2 + ["SmoothCylinder"] * 2 + ["SmoothCube_v2"] * 2
     assert all(isinstance(p, Path) and p.suffix == ".png" for p in paths)
     assert paths[0].name < paths[1].name
+
+
+def test_pool_patch_tokens_drops_the_class_token_and_keeps_the_cell_order():
+    from dd3d.extract_vision import pool_patch_tokens
+
+    side, c = 4, 2
+    tokens = torch.zeros(1, 1 + side * side, c)
+    tokens[0, 0] = 100.0  # class token: must not enter the mean
+    grid_vals = torch.arange(side * side, dtype=torch.float32).reshape(side, side)
+    tokens[0, 1:, 0] = grid_vals.reshape(-1)
+    pooled = pool_patch_tokens(tokens, 2).reshape(2, 2, c)
+    expected = grid_vals.reshape(2, 2, 2, 2).mean(dim=(1, 3)).numpy()
+    assert np.allclose(pooled[..., 0], expected)
+    assert np.allclose(pooled[..., 1], 0.0)

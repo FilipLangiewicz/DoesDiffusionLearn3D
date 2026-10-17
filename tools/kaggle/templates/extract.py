@@ -79,6 +79,8 @@ sys.path.insert(0, cfg_in["repo"] + "/src")
 from dd3d.extract import ExtractConfig, encode_prompt, run
 from dd3d.extract_unet import UNetExtractConfig
 from dd3d.extract_unet import run as run_unet
+from dd3d.extract_vision import VisionExtractConfig
+from dd3d.extract_vision import run as run_vision
 import torch
 
 LOG = open(cfg_in["log"], "a")
@@ -110,8 +112,11 @@ for run_name, overrides in cfg_in["runs"].items():
     overrides = dict(overrides)
     common = {"images_dir": images_dir, "out_dir": Path(cfg_in["out_root"]) / run_name,
               "task_id": task_id, "num_tasks": num_tasks}
-    if overrides.pop("kind", "sana") == "unet":
+    kind = overrides.pop("kind", "sana")
+    if kind == "unet":
         cfg, runner = UNetExtractConfig(**common, **overrides), run_unet
+    elif kind == "vision":
+        cfg, runner = VisionExtractConfig(**common, **overrides), run_vision
     else:
         cfg, runner = ExtractConfig(**common, prompt_cache=prompt_cache, **overrides), run
     t0 = time.time()

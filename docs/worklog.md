@@ -47,9 +47,34 @@ This file is the weekly standup log of the team. Each week has one entry. We wri
 - F17: The pixel probe on the outputs reads mostly the object. A claim about the shadow needs a measure of the shadow.
 - F18: A shift of the pattern in all 20 blocks together moves every measure strongly (+120 deg at a quarter of the natural size). The images show dark and bright blocks on the grid of the shift, not a new cast shadow. No shift drew a new crisp shadow.
 
+### Audit of 2026-10-17
+
+- A validation audit checked the article, the documents, the code and the course rules. The report is `docs/audit/validation_2026-10-17/RAPORT.md`.
+- Two independent readers read only the article or only the documents. Their notes are in the same folder.
+- Four checks ran on Kaggle (CPU). They changed these findings:
+  - F16 is not correct. Most of the source shadow that a patch of the object tokens shows lies in the patched cells. The patch copies these pixels. One token or more away from these cells, the source shadow does not appear (5% against 3% without a patch).
+  - The LEACE eraser of the causal test removed only the code that is the same at every position. A probe on the grid read the azimuth after the eraser as well as before (4.6 deg and 4.7 deg). Thus the erasure result in F15 does not show that the code is unused.
+  - The shift along the pattern turns the light and dark sides of the object. A probe on a crop of the object, without the floor and the shadow, shows this (F15 stays). The values "60 to 65 deg" are readings of the probe on the whole image.
+  - Two calibration values of the shadow measures were wrong. The dark-region error on cubes is 8.7 deg (not 10.3 deg). The kept share for a light turned by 90 deg is 0.07 to 0.09 (not 0.00 to 0.01).
+- The fixes are on the branch `fix/audit-findings`:
+  - one LEACE eraser for each grid cell;
+  - DINOv2 and CLIP as encoders that do not generate images;
+  - a measure on the object crop, and shadow shares outside the patched cells;
+  - a calibration of the output measures;
+  - tests of the probe and of the measures;
+  - `docs/REPRODUCE.md`.
+
+### Deviations from the plan
+
+- The plan (`docs/design_proposal.md`) put E0 in week 4, RQ1 in weeks 6 and 7, RQ3 in week 8 and RQ4 in week 9. Kaggle GPU jobs ran in parallel, so all four studies ran in week 1.
+- The design proposal named the CLI commands `baseline`, `render-spec`, `erase` and `steer`. The work used scripts in `scripts/experiments/` and Kaggle job specs in their place.
+- The design proposal planned TensorBoard logs. The experiments record their settings in the Kaggle job specs, with the commit of each run, and their results in `reports/experiments/`.
+- The upstream issue for the library error is sent (diffusers issue 15021).
+
 ### Next steps
 
-- Week 2 (2026-10-19 to 2026-10-25): ask the coordinator about the team size and the old project.
+- Week 2 (2026-10-19 to 2026-10-25): finish the fixes of the audit and change the article to the new results.
+- Ask the coordinator about the team size and the old project.
 - Review the language of the article and select the venue.
 - Show the viewer and the status report at the next meeting.
 
@@ -57,21 +82,3 @@ This file is the weekly standup log of the team. Each week has one entry. We wri
 
 - The cluster has no GPU hours left. All GPU work runs on Kaggle (30 GPU hours each week).
 - The team size: the course rules ask for 3 persons and the team has 2. We need an answer from the coordinator.
-
-## Week N (YYYY-MM-DD to YYYY-MM-DD)
-
-### Done
-
--
-
-### Findings
-
--
-
-### Next steps
-
--
-
-### Blockers
-
--

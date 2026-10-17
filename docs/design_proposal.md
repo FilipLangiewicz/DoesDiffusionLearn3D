@@ -1,5 +1,7 @@
 # Design proposal
 
+> This is the plan of 2026-10-13. It does not change. The results are in `docs/RESULTS.md`, and the deviations from this plan are in `docs/worklog.md`.
+
 Project: Does SANA encode the light direction of a 3D scene, and does it use this information?
 
 Date of this version: 2026-10-13. Branch: `siwy-xai`.

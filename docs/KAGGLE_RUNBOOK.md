@@ -12,7 +12,8 @@ This file tells how the project runs work on Kaggle. Read it before you start or
 
 ## Account and limits
 
-- Account `jankombajn`. The API token is in `~/.kaggle/`; never print it. Use `/home/flang/tools/kag` for all Kaggle CLI calls (log in `~/kaggle.log`).
+- Account `jankombajn`. The API token is in `~/.kaggle/`; never print it.
+- The tools call the Kaggle CLI of the virtual environment. If you want a log of the calls, set `KAGGLE_CLI` to a wrapper.
 - At most 5 CPU jobs and 2 GPU jobs at the same time. GPU quota: 30 hours each week.
 - Accelerator `NvidiaTeslaT4` = one T4. Accelerator `NvidiaTeslaT4Highmem` = two T4 and 31 GB RAM.
 - A job stops after 12 hours. Its output folder can have at most 20 GB and at most 500 files; pack many files into tar files.

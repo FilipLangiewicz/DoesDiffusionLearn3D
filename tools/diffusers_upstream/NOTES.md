@@ -50,7 +50,7 @@ I did not read the status of every result in full. The statuses above come from 
 
 ## Fix
 
-Files changed in the clone `/home/flang/tools/diffusers-src` (not committed; see `fix.patch`):
+Files changed in a local clone of diffusers (not in this repository; see `fix.patch`):
 
 - `scheduling_dpmsolver_multistep.py`, `scheduling_dpmsolver_singlestep.py`, `scheduling_unipc_multistep.py`, `scheduling_deis_multistep.py`: in `__init__`, `self.sigmas` is flipped (VP) or set to `timesteps / num_train_timesteps` (flow).
 - `tests/schedulers/test_scheduler_dpm_multi.py`: three new tests.
@@ -61,7 +61,7 @@ Risk: code that reads `scheduler.sigmas` before `set_timesteps` and expects the 
 
 ## Test results (exact)
 
-Environment: project venv python, `PYTHONPATH=/home/flang/tools/diffusers-src/src`, pytest, CPU.
+Environment: project venv python, `PYTHONPATH=<clone>/src`, pytest, CPU.
 
 New tests, before the fix (`git stash` of `src`):
 

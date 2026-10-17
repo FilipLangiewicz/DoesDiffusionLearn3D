@@ -1,6 +1,6 @@
 """Probe the light direction from pixel cue variants (no diffusion model).
 
-The script fits the same probe (PCA, standard scores, Ridge, alpha from val) on
+The script fits the same probe (PCA, Ridge, alpha from val) on
 four pixel variants and on two label types. It writes a CSV and a Markdown table.
 """
 

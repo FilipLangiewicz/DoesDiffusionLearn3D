@@ -14,12 +14,15 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import subprocess
 import sys
 import time
 from pathlib import Path
 
-KAG = "/home/flang/tools/kag"
+# The Kaggle CLI of the virtual environment.
+# KAGGLE_CLI can name a wrapper, for example one that logs the calls.
+KAG = os.environ.get("KAGGLE_CLI", str(Path(sys.executable).parent / "kaggle"))
 DONE = ("COMPLETE", "ERROR", "CANCEL")
 
 
